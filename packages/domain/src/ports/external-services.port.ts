@@ -52,3 +52,4 @@ export interface BlockchainPort {
     receiptHash: string;
   }): Promise<{ txHash: string; success: boolean }>;
 }
+

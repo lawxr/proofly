@@ -390,3 +390,4 @@ export class PostgresOutboxRepository implements OutboxRepositoryPort {
     );
   }
 }
+

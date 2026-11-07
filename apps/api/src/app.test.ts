@@ -162,3 +162,4 @@ describe('Proofly REST API Endpoints (Integration)', () => {
     assert.equal(settleData.prooflyFeeRetainedCents, createdOp.prooflyFeeCents);
   });
 });
+

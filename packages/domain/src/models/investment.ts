@@ -39,3 +39,4 @@ export class InvestmentEntity {
     this.createdAt = props.createdAt;
   }
 }
+
