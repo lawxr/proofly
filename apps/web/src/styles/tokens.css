@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --proofly-canvas: #FFFFFF;
+  --proofly-lavender: #F8D4FD;
+  --proofly-subtle: #F6F5F8;
+  --proofly-electric: #7300FF;
+  --proofly-black: #000000;
+  --proofly-emerald: #16A34A;
+  --proofly-rose: #E11D48;
+}
+
+body {
+  background-color: var(--proofly-canvas);
+  color: var(--proofly-black);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Clases de utilidad específicas para Modo Claro Proofly */
+.proofly-pill-button {
+  border-radius: 9999px;
+  background-color: #000000;
+  color: #FFFFFF;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.proofly-pill-button:hover {
+  transform: translateY(-1px);
+  background-color: #1a1a1a;
+}
+
+.proofly-bento-card {
+  border-radius: 24px;
+  padding: 1.5rem;
+}
+
+.proofly-glass-dock {
+  backdrop-filter: blur(16px);
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
