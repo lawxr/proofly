@@ -1,0 +1,51 @@
+[
+  {
+    "type": "function",
+    "name": "mintOperation",
+    "inputs": [
+      { "name": "canonicalHmac", "type": "bytes32" },
+      { "name": "dossierHash", "type": "bytes32" },
+      { "name": "nominalAmountCents", "type": "uint256" },
+      { "name": "dueDateUnix", "type": "uint256" },
+      { "name": "financiers", "type": "address[]" },
+      { "name": "shares", "type": "uint256[]" }
+    ],
+    "outputs": [{ "name": "tokenId", "type": "uint256" }],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "settleOperation",
+    "inputs": [
+      { "name": "tokenId", "type": "uint256" },
+      { "name": "settlementProofHash", "type": "bytes32" },
+      { "name": "receivedAmountCents", "type": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "OperationMinted",
+    "inputs": [
+      { "name": "tokenId", "type": "uint256", "indexed": true },
+      { "name": "canonicalHmac", "type": "bytes32", "indexed": true },
+      { "name": "dossierHash", "type": "bytes32", "indexed": false },
+      { "name": "nominalAmountCents", "type": "uint256", "indexed": false },
+      { "name": "dueDateUnix", "type": "uint256", "indexed": false }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OperationSettled",
+    "inputs": [
+      { "name": "tokenId", "type": "uint256", "indexed": true },
+      { "name": "settlementProofHash", "type": "bytes32", "indexed": true },
+      { "name": "settledAmountCents", "type": "uint256", "indexed": false },
+      { "name": "newState", "type": "uint8", "indexed": false }
+    ],
+    "anonymous": false
+  }
+]
+

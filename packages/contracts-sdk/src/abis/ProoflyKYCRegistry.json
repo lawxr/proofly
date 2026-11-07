@@ -1,0 +1,30 @@
+[
+  {
+    "type": "function",
+    "name": "isKycVerified",
+    "inputs": [{ "name": "account", "type": "address" }],
+    "outputs": [{ "name": "", "type": "bool" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setKycStatus",
+    "inputs": [
+      { "name": "account", "type": "address" },
+      { "name": "isVerified", "type": "bool" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "KycStatusUpdated",
+    "inputs": [
+      { "name": "account", "type": "address", "indexed": true },
+      { "name": "isVerified", "type": "bool", "indexed": true },
+      { "name": "timestamp", "type": "uint256", "indexed": false }
+    ],
+    "anonymous": false
+  }
+]
+
