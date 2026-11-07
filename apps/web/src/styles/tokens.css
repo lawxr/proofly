@@ -15,35 +15,47 @@
 body {
   background-color: var(--proofly-canvas);
   color: var(--proofly-black);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Clases de utilidad específicas para Modo Claro Proofly */
+/* Custom interactive utility classes */
 .proofly-pill-button {
   border-radius: 9999px;
   background-color: #000000;
   color: #FFFFFF;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
-  transition: all 0.2s ease;
+  font-weight: 700;
+  padding: 0.75rem 1.75rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 0 #000000;
 }
 
 .proofly-pill-button:hover {
-  transform: translateY(-1px);
-  background-color: #1a1a1a;
+  transform: translateY(-2px);
+  background-color: #7300FF;
+  box-shadow: 0 6px 0 #000000;
 }
 
-.proofly-bento-card {
-  border-radius: 24px;
-  padding: 1.5rem;
+.proofly-pill-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 #000000;
 }
 
-.proofly-glass-dock {
-  backdrop-filter: blur(16px);
-  background-color: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+.polaroid-badge {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.polaroid-badge:hover {
+  transform: translateY(-6px) scale(1.04) !important;
+  box-shadow: 0 20px 40px -10px rgba(115, 0, 255, 0.2), 0 5px 0 #000000 !important;
+}
+
+/* Hide scrollbar for clean horizontal swipe */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
