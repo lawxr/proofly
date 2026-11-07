@@ -10,8 +10,8 @@
     "start": "node dist/main.js"
   },
   "dependencies": {
-    "@proofly/domain": "workspace:*",
-    "@proofly/contracts-sdk": "workspace:*"
+    "@proofly/domain": "*",
+    "@proofly/contracts-sdk": "*"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

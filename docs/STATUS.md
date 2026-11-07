@@ -1,20 +1,26 @@
 # Estado del Proyecto — Proofly (`docs/STATUS.md`)
 
 Última actualización: 2026-11-07  
-Estado general: **FASE 2 COMPLETADA AL 100 % · Esperando «APROBADO FASE 2»**  
+Estado general: **FASE 3 COMPLETADA AL 100 % · Esperando «APROBADO FASE 3»**  
 Rama activa: `main`
 
 ---
 
 ## 1. Resumen Ejecutivo de Estado
-La **Fase 2 (Fundaciones del Monorepo, Configuración y Docker)** ha sido completada con éxito:
-- Monorepo configurado con Turborepo ([`turbo.json`](../../turbo.json)) y workspaces (`apps/*`, `packages/*`).
-- Biblioteca `@proofly/domain` implementada con el `FinancialEngine` (cálculo de adelanto, E.A. y Algoritmo del Mayor Resto con pruebas passing).
-- Biblioteca `@proofly/contracts-sdk` con ABIs oficiales de `ProoflyKYCRegistry` y `ProoflyOperations`.
-- Aplicaciones inicializadas: `@proofly/api` (con validación de entorno Zod), `@proofly/worker` y `@proofly/web` (con tokens de Tailwind CSS en Modo Claro).
-- Contratos Foundry en `contracts/src/` con Solidity 0.8.24+.
-- [`docker-compose.yml`](../../docker-compose.yml) con PostgreSQL 16 Alpine (montando `db/schema.sql`), Redis 7 Alpine y nodo local Anvil (Base Sepolia emulado).
-- 10 pruebas unitarias automatizadas ejecutando y pasando al 100 %.
+La **Fase 3 (Dominio Puro, FinancialEngine, Casos de Uso y Backend Núcleo REST)** ha sido completada con éxito:
+- `@proofly/domain`:
+  - `FinancialEngine` con Algoritmo del Mayor Resto, cálculo de adelantos y E.A. y tests de propiedades (10.000 iteraciones).
+  - `OperationStateMachine` con 10 estados canónicos y transiciones deterministas.
+  - `AntiDuplicateService` HMAC-SHA256 para facturas e hitos.
+  - `TiersPolicy` para progresión de cupos de freelancers.
+  - Modelos de dominio (`OperationEntity`, `InvestmentEntity`, `UserEntity`, `OutboxEvent`).
+  - 8 Casos de Uso del ciclo de vida completo (`SimulateQuote`, `CreateInvoiceOperation`, `CreateMilestoneOperation`, `ConfirmMilestone`, `AcceptQuote`, `SimulateParticipation`, `PurchaseParticipation`, `ReconcileBankReceipt`).
+- `@proofly/api`:
+  - Servidor REST nativo modular con enrutamiento conforme a `api/openapi.yaml`.
+  - Serialización estricta de `bigint` (centavos de COP) y manejo estándar de errores HTTP.
+  - Adaptadores en memoria y adaptadores PostgreSQL 16 ([`db/schema.sql`](../../db/schema.sql)) con Transactional Outbox y `SKIP LOCKED` (ADR-0004).
+  - Adaptadores sandbox deterministas para RADIAN, Hitos, KYC, Pasarela ACH y Base EVM.
+- **21 pruebas automatizadas** ejecutando y pasando al 100 % (7 pruebas funcionales legadas, 9 pruebas unitarias y de propiedades de dominio, 5 pruebas de integración REST y PostgreSQL).
 
 ---
 
@@ -24,9 +30,9 @@ La **Fase 2 (Fundaciones del Monorepo, Configuración y Docker)** ha sido comple
 | :--- | :--- | :---: | :--- |
 | **Setup & Fuentes** | Rebranding, fuentes de verdad (`DESIGN.md`, `enfoque-proofly.md`, `informe-proyecto.md`) y control vivo | **COMPLETADO** | Ninguno |
 | **Fase 1 (1A a 1E)**| Especificación de arquitectura, C4, puertos, HMAC, STRIDE y congelación v1.0 | **COMPLETADO** | **PUERTA 1 CERRADA** |
-| **Fase 2** | Fundaciones del Monorepo Turborepo, Docker Compose, Tailwind Tokens | **COMPLETADO** | **Puerta Fase 2 (Esperando «APROBADO FASE 2»)** |
-| **Fase 3** | Dominio puro, FinancialEngine completo, Repositorios PostgreSQL | *Listo para iniciar* | Puerta Fase 3 |
-| **Fase 4** | Smart contracts Foundry (`ProoflyKYCRegistry`, `ProoflyOperations` ERC-1155) | *En cola* | Puerta Fase 4 |
+| **Fase 2** | Fundaciones del Monorepo Turborepo, Docker Compose, Tailwind Tokens | **COMPLETADO** | **Puerta Fase 2 CERRADA** |
+| **Fase 3** | Dominio puro, FinancialEngine completo, Casos de Uso y API REST | **COMPLETADO** | **Puerta Fase 3 (Esperando «APROBADO FASE 3»)** |
+| **Fase 4** | Smart contracts Foundry (`ProoflyKYCRegistry`, `ProoflyOperations` ERC-1155) | *Listo para iniciar* | Puerta Fase 4 |
 | **Fase 5** | Integración Backend + Blockchain (`viem`, Outbox worker, Conciliador) | *En cola* | Puerta Fase 5 |
 | **Fase 6** | Frontend Web & Mobile Light Mode (Landing interactiva + App Fintech) | *En cola* | Puerta Fase 6 |
 | **Fase 7** | QA Integral (QA-01 a QA-06), pruebas de carga y seguridad | *En cola* | Puerta Fase 7 |
@@ -62,4 +68,4 @@ La **Fase 2 (Fundaciones del Monorepo, Configuración y Docker)** ha sido comple
 ---
 
 ## 5. Próxima Acción Inmediata
-- Recibir confirmación **«APROBADO FASE 2»** para dar inicio a la **Fase 3: Dominio Puro, FinancialEngine Completo y Backend Núcleo (NestJS + PostgreSQL)**.
+- Recibir confirmación **«APROBADO FASE 3»** para dar inicio a la **Fase 4: Contratos Inteligentes en Base L2 (Foundry)**.
