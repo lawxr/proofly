@@ -2637,7 +2637,52 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
   }
 }
 
-  </style>
+  @media(max-width: 639px){ .cta-handwritten-note { display: none !important; } }
+
+    .social-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 9999px;
+      background-color: #0C1E28;
+      color: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .social-circle:hover {
+      background-color: #7300FF;
+      transform: translateY(-2px);
+    }
+    .social-circle svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+    .cta-mint-btn {
+      background-color: #D6F8D8;
+      color: #000000;
+      font-weight: 800;
+      font-size: 15px;
+      padding: 14px 34px;
+      border-radius: 9999px;
+      border: 2px solid #000000;
+      box-shadow: 0 5px 0 #000000;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-block;
+    }
+    .cta-mint-btn:hover {
+      background-color: #c0f7c4;
+      transform: translateY(-2px);
+      box-shadow: 0 7px 0 #000000;
+    }
+    .cta-mint-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #000000;
+    }
+
+</style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -3759,52 +3804,103 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
   <!-- =================================================================== -->
   <!-- FINAL: BLACK FOOTER. THE PAGE ENDS IN THE PROOFLY WORDMARK.          -->
   <!-- =================================================================== -->
-  <footer id="footer" class="proofly-footer bg-[#0B0B0E] text-white relative overflow-hidden">
-    <div class="max-w-[1380px] mx-auto px-6 sm:px-10 lg:px-12 pt-16 sm:pt-24">
-      <div class="grid lg:grid-cols-12 gap-10 lg:gap-8 items-end pb-16 sm:pb-20">
-        <div class="lg:col-span-8">
-          <span class="inline-flex items-center gap-2 rounded-full border border-white/25 px-3.5 py-2 text-[10px] sm:text-xs uppercase tracking-[0.14em] font-bold text-[#EADAF9]">
-            <span class="w-1.5 h-1.5 rounded-full bg-lilac"></span> UN NUEVO RITMO PARA TUS PAGOS
-          </span>
-          <h2 class="balance-text mt-7 font-extrabold text-[clamp(2.5rem,5.7vw,5.3rem)] tracking-[-0.065em] leading-[1.04] text-white max-w-[890px]">
-            Tu trabajo avanza.<br><span class="text-lilac">Tu dinero también.</span>
-          </h2>
-        </div>
-        <div class="lg:col-span-4 lg:pb-2 flex flex-col items-start lg:items-end gap-5">
-          <p class="text-sm sm:text-base text-zinc-400 font-medium leading-relaxed max-w-sm lg:text-right">Convierte tus entregables aprobados en liquidez. O participa en oportunidades desde tu celular.</p>
-          <button type="button" onclick="openPublishModal()" class="group inline-flex items-center gap-6 rounded-full bg-lilac hover:bg-white text-black pl-6 pr-2.5 py-2.5 text-sm font-extrabold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-            Adelantar mi cobro
-            <span class="w-9 h-9 rounded-full bg-black text-white grid place-items-center group-hover:bg-electric transition-colors" aria-hidden="true">↗</span>
-          </button>
-        </div>
+    <!-- =================================================================== -->
+  <!-- PRE-FOOTER CTA SECTION (Matching inspo.mp4 / Reference Image)       -->
+  <!-- =================================================================== -->
+  <section class="py-24 sm:py-32 px-6 sm:px-10 text-center relative overflow-hidden bg-white">
+    <div class="max-w-4xl mx-auto flex flex-col items-center relative">
+      
+      <!-- Pill Badge: READY TO GET PAID -->
+      <div class="inline-flex items-center gap-2 bg-[#F1EFF4] border border-black/10 rounded-full px-5 py-2 text-[11px] font-extrabold tracking-widest uppercase text-zinc-800 mb-8 shadow-xs">
+        <span>READY TO GET PAID</span>
       </div>
 
-      <div class="border-t border-white/20 py-8 sm:py-10 grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-6 items-start">
-        <div class="md:col-span-5 space-y-3">
-          <a href="#" class="inline-flex items-center gap-2.5 font-display font-extrabold text-2xl tracking-tight hover:text-lilac transition-colors" aria-label="Proofly, volver al inicio">
-            <span class="text-lilac" aria-hidden="true">✳</span> Proofly
-          </a>
-          <p class="text-zinc-400 text-xs sm:text-sm leading-relaxed max-w-xs">Liquidez para quienes crean.<br>Oportunidades para quienes financian.</p>
+      <!-- Main Headline with Typewriter Accent -->
+      <h2 class="font-extrabold text-4xl sm:text-6xl lg:text-[72px] tracking-tight text-black leading-[1.08] max-w-3xl">
+        Make your milestones<br />work for you<span class="text-zinc-300">u</span>
+      </h2>
+
+      <!-- Button and Handwritten Arrow Area -->
+      <div class="mt-10 flex items-center justify-center relative w-full">
+        <div class="relative flex items-center">
+          <button
+            type="button"
+            onclick="scrollToId('calculadora')"
+            class="cta-mint-btn z-10"
+          >
+            Get Started
+          </button>
+
+          <!-- Handwritten Annotation & Curved Arrow precisely 36px to the right -->
+          <div class="cta-handwritten-note flex flex-col items-start absolute pointer-events-none select-none" style="left: calc(100% + 36px); top: -20px;">
+            <div class="font-hand text-2xl sm:text-3xl font-bold text-black rotate-[-6deg] leading-tight whitespace-nowrap">
+              Start accepting<br />milestones today
+            </div>
+            <svg class="w-12 h-12 text-black mt-0.5 ml-1 -rotate-6" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <path d="M38 6 C36 26, 30 38, 10 40" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M20 32 L10 40 L20 48" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </div>
-        <nav aria-label="Enlaces del pie de página" class="md:col-span-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm font-semibold">
-          <a href="#ventajas" class="w-fit text-zinc-300 hover:text-lilac transition-colors">Cómo funciona</a>
-          <a href="#ecosistema" class="w-fit text-zinc-300 hover:text-lilac transition-colors">Ecosistema</a>
-          <a href="#app-movil" class="w-fit text-zinc-300 hover:text-lilac transition-colors">App móvil</a>
-          <a href="#calculadora" class="w-fit text-zinc-300 hover:text-lilac transition-colors">Simulador</a>
-        </nav>
-        <div class="md:col-span-3 text-xs text-zinc-500 leading-relaxed md:text-right">
-          <p class="text-zinc-300 font-bold mb-2">Una nueva forma de moverse.</p>
-          <p>Demo conceptual de Proofly.<br>Los montos y retornos son ilustrativos.</p>
-          <p class="mt-4">© <span id="footerYear">2026</span> Proofly</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- LIGHT MINIMALIST FOOTER (Matching inspo.mp4 / Reference Image)      -->
+  <!-- =================================================================== -->
+  <footer id="footer" class="bg-[#F4F4F6] text-black relative overflow-hidden pt-12 sm:pt-16 pb-0 border-t border-black/5">
+    <div class="max-w-[1380px] mx-auto px-6 sm:px-10 lg:px-12">
+      
+      <!-- Top Row: Copy on Left, Social Icons on Right -->
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-12 sm:pb-16 border-b border-black/10">
+        
+        <!-- Left: Two-line concise brand copy -->
+        <div class="space-y-1 max-w-md">
+          <p class="text-xs sm:text-sm text-zinc-800 font-semibold leading-relaxed">
+            Milestone payments made simple for modern freelancers.
+          </p>
+          <p class="text-xs sm:text-sm text-zinc-500 font-medium leading-relaxed">
+            Accept contracts, get paid in COP instantly on Base L2.
+          </p>
+        </div>
+
+        <!-- Right: Circular Social Media Icons in Dark Navy/Black -->
+        <div class="flex items-center gap-2.5 sm:gap-3">
+          <!-- Facebook -->
+          <a href="#" aria-label="Facebook" class="social-circle">
+            <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          </a>
+          <!-- Instagram -->
+          <a href="#" aria-label="Instagram" class="social-circle">
+            <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          </a>
+          <!-- TikTok -->
+          <a href="#" aria-label="TikTok" class="social-circle">
+            <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.24 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+          </a>
+          <!-- X (Twitter) -->
+          <a href="#" aria-label="X" class="social-circle">
+            <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          <!-- LinkedIn -->
+          <a href="#" aria-label="LinkedIn" class="social-circle">
+            <svg viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+          </a>
         </div>
       </div>
     </div>
 
-    <!-- Last visual of the page: the brand fades into the black background. -->
-    <div class="footer-wordmark-wrap relative w-full px-2 sm:px-7 pt-9 pb-0 select-none overflow-hidden" aria-hidden="true">
-      <div id="footerWordmark" class="font-display font-extrabold text-center whitespace-nowrap leading-[0.76] tracking-[-0.105em] text-lilac">Proofly</div>
+    <!-- Giant Monumental Proofly Wordmark Cropped at the Bottom Fold (Edge-to-Edge SVG) -->
+    <div class="relative w-full overflow-hidden select-none pointer-events-none pt-6 -mb-16 sm:-mb-24 md:-mb-32 lg:-mb-44" aria-hidden="true">
+      <svg viewBox="0 0 1400 340" class="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
+        <text x="50%" y="290" text-anchor="middle" fill="#0C1E28" font-family="'Plus Jakarta Sans', 'Syne', sans-serif" font-weight="900" font-style="italic" font-size="360" letter-spacing="-0.07em">
+          Proofly
+        </text>
+      </svg>
     </div>
   </footer>
+
 
   <!-- =================================================================== -->
   <!-- Live Status Toast -->

@@ -104,3 +104,4 @@ runLoadTest().catch((err) => {
   console.error('Error en prueba de carga:', err);
   process.exit(1);
 });
+

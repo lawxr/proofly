@@ -49,3 +49,4 @@ Se sometió a la API de Proofly a una batería de 500 peticiones concurrentes (c
 - **Latencia $p99$:** 20.79 ms.
 
 **Conclusión:** La arquitectura modular sin frameworks pesados garantiza una respuesta sub-20ms en el percentil 99, superando los requerimientos de SLA financiero para el ecosistema Proofly.
+

@@ -50,3 +50,4 @@ Se ejecutó la suite automatizada integral cubriendo el ciclo de vida completo d
 - **Escenario:** Operación de $ 10.000.000 COP con 3 inversionistas que recibe abono parcial del 60% ($ 6.000.000 COP).
 - **Algoritmo:** Mayor Resto asigna enteros exactos de centavos a cada financiador sin redondeos flotantes.
 - **Resultado:** Estado `PARTIALLY_SETTLED_OVERDUE`. Cero pérdida de centavos. Activación de protocolo de cobranza sobre el 40% restante.
+
