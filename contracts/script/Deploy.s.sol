@@ -36,3 +36,4 @@ contract DeployProofly is Script {
         vm.stopBroadcast();
     }
 }
+

@@ -1,27 +1,28 @@
 # Estado del Proyecto — Proofly (`docs/STATUS.md`)
 
 Última actualización: 2026-11-07  
-Estado general: **FASE 4 COMPLETADA AL 100 % · Esperando «APROBADO FASE 4»**  
+Estado general: **FASE 5 COMPLETADA AL 100 % · Esperando «APROBADO FASE 5»**  
 Rama activa: `main`
 
 ---
 
 ## 1. Resumen Ejecutivo de Estado
-La **Fase 4 (Contratos Inteligentes Solidity en Base L2 con Foundry)** ha sido completada con éxito:
-- **`contracts/src/ProoflyKYCRegistry.sol`:**
-  - Registro de lista blanca y gobernanza con roles Admin/Operator.
-  - Verificación individual y por lotes (`setBatchKycStatus`).
-- **`contracts/src/ProoflyOperations.sol`:**
-  - Estándar de participaciones fraccionadas (1 token = 1 centavo de COP).
-  - Bloqueo estricto de doble emisión por HMAC canónico (`isHmacRegistered`, Invariante I4/I5).
-  - Emisión restringida con respaldo 1:1 (`sum(shares) == nominalAmountCents`, Invariante I6).
-  - Transferencias condicionadas a KYC activo tanto en emisor como en receptor (`safeTransferFrom`, Invariante I7).
-  - Liquidación total o parcial en Cascada Waterfall con hash de comprobante bancario (`settleOperation`, Invariante I10).
-- **`contracts/test/` (Suite Foundry con Fuzzing):**
-  - 18 pruebas automatizadas ejecutando y pasando al 100 %.
-  - Pruebas de fuzzing (10.000 iteraciones cada una) sobre la imposibilidad de doble minteo de HMAC y conservación estricta de suministro.
-- **`contracts/script/Deploy.s.sol`:** Script de despliegue parametrizado para Base Sepolia y Base Mainnet.
-- **`packages/contracts-sdk`:** ABIs oficiales sincronizados y actualizados.
+La **Fase 5 (Integración Backend + Blockchain, Worker de Outbox y Conciliación)** ha sido completada con éxito:
+- **`apps/worker/src/outbox/dispatcher.ts`:**
+  - Despachador asíncrono sobre la tabla `outbox_events` con procesamiento `FOR UPDATE SKIP LOCKED`.
+  - Despacho automático de minteo en Base L2 (`mintOperationTokens`) y desembolso bancario ACH al freelancer al completarse el 100% de financiación.
+  - Registro de liquidación y quema on-chain al conciliarse pagos bancarios.
+  - Gestión de errores y reintentos con registro de causa de falla (`last_error`).
+- **`apps/worker/src/indexer/evm-indexer.ts`:**
+  - Indexador de eventos EVM (`OperationMinted`, `OperationSettled`, `KycStatusUpdated`).
+  - Ventana de seguridad estricta de **12 bloques de confirmación** en Base L2 para protección contra reorganizaciones de cadena (*reorgs*).
+- **`apps/worker/src/reconciliation/daily-job.ts`:**
+  - Conciliación diaria automatizada de **tres vías**: Base de Datos operacional vs. Contratos ERC-1155 en Base L2 vs. Extractos bancarios.
+  - Invariante de discrepancia cero ($0 COP).
+- **Batería de Pruebas:**
+  - 26 pruebas TypeScript pasando al 100 % (Dominio, API REST y Worker Asíncrono).
+  - 18 pruebas Solidity en Foundry (incluyendo 20.000 iteraciones de fuzzing).
+  - **44 pruebas totales en el proyecto, 100% en verde.**
 
 ---
 
@@ -33,9 +34,9 @@ La **Fase 4 (Contratos Inteligentes Solidity en Base L2 con Foundry)** ha sido c
 | **Fase 1 (1A a 1E)**| Especificación de arquitectura, C4, puertos, HMAC, STRIDE y congelación v1.0 | **COMPLETADO** | **PUERTA 1 CERRADA** |
 | **Fase 2** | Fundaciones del Monorepo Turborepo, Docker Compose, Tailwind Tokens | **COMPLETADO** | **Puerta Fase 2 CERRADA** |
 | **Fase 3** | Dominio puro, FinancialEngine completo, Casos de Uso y API REST | **COMPLETADO** | **Puerta Fase 3 CERRADA** |
-| **Fase 4** | Smart contracts Foundry (`ProoflyKYCRegistry`, `ProoflyOperations` ERC-1155) | **COMPLETADO** | **Puerta Fase 4 (Esperando «APROBADO FASE 4»)** |
-| **Fase 5** | Integración Backend + Blockchain (`viem`, Outbox worker, Conciliador) | *Listo para iniciar* | Puerta Fase 5 |
-| **Fase 6** | Frontend Web & Mobile Light Mode (Landing interactiva + App Fintech) | *En cola* | Puerta Fase 6 |
+| **Fase 4** | Smart contracts Foundry (`ProoflyKYCRegistry`, `ProoflyOperations` ERC-1155) | **COMPLETADO** | **Puerta Fase 4 CERRADA** |
+| **Fase 5** | Integración Backend + Blockchain (`viem`, Outbox worker, Conciliador) | **COMPLETADO** | **Puerta Fase 5 (Esperando «APROBADO FASE 5»)** |
+| **Fase 6** | Frontend Web & Mobile Light Mode (Landing interactiva + App Fintech) | *Listo para iniciar* | Puerta Fase 6 |
 | **Fase 7** | QA Integral (QA-01 a QA-06), pruebas de carga y seguridad | *En cola* | Puerta Fase 7 |
 | **Fase 8** | Documentación operativa, Runbooks de producción y Cierre | *En cola* | Lanzamiento Mainnet |
 
@@ -69,4 +70,4 @@ La **Fase 4 (Contratos Inteligentes Solidity en Base L2 con Foundry)** ha sido c
 ---
 
 ## 5. Próxima Acción Inmediata
-- Recibir confirmación **«APROBADO FASE 4»** para dar inicio a la **Fase 5: Integración Backend + Blockchain y Conciliación (`viem`, Outbox worker, Conciliador)**.
+- Recibir confirmación **«APROBADO FASE 5»** para dar inicio a la **Fase 6: Frontend Web & Mobile Fintech (Modo Claro Absoluto con `design-taste-frontend` y `web-design-guidelines`)**.

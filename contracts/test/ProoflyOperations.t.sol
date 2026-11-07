@@ -290,3 +290,4 @@ contract ProoflyOperationsTest is Test {
         assertEq(bal1 + bal2, totalNominal);
     }
 }
+

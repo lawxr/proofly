@@ -88,3 +88,4 @@ contract ProoflyKYCRegistryTest is Test {
         registry.setKycStatus(freelancer, true);
     }
 }
+
