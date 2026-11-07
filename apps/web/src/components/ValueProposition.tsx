@@ -1,140 +1,164 @@
-import React from 'react';
+import { useEffect, useRef } from 'react';
+import { gsap, ScrollTrigger, prefersReducedMotion, splitChars } from '../lib/gsap';
 
-export const ValueProposition: React.FC = () => {
+interface ValuePropositionProps {
+  onPublish: () => void;
+}
+
+export function ValueProposition({ onPublish }: ValuePropositionProps) {
+  const rootRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const reduced = prefersReducedMotion();
+
+    const ctx = gsap.context((self) => {
+      const q = self.selector!;
+
+      /* ── S1: Title scroll-scrubbed reveal (opacity 0.2 → 1 per char) ── */
+      const h2 = q('h2')[0] as HTMLElement | undefined;
+      if (h2) {
+        const chars = splitChars(h2);
+        gsap.set(chars, { opacity: reduced ? 1 : 0.2 });
+        if (!reduced) {
+          gsap.to(chars, {
+            opacity: 1,
+            ease: 'none',
+            stagger: 0.5,
+            scrollTrigger: { trigger: h2, start: 'top 80%', end: 'center center', scrub: true },
+          });
+        }
+      }
+
+      const card = q('[data-vp-card]')[0] as HTMLElement | undefined;
+      const payout = q('.proofly-payout')[0] as HTMLElement | undefined;
+      const note = q('[data-vp-note]')[0] as HTMLElement | undefined;
+      const arrow = q('[data-vp-arrow]')[0] as SVGPathElement | undefined;
+
+      if (reduced) {
+        // Jump straight to the resting state.
+        if (card) gsap.set(card, { clearProps: 'all' });
+        if (payout) gsap.set(payout, { scale: 1, rotate: -6, opacity: 1 });
+        if (note) gsap.set(note, { opacity: 1 });
+        if (arrow) {
+          const len = arrow.getTotalLength();
+          gsap.set(arrow, { strokeDasharray: len, strokeDashoffset: 0 });
+        }
+        return;
+      }
+
+      /* ── S6: main card scroll-linked expansion (clip-path inset top/bottom) ── */
+      if (card) {
+        gsap.fromTo(
+          card,
+          { clipPath: 'inset(45% 0% 45% 0%)' },
+          {
+            clipPath: 'inset(0% 0% 0% 0%)',
+            ease: 'none',
+            scrollTrigger: { trigger: card, start: 'top 85%', end: 'top 35%', scrub: true },
+          },
+        );
+      }
+
+      /* ── S7: payout overlay elastic pop-in at 70% of the card's expansion ── */
+      if (payout) {
+        gsap.set(payout, { scale: 0, rotate: -6, transformOrigin: 'center center' });
+        ScrollTrigger.create({
+          trigger: card ?? payout,
+          start: 'top 85%',
+          end: 'top 35%',
+          onUpdate: (st) => {
+            if (st.progress >= 0.7 && !payout.dataset.popped) {
+              payout.dataset.popped = 'true';
+              gsap.to(payout, { scale: 1, rotate: -6, duration: 0.9, ease: 'elastic.out(1, 0.5)' });
+            }
+          },
+        });
+      }
+
+      /* ── S8: hand-drawn arrow self-draw + handwritten note fade-in ── */
+      if (arrow) {
+        const len = arrow.getTotalLength();
+        gsap.set(arrow, { strokeDasharray: len, strokeDashoffset: len });
+        gsap.to(arrow, {
+          strokeDashoffset: 0,
+          ease: 'none',
+          scrollTrigger: { trigger: arrow, start: 'top 90%', end: 'top 55%', scrub: true },
+        });
+      }
+      if (note) {
+        gsap.fromTo(
+          note,
+          { opacity: 0, y: 10 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: note, start: 'top 88%' },
+          },
+        );
+      }
+    }, root);
+
+    ScrollTrigger.refresh();
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section id="ventajas" className="px-4 sm:px-6 lg:px-8 py-16 max-w-7xl mx-auto">
-      <div className="bg-gradient-to-br from-proofly-lavender via-[#FBE5FF] to-proofly-subtle text-black rounded-[44px] p-6 sm:p-12 lg:p-16 relative overflow-hidden border-[2px] border-black shadow-card">
-        
-        {/* Background Decorative Starbursts */}
-        <svg className="absolute -top-24 -left-24 w-96 h-96 text-proofly-lavender-deep/30 pointer-events-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 0L14.8 7.2L22 4.4L16.8 10.4L24 12L16.8 13.6L22 19.6L14.8 16.8L12 24L9.2 16.8L2 19.6L7.2 13.6L0 12L7.2 10.4L2 4.4L9.2 7.2L12 0Z"/>
-        </svg>
-        <svg className="absolute -bottom-28 right-1/4 w-80 h-80 text-white/50 pointer-events-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 0L14.8 7.2L22 4.4L16.8 10.4L24 12L16.8 13.6L22 19.6L14.8 16.8L12 24L9.2 16.8L2 19.6L7.2 13.6L0 12L7.2 10.4L2 4.4L9.2 7.2L12 0Z"/>
-        </svg>
-
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-          
-          {/* Left Column: Copy, Button & Handwritten Callout */}
-          <div className="lg:col-span-6 space-y-6">
-            <div className="inline-flex items-center gap-2 bg-white border-[1.5px] border-black rounded-full px-4 py-1.5 text-xs font-black uppercase tracking-wider text-proofly-electric shadow-[0_2px_0_#000000]">
-              <span className="w-2 h-2 rounded-full bg-proofly-electric"></span>
-              <span>LIQUIDEZ INMEDIATA EN COP</span>
-            </div>
-
-            <h2 className="font-extrabold text-3xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-tight text-black">
-              Cobra hoy sin<br />
-              <span className="text-proofly-electric">esperar a 60 días.</span>
-            </h2>
-
-            <p className="text-base sm:text-lg text-zinc-800 max-w-lg font-medium leading-relaxed">
-              Tus empresas clientes mantienen su plazo habitual de pago a 30 o 60 días, mientras Proofly convierte cada entregable aprobado en pesos colombianos directos a tu cuenta bancaria.
+    <section id="ventajas" className="proofly-value relative overflow-hidden bg-lilac text-ink" ref={rootRef}>
+      <svg className="absolute -bottom-24 -left-20 w-80 h-80 text-white/40 pointer-events-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 0L15 7L22 4L17 10L24 12L17 14L22 20L15 17L12 24L9 17L2 20L7 14L0 12L7 10L2 4L9 7Z" />
+      </svg>
+      <div className="relative z-10 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div>
+          <h2 className="font-extrabold text-[36px] sm:text-[46px] lg:text-[48px] leading-[1.05] tracking-[-0.05em] max-w-lg">
+            Cobra hoy sin<br />esperar a 60 días.
+          </h2>
+          <p className="mt-6 text-base sm:text-lg leading-relaxed text-ink-soft max-w-[440px]">
+            Sube tu factura o los hitos de tu proyecto confirmado. Evaluamos tu historial de entrega y el cumplimiento de la empresa para adelantar tu dinero, mientras quienes financian reciben su capital más rendimiento cuando la empresa paga.
+          </p>
+          <button type="button" onClick={onPublish} className="mt-7 bg-electric hover:bg-electric-dark text-white font-bold text-sm px-7 py-4 rounded-full transition-colors">
+            Adelantar mi primer hito
+          </button>
+          <div className="mt-8 flex items-center gap-4" aria-hidden="true">
+            <p data-vp-note className="font-hand text-[28px] sm:text-[32px] font-bold leading-tight -rotate-3">
+              Tu trabajo vale hoy,<br /><span className="text-electric">no en dos meses</span>
             </p>
-
-            <div className="pt-2">
-              <a
-                href="#app-movil"
-                className="inline-block proofly-pill-button text-sm sm:text-base px-8 py-4"
-              >
-                Empezar a Adelantar
-              </a>
-            </div>
-
-            {/* Handwritten Note with Curved SVG Arrow */}
-            <div className="pt-4 flex items-center gap-3">
-              <div className="font-hand text-2xl sm:text-3xl font-bold text-black -rotate-3 leading-tight">
-                Plazo cómodo para la empresa,<br />
-                <span className="text-proofly-electric">efectivo hoy para ti</span>
-              </div>
-              <svg className="w-14 h-14 text-proofly-electric shrink-0" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                <path d="M12 14 C8 40, 26 52, 52 48" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                <path d="M43 40 L53 48 L44 56" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
+            <svg className="w-12 h-12 text-ink" viewBox="0 0 64 64" fill="none">
+              <path data-vp-arrow d="M8 51C32 55 43 37 48 15M39 22L49 12L54 25" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
-
-          {/* Right Column: Live Product Card */}
-          <div className="lg:col-span-6 relative flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-[500px]">
-              
-              <div className="bg-white border-[2px] border-black rounded-[32px] shadow-card p-6 sm:p-8 relative overflow-hidden">
-                {/* Card Header */}
-                <div className="flex items-center justify-between border-b border-black/10 pb-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-black text-proofly-lavender flex items-center justify-center font-black">
-                      <svg className="w-5 h-5 text-proofly-lavender" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 0L14.8 7.2L22 4.4L16.8 10.4L24 12L16.8 13.6L22 19.6L14.8 16.8L12 24L9.2 16.8L2 19.6L7.2 13.6L0 12L7.2 10.4L2 4.4L9.2 7.2L12 0Z"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-extrabold text-base text-black">Proofly</p>
-                      <p className="text-xs text-proofly-muted font-semibold">Operación #PRF-2026-081</p>
-                    </div>
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 bg-proofly-subtle border border-black/10 rounded-full px-3 py-1 text-xs font-bold text-proofly-electric">
-                    <span className="w-2 h-2 rounded-full bg-proofly-electric"></span>
-                    VERIFICADO COP
-                  </span>
-                </div>
-
-                {/* Milestone Info */}
-                <div className="pt-6 pb-4 flex items-start justify-between">
-                  <div>
-                    <span className="text-[11px] font-bold text-proofly-muted uppercase tracking-wider">Entregable Aprobado</span>
-                    <h3 className="font-extrabold text-lg text-black mt-0.5">Diseño de plataforma digital</h3>
-                    <p className="text-xs text-proofly-muted mt-1">Factura verificada con plazo de 60 días</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-proofly-lavender border border-black/15 flex items-center justify-center text-proofly-electric font-black text-lg">
-                    ✓
-                  </div>
-                </div>
-
-                {/* Liquidity Amount Banner */}
-                <div className="rounded-[24px] bg-proofly-subtle border border-black/10 p-5 mt-2 relative overflow-hidden">
-                  <div className="flex items-center justify-between text-xs font-bold text-zinc-600">
-                    <span>Liquidez disponible</span>
-                    <span className="rounded-full bg-black text-white text-[10px] font-extrabold px-3 py-1">INMEDIATO ↗</span>
-                  </div>
-                  <p className="text-3xl sm:text-4xl font-extrabold text-black tracking-tight mt-2">
-                    $ 8.347.000 <span className="text-base font-normal text-proofly-muted">COP</span>
-                  </p>
-                  <p className="text-xs text-proofly-muted font-medium mt-1">Directo a tu cuenta Bancolombia / Davivienda.</p>
-                </div>
-
-                {/* 3-Step Progress */}
-                <div className="pt-6 pb-2">
-                  <div className="grid grid-cols-[auto_1fr_auto_1fr_auto] items-center gap-2">
-                    <span className="w-8 h-8 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center">01</span>
-                    <span className="h-[2px] bg-proofly-electric/40"></span>
-                    <span className="w-8 h-8 rounded-full bg-proofly-electric text-white text-xs font-bold flex items-center justify-center">02</span>
-                    <span className="h-[2px] bg-proofly-electric/40"></span>
-                    <span className="w-8 h-8 rounded-full bg-proofly-lavender border border-black/20 text-black text-xs font-bold flex items-center justify-center">03</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-1 mt-2 text-center text-xs font-bold text-zinc-600">
-                    <span>Hito validado</span>
-                    <span>Adelanto ACH</span>
-                    <span>Cobro en COP</span>
-                  </div>
-                </div>
-
+        </div>
+        <div className="proofly-value-visual relative pt-3 pb-16 lg:pb-8" aria-label="Ejemplo ilustrativo de adelanto de un hito">
+          <div data-vp-card className="bg-white rounded-[28px] p-5 sm:p-7 shadow-card border border-electric/5">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 bg-electric text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">SV</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold">Sofía Vargas<span className="hidden sm:inline"> · Diseñadora</span></div>
+                <div className="text-xs text-ink-soft mt-1">Hito de diseño confirmado</div>
               </div>
-
-              {/* Floating verified badge */}
-              <div className="absolute -bottom-4 -left-3 sm:-left-6 z-20 rounded-2xl bg-black text-white px-4 py-3 shadow-[0_10px_25px_rgba(0,0,0,0.18)] -rotate-3 border border-black">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-7 h-7 rounded-full bg-proofly-lavender text-black font-extrabold flex items-center justify-center text-xs">✓</span>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-proofly-lavender font-extrabold">Operación</p>
-                    <p className="text-xs font-extrabold text-white">Hito verificado en Base L2</p>
-                  </div>
-                </div>
-              </div>
-
+              <span className="bg-lilac/60 text-ink text-[11px] font-bold rounded-full px-3 py-1 shrink-0">30 días</span>
             </div>
+            <div className="mt-6 rounded-[20px] bg-surface p-5 flex flex-wrap justify-between items-end gap-4">
+              <div><div className="text-xs text-ink-soft mb-2">Valor del entregable</div><div className="text-[28px] sm:text-[32px] leading-none font-extrabold tracking-tight tabular-nums">$ 8.500.000</div></div>
+              <div><div className="text-[11px] text-ink-soft mb-2">Retorno financiador</div><div className="text-electric text-lg font-extrabold">16,8 % E.A.</div></div>
+            </div>
+            <div className="mt-6 flex justify-between gap-4 text-xs"><span className="text-ink-soft">Adelanto disponible hoy</span><span className="font-bold tabular-nums">$ 8.347.000</span></div>
+            <div className="mt-2 h-2 rounded-full bg-electric" />
+            <div className="mt-4 text-[10px] text-ink-soft">Ejemplo ilustrativo. Valores sujetos a evaluación.</div>
           </div>
-
+          <div className="proofly-payout relative mt-4 ml-3 sm:-ml-4 bg-white border border-electric/20 rounded-[20px] p-2.5 shadow-floating w-[185px]">
+            <div className="bg-electric rounded-[12px] text-white text-center px-4 py-5">
+              <div className="text-[11px] font-semibold text-white/85">Desembolso hoy</div>
+              <div className="mt-1 text-lg font-extrabold tabular-nums">$ 8.347.000</div>
+            </div>
+            <div className="text-[11px] text-center font-bold pt-2 pb-1">A tu cuenta, en pesos ↗</div>
+          </div>
         </div>
       </div>
     </section>
   );
-};
+}

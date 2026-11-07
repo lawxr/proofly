@@ -3,59 +3,390 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: light;
+  background-color: var(--proofly-edge-ground, #FFFFFF);
+  overflow-x: clip;
   --proofly-canvas: #FFFFFF;
   --proofly-lavender: #F8D4FD;
   --proofly-subtle: #F6F5F8;
   --proofly-electric: #7300FF;
-  --proofly-black: #000000;
-  --proofly-emerald: #16A34A;
-  --proofly-rose: #E11D48;
+  --proofly-ink: #1E0B3B;
 }
 
 body {
-  background-color: var(--proofly-canvas);
-  color: var(--proofly-black);
+  background-color: transparent;
+  color: #1E0B3B;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   margin: 0;
   padding: 0;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom interactive utility classes */
+.tabular-nums { font-variant-numeric: tabular-nums; }
+.balance-text { text-wrap: balance; }
+.pretty-text  { text-wrap: pretty; }
+
+button, a, input[type="range"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Diagonal hatching ── */
+.bg-hatch-lilac {
+  background-color: #F3E5F5;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(115,0,255,0.10) 0px,
+    rgba(115,0,255,0.10) 1.5px,
+    transparent 1.5px,
+    transparent 9px
+  );
+}
+.bg-hatch-light {
+  background-color: #FFF8FE;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(229,168,242,0.28) 0px,
+    rgba(229,168,242,0.28) 1.5px,
+    transparent 1.5px,
+    transparent 10px
+  );
+}
+
+/* ── Editorial photo duotone harmonisation ── */
+.editorial-photo-wrap {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #F8D4FD 0%, #EFE5FF 100%);
+}
+.editorial-photo {
+  filter: saturate(0.92) contrast(1.03) brightness(1.03);
+  transition: transform 0.6s cubic-bezier(0.22,1,0.36,1), filter 0.4s ease;
+}
+.editorial-photo-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,rgba(248,212,253,0.14) 0%,rgba(115,0,255,0.10) 100%);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+.editorial-photo-wrap:hover .editorial-photo {
+  transform: scale(1.04);
+  filter: saturate(1.05) contrast(1.04) brightness(1.05);
+}
+
+/* ── Custom range slider ── */
+input[type="range"].proofly-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 10px;
+  background: #F6F5F8;
+  border-radius: 999px;
+  border: 1.5px solid rgba(30,11,59,0.18);
+  outline: none;
+}
+input[type="range"].proofly-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #7300FF;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 4px 12px -2px rgba(115,0,255,0.45);
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+input[type="range"].proofly-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+  background: #5200B8;
+}
+
+/* ── Typewriter character reveal ── */
+.char-reveal {
+  display: inline-block;
+  transition: color 0.18s cubic-bezier(0.16,1,0.3,1),
+              opacity 0.18s ease,
+              transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  will-change: color, opacity, transform;
+}
+.char-hidden {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.char-ghost {
+  opacity: 1;
+  color: rgba(30,11,59,0.22) !important;
+  transform: translateY(1px);
+}
+.char-solid {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Self-drawing SVG arrow ── */
+.draw-arrow-path {
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  transition: stroke-dashoffset 1.25s cubic-bezier(0.22,1,0.36,1);
+}
+.draw-arrow-head {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  transition: stroke-dashoffset 0.55s cubic-bezier(0.22,1,0.36,1) 0.85s;
+}
+.arrow-drawn .draw-arrow-path,
+.arrow-drawn .draw-arrow-head { stroke-dashoffset: 0; }
+
+/* ── Spring bar chart ── */
+.spring-bar {
+  transform-origin: bottom;
+  transform: scaleY(0.08);
+  transition: transform 0.85s cubic-bezier(0.34,1.56,0.64,1);
+}
+.bars-active .spring-bar { transform: scaleY(1); }
+
+/* ── Hero stage scroll zoom ── */
+.hero-white-card {
+  transition: transform 0.12s linear;
+  will-change: transform;
+}
+
+/* ── Polaroid float cards ── */
+.polaroid-card {
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease;
+  will-change: transform;
+}
+.polaroid-card:hover {
+  z-index: 30;
+  box-shadow: 0 26px 46px -14px rgba(115,0,255,0.26), 0 8px 18px -6px rgba(30,11,59,0.14);
+}
+
+/* ── Bento horizontal track ── */
+.bento-track {
+  transition: transform 0.18s cubic-bezier(0.2,0.8,0.2,1);
+  will-change: transform;
+  cursor: grab;
+}
+.bento-track:active { cursor: grabbing; }
+
+/* ── Footer wordmark parallax ── */
+.footer-wordmark {
+  transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
+  will-change: transform;
+}
+
+/* ── Legacy pill button (soft elevated, no hard offset) ── */
 .proofly-pill-button {
   border-radius: 9999px;
-  background-color: #000000;
-  color: #FFFFFF;
-  font-weight: 700;
+  background-color: #F8D4FD;
+  color: #1E0B3B;
+  font-weight: 800;
   padding: 0.75rem 1.75rem;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 0 #000000;
+  box-shadow: 0 10px 24px -10px rgba(115,0,255,0.35);
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
 }
-
 .proofly-pill-button:hover {
   transform: translateY(-2px);
   background-color: #7300FF;
-  box-shadow: 0 6px 0 #000000;
+  color: #FFFFFF;
+  box-shadow: 0 16px 30px -12px rgba(115,0,255,0.5);
 }
-
 .proofly-pill-button:active {
-  transform: translateY(1px);
-  box-shadow: 0 2px 0 #000000;
+  transform: translateY(0);
+  box-shadow: 0 8px 18px -10px rgba(115,0,255,0.4);
 }
 
 .polaroid-badge {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s cubic-bezier(0.16,1,0.3,1);
 }
-
 .polaroid-badge:hover {
   transform: translateY(-6px) scale(1.04) !important;
-  box-shadow: 0 20px 40px -10px rgba(115, 0, 255, 0.2), 0 5px 0 #000000 !important;
+  box-shadow: 0 24px 46px -14px rgba(115,0,255,0.24), 0 8px 18px -8px rgba(30,11,59,0.14) !important;
 }
 
-/* Hide scrollbar for clean horizontal swipe */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+/* ── Scrollbar hide ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .char-hidden, .char-ghost { opacity: 1 !important; color: inherit !important; transform: none !important; }
+  .draw-arrow-path, .draw-arrow-head { stroke-dashoffset: 0 !important; }
+  .spring-bar { transform: scaleY(1) !important; }
 }
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+/* Full-bleed narrative. Only product UI has a card boundary. */
+.proofly-hero { position: relative; min-height: max(790px, calc(100svh - 110px)); display: grid; place-items: center; background: #fff; }
+.proofly-header { position: absolute; top: 28px; left: 5vw; width: 90vw; min-height: 64px; gap: 20px; }
+.proofly-header nav { box-shadow: none; }
+.proofly-header nav button { min-height: 44px; }
+.proofly-hero-copy { max-width: 720px; padding: 160px 24px; animation: proofly-arrive .65s ease-out both; }
+.proofly-hero .polaroid-card { width: clamp(170px, 15vw, 245px); border: 2px solid #3A1670; border-radius: 24px; box-shadow: 0 5px 0 #3A1670; }
+.proofly-hero .polaroid-card > div { height: clamp(120px, 10vw, 180px); }
+.proofly-satellite-one { top: -70px; left: 23%; }
+.proofly-satellite-two { top: 24%; right: 4%; }
+.proofly-satellite-three { top: 43%; left: 4%; }
+.proofly-satellite-four { bottom: -95px; left: 17%; }
+.proofly-satellite-five { bottom: -85px; right: 12%; }
+.proofly-value { padding: 180px 6vw 100px; min-height: 100svh; display: grid; align-items: center; }
+.proofly-value > div { width: 100%; }
+.proofly-value-visual { width: 100%; max-width: 600px; margin-left: auto; padding-bottom: 16px; }
+.proofly-payout { transform: rotate(-6deg); }
+.proofly-ecosystem { padding: 110px 0 70px; min-height: 900px; }
+.proofly-ecosystem-heading { padding: 0 6vw; }
+.proofly-mobile-menu summary { list-style: none; }
+.proofly-mobile-menu summary::-webkit-details-marker { display: none; }
+.proofly-mobile-menu[open] summary { background: #F8D4FD; }
+button { cursor: pointer; }
+button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid #7300ff; outline-offset: 4px; }
+button:active { translate: 0 1px; }
+@keyframes proofly-arrive { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .proofly-hero-copy { max-width: 570px; }
+  .proofly-hero-copy h1 { font-size: 64px; }
+  .proofly-satellite-three { left: 1%; }
+  .proofly-satellite-two { right: 1%; }
+}
+@media (max-width: 1023px) {
+  .proofly-hero { min-height: 780px; }
+  .proofly-hero-copy { max-width: 650px; padding: 160px 24px 130px; }
+  .proofly-hero .proofly-satellite-four, .proofly-hero .proofly-satellite-five { display: flex; width: 130px; }
+  .proofly-hero .proofly-satellite-four > div, .proofly-hero .proofly-satellite-five > div { height: 80px; }
+  .proofly-satellite-four { left: 9%; bottom: -55px; }
+  .proofly-satellite-five { right: 9%; bottom: -55px; }
+  .proofly-value { padding: 130px 6vw 80px; }
+  .proofly-value-visual { margin: 0 auto; }
+}
+@media (max-width: 639px) {
+  .proofly-header { top: 20px; gap: 8px; }
+  .proofly-header nav { padding: 4px; }
+  .proofly-hero { min-height: 760px; }
+  .proofly-hero-copy { padding: 150px 24px 170px; }
+  .proofly-hero-copy > button:first-of-type { width: 100%; justify-content: space-between; }
+  .proofly-value { padding: 120px 24px 64px; }
+  .proofly-value > div { gap: 36px; }
+  .proofly-value button { width: 100%; }
+  .proofly-value-visual > div:first-child > div:first-child { flex-wrap: wrap; }
+  .proofly-value-visual > div:first-child > div:first-child > span { margin-left: 56px; }
+  .proofly-ecosystem { min-height: 780px; padding-top: 72px; }
+  .proofly-ecosystem-heading { padding: 0 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Compact layouts are recomposed, not scaled-down desktop canvases. */
+.proofly-footer-ground { padding-bottom: env(safe-area-inset-bottom, 0px); }
+@media (max-width: 1023px) {
+  .proofly-bento-viewport {
+    overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
+    scroll-padding-inline: 24px; padding: 20px 24px 40px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .bento-track { gap: 24px; transform: none; transition: none; cursor: auto; }
+  .bento-track > div { width: min(420px, calc(100vw - 48px)); scroll-snap-align: start; scroll-snap-stop: always; }
+  .bento-track > div > div { max-width: 100%; }
+  .bento-track button { min-height: 44px; }
+  .bento-track button > div { min-width: 0; }
+  .bento-track button > span:last-child { flex-shrink: 0; }
+  .proofly-ecosystem-heading button { min-width: 44px; min-height: 44px; }
+  .proofly-footer a { width: 44px; height: 44px; }
+  .proofly-value { min-height: auto; }
+}
+@media (max-width: 639px) {
+  .proofly-header { left: 20px; width: calc(100% - 40px); min-height: 48px; }
+  .proofly-header > a { gap: 4px; }
+  .proofly-header > a img { width: 24px; height: 24px; }
+  .proofly-header > a span { font-size: 28px; }
+  .proofly-header nav { padding: 0; border: 0; background: transparent; gap: 0; }
+  .proofly-header nav > button:last-child { padding: 8px 10px 8px 14px; }
+  .proofly-hero { min-height: clamp(640px, 86svh, 760px); }
+  .proofly-hero-copy { width: 100%; min-width: 0; padding: 130px 24px 150px; }
+  .proofly-hero-copy h1 { font-size: clamp(34px, 9.8vw, 48px); letter-spacing: -.055em; }
+  .proofly-hero-copy > span:first-child { font-size: 10px; letter-spacing: .12em; }
+  .proofly-hero-copy p { font-size: 15px; line-height: 1.65; }
+  .proofly-hero-copy > button:first-of-type { padding-left: 20px; gap: 8px; font-size: 13px; }
+  .proofly-hero .proofly-satellite-four, .proofly-hero .proofly-satellite-five { width: clamp(110px, 32vw, 138px); padding: 8px; }
+  .proofly-satellite-four { left: 7%; bottom: -52px; }
+  .proofly-satellite-five { right: 7%; bottom: -48px; }
+  .proofly-hero .polaroid-card > span { font-size: 10px; }
+  .proofly-value { padding: 110px 24px 64px; }
+  .proofly-value h2 { font-size: clamp(30px, 8.6vw, 38px); }
+  .proofly-value-visual > div:first-child { padding: 18px; }
+  .proofly-value-visual > div:first-child > div:nth-child(2) { padding: 16px; }
+  .proofly-value-visual > div:first-child > div:nth-child(3) { flex-wrap: wrap; gap: 6px; }
+  .proofly-payout { margin-left: 6px; }
+  .proofly-ecosystem { min-height: auto; padding-bottom: 40px; }
+  .bento-track > div:nth-child(2) > div:first-child { width: 88%; min-height: 300px; padding: 16px 16px 64px; }
+  .bento-track > div:nth-child(2) > div:first-child svg { width: 210px; height: 210px; }
+  .bento-track > div:nth-child(2) > div:last-child { width: 100%; padding: 16px; }
+  .bento-track > div:nth-child(2) button { flex-wrap: wrap; gap: 8px; }
+  .bento-track > div:nth-child(2) button > span:last-child { margin-left: 48px; }
+  .bento-track > div:nth-child(3) > div:last-child { width: 100%; padding: 20px; }
+  .bento-track > div:nth-child(4) { padding: 22px; }
+  .bento-track > div:nth-child(4) > div:last-child { padding: 12px; }
+  .bento-track > div:nth-child(4) > div:last-child > div { flex-wrap: wrap; gap: 6px; }
+  .proofly-footer > div:first-child { padding: 64px 24px 48px; }
+  .proofly-footer h2 { font-size: clamp(30px, 8.6vw, 38px); }
+  .proofly-footer-ground { padding-left: 24px; padding-right: 24px; }
+  .proofly-footer-ground > div:first-child { gap: 24px; }
+}
+@media (max-width: 639px) {
+  .proofly-value-visual > div:first-child > div:first-child {
+    display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 10px; row-gap: 8px;
+  }
+  .proofly-value-visual > div:first-child > div:first-child > span {
+    grid-column: 2; margin-left: 0; justify-self: start;
+  }
+}
+
+/* The settlement satellite supports the hero; it does not compete with its headline. */
+.proofly-hero .proofly-satellite-five { width: clamp(132px, 11vw, 175px); bottom: -62px; }
+.proofly-hero .proofly-satellite-five > div { height: clamp(96px, 7.5vw, 130px); }
+.proofly-hero .proofly-satellite-five svg { width: 90px; height: 90px; }
+@media (max-width: 1023px) {
+  .proofly-hero .proofly-satellite-five { width: 110px; bottom: -43px; }
+  .proofly-hero .proofly-satellite-five > div { height: 70px; }
+  .proofly-hero .proofly-satellite-five svg { width: 68px; height: 68px; }
+  .proofly-satellite-five > div > span { font-size: 8px; top: 4px; right: 4px; }
+}
+.proofly-login { min-height: 100svh; padding: 24px; display: grid; place-items: center; background: #FFF8FE; }
+.proofly-login-card { width: min(100%, 420px); padding: 36px 28px; background: white; border: 1px solid #EADDF8; border-radius: 28px; box-shadow: 0 24px 64px -36px #3A1670; }
+.proofly-pin-input { width: 100%; min-height: 56px; border: 1px solid #C9ACEA; border-radius: 14px; background: #F6F5F8; padding: 12px 16px; font-size: 22px; letter-spacing: .25em; color: #1E0B3B; }
+.proofly-pin-input:focus { outline: 3px solid #D8BAFF; outline-offset: 2px; border-color: #7300FF; }
+
+/* ── Footer wordmark "painted" reveal (S13) ──
+   A slanted gradient mask sweeps left→right as --paint goes 0 → 1, so the
+   cursive "Proofly" appears to be painted on. The angle follows the italic
+   slant of the script font. --paint is driven by GSAP; the registered
+   property lets the browser interpolate the mask smoothly. */
+@property --paint {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+.wordmark-paint {
+  --paint: 0;
+  -webkit-mask-image: linear-gradient(
+    105deg,
+    #000 0%,
+    #000 calc(var(--paint) * 118% - 20%),
+    transparent calc(var(--paint) * 118% - 2%),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    105deg,
+    #000 0%,
+    #000 calc(var(--paint) * 118% - 20%),
+    transparent calc(var(--paint) * 118% - 2%),
+    transparent 100%
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  .wordmark-paint { --paint: 1 !important; -webkit-mask-image: none !important; mask-image: none !important; }
 }
