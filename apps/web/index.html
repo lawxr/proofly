@@ -2682,6 +2682,90 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
       box-shadow: 0 2px 0 #000000;
     }
 
+
+  /* Our Brand Style & Colors */
+  .social-circle-proofly {
+    width: 42px;
+    height: 42px;
+    border-radius: 9999px;
+    background-color: #7300FF;
+    color: #FFFFFF;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 3px 0 #000000;
+    border: 1.5px solid #000000;
+  }
+  .social-circle-proofly:hover {
+    background-color: #000000;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 0 #7300FF;
+  }
+  .social-circle-proofly svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
+
+  .cta-proofly-btn {
+    background-color: #7300FF;
+    color: #FFFFFF;
+    font-weight: 800;
+    font-size: 16px;
+    padding: 16px 36px;
+    border-radius: 9999px;
+    border: 2px solid #000000;
+    box-shadow: 0 5px 0 #000000;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-block;
+  }
+  .cta-proofly-btn:hover {
+    background-color: #000000;
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 7px 0 #7300FF;
+  }
+  .cta-proofly-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #000000;
+  }
+
+  /* App chassis styles */
+  .phone-chassis {
+    width: 100%;
+    max-width: 412px;
+    height: 844px;
+    border-radius: 50px;
+    background: #000000;
+    padding: 12px;
+    box-shadow: 0 25px 60px -15px rgba(115, 0, 255, 0.25), 0 10px 30px rgba(0, 0, 0, 0.35);
+    position: relative;
+    border: 3px solid #1a1a1a;
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 40px;
+    background: #FFFFFF;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .dynamic-island {
+    width: 110px;
+    height: 28px;
+    background: #000000;
+    border-radius: 20px;
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+  }
+
 </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2946,9 +3030,9 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
       <nav aria-label="Navegación principal" class="bg-white/95 backdrop-blur-md text-black border-[1.5px] border-black rounded-full p-1.5 pl-5 sm:pl-7 flex items-center gap-4 sm:gap-7 shadow-pill-nav">
         <a href="#ventajas" class="hidden md:inline-block text-xs font-extrabold tracking-wide uppercase text-zinc-700 hover:text-electric transition-colors">Ventajas</a>
         <a href="#ecosistema" class="hidden md:inline-block text-xs font-extrabold tracking-wide uppercase text-zinc-700 hover:text-electric transition-colors">Ecosistema</a>
-        <a href="#app-movil" class="hidden sm:inline-block text-xs font-extrabold tracking-wide uppercase text-zinc-700 hover:text-electric transition-colors">App Móvil</a>
-        <a href="#calculadora" class="hidden sm:inline-block text-xs font-extrabold tracking-wide uppercase text-zinc-700 hover:text-electric transition-colors">Simulador</a>
-        <button type="button" onclick="openPublishModal()" class="bg-electric hover:bg-black text-white text-xs font-extrabold px-4 py-2.5 rounded-full border border-black transition-colors flex items-center gap-2 shadow-[0_2px_0_#000000]">
+        <a href="javascript:openProoflyApp(\'freelancer\')" class="hidden sm:inline-block text-xs font-extrabold tracking-wide uppercase text-zinc-700 hover:text-electric transition-colors">App Móvil</a>
+        <a href="javascript:openProoflyApp(\'investor\')" class="hidden sm:inline-block text-xs font-extrabold tracking-wide uppercase text-zinc-700 hover:text-electric transition-colors">Simulador</a>
+        <button type="button" onclick="openProoflyApp(\'freelancer\')" class="bg-electric hover:bg-black text-white text-xs font-extrabold px-4 py-2.5 rounded-full border border-black transition-colors flex items-center gap-2 shadow-[0_2px_0_#000000]">
           <span>Empezar</span>
           <span class="w-5 h-5 rounded-full bg-lilac text-black flex items-center justify-center text-[10px] font-black" aria-hidden="true">↗</span>
         </button>
@@ -3009,7 +3093,7 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
               </span>
             </button>
 
-            <button type="button" onclick="openPublishModal()" class="bg-white hover:bg-lilac-soft text-black font-extrabold text-sm px-6 py-3.5 rounded-full border-[1.5px] border-black transition-colors shadow-[0_2px_0_#000000]">
+            <button type="button" onclick="openProoflyApp(\'freelancer\')" class="bg-white hover:bg-lilac-soft text-black font-extrabold text-sm px-6 py-3.5 rounded-full border-[1.5px] border-black transition-colors shadow-[0_2px_0_#000000]">
               Publicar mi Hito →
             </button>
           </div>
@@ -3019,7 +3103,7 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 
       <!-- Stickers are positioned on the outer hero stage, intentionally outside the white canvas. -->
         <!-- POLAROID 1 (Top-Left): Luminous Pastel #EFE5FF + 3D 4-Leaf Clover -->
-        <button type="button" data-parallax="-0.12" data-rot="-9" onclick="openPublishModal()" aria-label="Diseñado para crecer" class="polaroid-card proofly-sticker hidden lg:flex flex-col absolute -top-7 -left-3 xl:-left-7 w-44 bg-white border-[2px] border-black rounded-[24px] p-2.5 shadow-polaroid cursor-pointer z-20" style="transform: rotate(-9deg);">
+        <button type="button" data-parallax="-0.12" data-rot="-9" onclick="openProoflyApp(\'freelancer\')" aria-label="Diseñado para crecer" class="polaroid-card proofly-sticker hidden lg:flex flex-col absolute -top-7 -left-3 xl:-left-7 w-44 bg-white border-[2px] border-black rounded-[24px] p-2.5 shadow-polaroid cursor-pointer z-20" style="transform: rotate(-9deg);">
           <div class="w-full h-32 rounded-[16px] bg-gradient-to-br from-[#EFE5FF] via-lilac to-white border border-black/15 flex items-center justify-center overflow-hidden relative">
             <svg class="w-24 h-24" viewBox="0 0 120 120" fill="none" aria-hidden="true" filter="url(#soft3DShadow)">
               <g transform="translate(10, 8)">
@@ -3095,111 +3179,102 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
     <!-- =================================================================== -->
     <!-- 3. SECTION 2: LUMINOUS LAVENDER VALUE SPLIT (NO HEAVY BLACK BLOCK)  -->
     <!-- =================================================================== -->
-    <section id="ventajas" class="bg-gradient-to-br from-lilac via-[#FBE5FF] to-lilac-soft text-black rounded-[44px] p-7 sm:p-12 lg:p-16 relative overflow-hidden border-[2px] border-black shadow-floating">
-      <!-- Giant 8-Point Starburst Watermarks (Matching Video Frame 00:02 - 00:03) -->
-      <svg class="absolute -top-24 -left-24 w-96 h-96 text-lilac-deep/45 pointer-events-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <section id="ventajas" style="background-color: #F8D4FD;" class="text-black rounded-[44px] p-8 sm:p-14 lg:p-16 relative overflow-hidden border-[2px] border-black shadow-floating">
+      <!-- Faint star background decoration matching reference -->
+      <svg class="absolute -bottom-24 -left-16 w-80 h-80 pointer-events-none select-none opacity-40" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true">
         <path d="M12 0L14.8 7.2L22 4.4L16.8 10.4L24 12L16.8 13.6L22 19.6L14.8 16.8L12 24L9.2 16.8L2 19.6L7.2 13.6L0 12L7.2 10.4L2 4.4L9.2 7.2L12 0Z"/>
       </svg>
-      <svg class="absolute -bottom-28 right-1/3 w-80 h-80 text-white/65 pointer-events-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <svg class="absolute -top-20 -right-20 w-72 h-72 pointer-events-none select-none opacity-30" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true">
         <path d="M12 0L14.8 7.2L22 4.4L16.8 10.4L24 12L16.8 13.6L22 19.6L14.8 16.8L12 24L9.2 16.8L2 19.6L7.2 13.6L0 12L7.2 10.4L2 4.4L9.2 7.2L12 0Z"/>
       </svg>
 
-      <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-        
-        <!-- Left Copy, Typewriter Title & Self-Drawing Handwritten Arrow -->
+      <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
+        <!-- Left Column -->
         <div class="lg:col-span-6 space-y-6">
-          <div class="inline-flex items-center gap-2 bg-white border-[1.5px] border-black rounded-full px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-electric shadow-[0_2px_0_#000000]">
-            <span>Liquidez inmediata en COP</span>
-          </div>
-
-          <h2
-            data-typewriter="Cobra hoy sin|esperar a 60 días."
-            data-accent-word="60 días."
-            class="typewriter-heading balance-text font-extrabold text-3xl sm:text-5xl lg:text-[54px] leading-[1.05] tracking-tight text-black min-h-[2.1em]"
-          >
-            Cobra hoy sin<br /><span class="text-electric">esperar a 60 días.</span>
+          <h2 class="font-extrabold text-3xl sm:text-5xl lg:text-[54px] leading-[1.06] tracking-tight text-black max-w-lg">
+            Cobra hoy sin esperar a 60 días.
           </h2>
 
-          <p class="pretty-text text-base sm:text-lg text-zinc-800 max-w-lg font-medium leading-relaxed">
-            Tus empresas clientes mantienen su plazo habitual de pago, mientras Proofly convierte cada entregable aprobado en pesos colombianos directos a tu cuenta bancaria.
+          <p class="text-base sm:text-lg text-zinc-800 font-medium leading-relaxed max-w-lg">
+            Sube tu factura o los hitos de tu proyecto confirmado. Evaluamos tu historial de entrega y el cumplimiento de la empresa para adelantar tu dinero en minutos, mientras quienes financian reciben su capital más rendimiento cuando la empresa paga.
           </p>
 
           <div class="pt-2">
-            <button type="button" onclick="openPublishModal()" class="bg-electric hover:bg-black text-white font-extrabold text-sm px-8 py-4 rounded-full border-[2px] border-black shadow-[0_4px_0_#000000] active:translate-y-0.5 transition-all">
-              Empezar a Adelantar
+            <button type="button" onclick="openProoflyApp('freelancer')" class="bg-black hover:bg-electric text-white font-extrabold text-sm px-8 py-4 rounded-full border-[2px] border-black shadow-[0_4px_0_#000000] active:translate-y-0.5 transition-all cursor-pointer">
+              Adelantar mi primer hito
             </button>
           </div>
 
-          <!-- Handwritten Note & Self-Drawing Curved Arrow (Video Frame 00:02 - 00:03) -->
-          <div class="pt-6 flex items-center gap-3 draw-arrow-trigger">
-            <div class="font-hand text-2xl sm:text-3xl font-bold text-black -rotate-6 leading-tight">
-              Plazo cómodo para la empresa,<br />
-              <span class="text-electric">efectivo hoy para ti</span>
+          <!-- Handwritten note & curved arrow matching image -->
+          <div class="pt-4 flex items-center gap-4">
+            <div class="font-hand text-2xl sm:text-3xl font-bold leading-tight -rotate-3 text-black">
+              Tu trabajo vale hoy,<br /><span class="text-electric">no en dos meses</span>
             </div>
-            <svg class="w-16 h-16 text-electric shrink-0" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-              <path class="draw-arrow-path" d="M12 14 C8 40, 26 52, 52 48" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-              <path class="draw-arrow-head" d="M43 40 L53 48 L44 56" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg class="w-12 h-12 text-black shrink-0" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <path d="M10 45 C25 45, 38 35, 48 15" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+              <path d="M34 14 L48 15 L46 29" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
         </div>
 
-        <!-- A purpose-built Proofly product visual replaces the unrelated portrait. -->
-        <div class="lg:col-span-6 relative flex justify-center lg:justify-end py-5 lg:py-0">
-          <div class="relative w-full max-w-[520px]">
-            <div class="liquidity-product-card bg-white border-[2px] border-black rounded-[32px] shadow-[0_24px_55px_-20px_rgba(29,11,49,0.25),0_5px_0_#161616] p-5 sm:p-7 relative overflow-hidden">
-              <div class="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 pb-5">
-                <div class="flex items-center gap-2.5">
-                  <div class="flex items-center justify-center w-9 h-9 bg-black text-lilac rounded-xl" aria-hidden="true">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0L14.8 7.2L22 4.4L16.8 10.4L24 12L16.8 13.6L22 19.6L14.8 16.8L12 24L9.2 16.8L2 19.6L7.2 13.6L0 12L7.2 10.4L2 4.4L9.2 7.2L12 0Z"/></svg>
+        <!-- Right Column: Sofía Vargas Card + Tilted Polaroid -->
+        <div class="lg:col-span-6 relative flex justify-center lg:justify-end py-6 lg:py-0">
+          <div class="relative w-full max-w-[500px]">
+            <!-- Main White Card -->
+            <div class="bg-white rounded-[32px] p-7 sm:p-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.08),0_4px_0_#000000] border-[2px] border-black/10 relative z-10">
+              
+              <!-- Header: SV Avatar + Info + 30 dias pill -->
+              <div class="flex items-center justify-between pb-6 border-b border-black/5">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-11 h-11 rounded-full bg-electric text-white font-extrabold text-sm flex items-center justify-center shadow-xs">
+                    SV
                   </div>
                   <div>
-                    <p class="font-display font-extrabold text-lg tracking-tight leading-none">Proofly</p>
-                    <p class="text-[10px] text-zinc-500 font-bold mt-1">Vista de operación</p>
+                    <h3 class="font-extrabold text-base sm:text-lg text-black leading-tight">Sofía Vargas · Diseñadora</h3>
+                    <p class="text-xs text-zinc-500 font-medium mt-0.5">Hito confirmado por Mercado Libre</p>
                   </div>
                 </div>
-                <span class="inline-flex items-center gap-2 bg-[#F3E7FF] border border-black/10 rounded-full px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider"><span class="w-1.5 h-1.5 bg-electric rounded-full"></span> DEMO · COP</span>
+                <span class="rounded-full bg-[#F3EFF8] px-3.5 py-1 text-xs font-bold text-zinc-800">
+                  30 días
+                </span>
               </div>
 
-              <div class="pt-6 pb-5 flex items-start justify-between gap-4">
-                <div class="min-w-0">
-                  <p class="text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Entregable aprobado</p>
-                  <h3 class="font-extrabold text-lg sm:text-xl leading-snug text-black">Diseño de plataforma digital</h3>
-                  <p class="text-xs text-zinc-500 mt-1">Factura con pago a 60 días</p>
+              <!-- Metrics Grid -->
+              <div class="grid grid-cols-2 gap-4 py-6">
+                <div>
+                  <p class="text-xs text-zinc-500 font-medium">Valor del entregable</p>
+                  <p class="font-extrabold text-2xl sm:text-3xl text-black tracking-tight mt-1.5">$ 8.500.000</p>
                 </div>
-                <div class="w-11 h-11 shrink-0 rounded-2xl bg-lilac border border-black/15 grid place-items-center text-electric font-black text-xl" aria-label="Aprobado">✓</div>
-              </div>
-
-              <div class="rounded-[24px] bg-[#F2E9FD] border border-black/10 px-5 sm:px-6 py-6 relative overflow-hidden">
-                <svg class="absolute -right-12 -top-16 w-56 h-56 text-white/70 pointer-events-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0L14.8 7.2L22 4.4L16.8 10.4L24 12L16.8 13.6L22 19.6L14.8 16.8L12 24L9.2 16.8L2 19.6L7.2 13.6L0 12L7.2 10.4L2 4.4L9.2 7.2L12 0Z"/></svg>
-                <div class="relative z-10">
-                  <div class="flex items-center justify-between gap-2 text-xs font-extrabold text-zinc-700">
-                    <span>Liquidez disponible</span>
-                    <span class="rounded-full bg-black text-white text-[10px] font-extrabold px-3 py-1">HOY ↗</span>
-                  </div>
-                  <p class="text-[clamp(2rem,4vw,3rem)] font-extrabold text-black tracking-[-0.07em] leading-[1.1] tabular-nums mt-4">$ 8.347.000</p>
-                  <p class="text-xs text-zinc-600 font-semibold mt-2">Directo a tu cuenta en pesos colombianos.</p>
+                <div>
+                  <p class="text-xs text-zinc-500 font-medium">Retorno financiador</p>
+                  <p class="font-extrabold text-xl sm:text-2xl text-electric tracking-tight mt-1.5">16,8 % E.A.</p>
                 </div>
               </div>
 
-              <div class="pt-6 pb-3">
-                <div class="flex items-center justify-between gap-3 text-[10px] uppercase tracking-wide font-extrabold text-zinc-500"><span>De la aprobación al cobro</span><span>Sin esperar 60 días</span></div>
-                <div class="mt-4 grid grid-cols-[auto_1fr_auto_1fr_auto] items-center gap-2">
-                  <span class="w-9 h-9 grid place-items-center rounded-full bg-black text-white text-xs font-black">01</span>
-                  <span class="h-[2px] bg-electric/35"></span>
-                  <span class="w-9 h-9 grid place-items-center rounded-full bg-electric text-white text-xs font-black">02</span>
-                  <span class="h-[2px] bg-electric/35"></span>
-                  <span class="w-9 h-9 grid place-items-center rounded-full bg-lilac border border-black/20 text-black text-xs font-black">03</span>
+              <!-- Bottom Progress Bar -->
+              <div class="pt-2">
+                <div class="flex items-center justify-between text-xs font-bold text-zinc-700 mb-2">
+                  <span>Monto disponible hoy</span>
+                  <span class="font-extrabold text-black">$ 8.347.000</span>
                 </div>
-                <div class="grid grid-cols-3 gap-1 mt-2 text-center text-[10px] sm:text-xs font-bold text-zinc-600"><span>Hito validado</span><span>Adelanto</span><span>Cobro en COP</span></div>
+                <div class="w-full h-2 rounded-full bg-[#EFE8F5] overflow-hidden">
+                  <div class="h-full bg-electric rounded-full w-[98%]"></div>
+                </div>
               </div>
-              <div class="mt-5 pt-4 border-t border-black/10 flex items-center justify-between text-[10px] sm:text-xs text-zinc-500 font-semibold gap-4">
-                <span>Simulación ilustrativa</span>
-                <button type="button" onclick="scrollToId('calculadora')" class="text-electric font-extrabold hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric">Simular mi monto ↗</button>
-              </div>
+
             </div>
-            <div class="absolute -bottom-7 -left-2 sm:-left-8 z-20 rounded-2xl bg-black text-white px-4 py-3 sm:px-5 sm:py-4 shadow-[0_10px_25px_rgba(0,0,0,0.18)] -rotate-3" aria-hidden="true">
-              <div class="flex items-center gap-3"><span class="grid place-items-center w-8 h-8 rounded-full bg-lilac text-black font-extrabold">✓</span><div><p class="text-[10px] uppercase tracking-wider text-lilac/85 font-extrabold">Operación</p><p class="text-xs sm:text-sm font-extrabold">Hito verificado</p></div></div>
+
+            <!-- Overlapping Tilted Polaroid Card (Front Left) -->
+            <div class="absolute -bottom-6 -left-3 sm:-left-6 z-20 bg-white p-2.5 rounded-[20px] border-[2px] border-black shadow-[0_16px_36px_rgba(0,0,0,0.18),0_4px_0_#000000] -rotate-6 w-44 sm:w-48 select-none">
+              <div class="bg-black text-white p-4 rounded-[14px] text-center">
+                <p class="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">Desembolso Hoy</p>
+                <p class="font-extrabold text-lg sm:text-xl text-white tracking-tight mt-0.5">$ 8.347.000</p>
+              </div>
+              <p class="text-[10px] font-extrabold text-black uppercase tracking-wider text-center pt-2 pb-0.5">
+                Conversión Inmediata
+              </p>
             </div>
+
           </div>
         </div>
 
@@ -3433,391 +3508,27 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
     <!-- =================================================================== -->
     <!-- 5. SECTION 4: 3 MOBILE APP SCREENS (100% LIGHT MODE HARMONIZED)     -->
     <!-- =================================================================== -->
-    <section id="app-movil" class="space-y-10 pt-6">
-      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <span class="text-xs font-extrabold uppercase tracking-widest text-electric block mb-2">EXPERIENCIA MÓVIL · MODO CLARO</span>
-          <h2 class="balance-text font-extrabold text-3xl sm:text-5xl tracking-tight text-black">
-            Adelanta tus pagos o financia desde el celular.
-          </h2>
-        </div>
-        <p class="text-sm text-zinc-600 max-w-md font-medium">
-          Interactúa con las tres pantallas: cambia pestañas, explora los proyectos o haz clic en cualquier hito para respaldarlo.
-        </p>
-      </div>
-
-      <!-- Soft Lavender Stage Container -->
-      <div class="rounded-[44px] bg-gradient-to-b from-lilac/55 via-lilac/20 to-lilac-soft border-[1.5px] border-black/15 p-6 sm:p-12">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 items-center justify-items-center">
-
-          <!-- ========================================================= -->
-          <!-- PHONE 1: ONBOARDING WITH 3D STACKED VIOLET COINS          -->
-          <!-- ========================================================= -->
-          <div class="w-full max-w-[336px] h-[688px] bg-lilac rounded-[46px] shadow-phone flex flex-col justify-between overflow-hidden relative">
-            <div class="px-7 pt-4 flex items-center justify-between text-[11px] font-extrabold text-black tabular-nums">
-              <span>19:27</span>
-              <div class="flex items-center gap-1.5" aria-hidden="true">
-                <span class="tracking-tighter">•••</span>
-                <span class="w-4 h-2.5 rounded-xs bg-black inline-block"></span>
-              </div>
-            </div>
-
-            <div class="relative flex-1 flex flex-col items-center justify-center px-4">
-              <svg class="w-64 h-64" viewBox="0 0 260 250" fill="none" aria-hidden="true" filter="url(#soft3DShadow)">
-                <path d="M182 32H192V22H200V32H210V40H200V50H192V40H182V32Z" fill="#7300FF" stroke="#000" stroke-width="1.8"/>
-                <path d="M212 52H224V40H234V52H246V62H234V74H224V62H212V52Z" fill="#E056FD" stroke="#000" stroke-width="2"/>
-                <path d="M38 48 L112 132 L152 100 L226 196" stroke="#7300FF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M38 40 L112 124 L152 92 L226 188" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-                <polygon points="24,24 62,34 36,62" fill="#FFFFFF" stroke="#000000" stroke-width="2.2"/>
-                <path d="M254 80 C218 76, 188 56, 158 66 C138 72, 122 92, 130 100 C138 108, 160 92, 176 96 C162 110, 148 122, 156 130 C164 138, 186 118, 202 116 L254 122 Z" fill="#FFFFFF" stroke="#000000" stroke-width="2.2"/>
-                <ellipse cx="120" cy="116" rx="24" ry="12" fill="url(#clayViolet)" stroke="#000000" stroke-width="2.2"/>
-                <g transform="translate(34, 126)">
-                  <ellipse cx="34" cy="76" rx="28" ry="12" fill="url(#coinRim)" stroke="#000" stroke-width="2"/>
-                  <ellipse cx="34" cy="64" rx="28" ry="12" fill="url(#clayViolet)" stroke="#000" stroke-width="2"/>
-                  <ellipse cx="34" cy="52" rx="28" ry="12" fill="url(#coinRim)" stroke="#000" stroke-width="2"/>
-                  <ellipse cx="34" cy="40" rx="28" ry="12" fill="url(#clayViolet)" stroke="#000" stroke-width="2"/>
-                  <ellipse cx="34" cy="28" rx="28" ry="12" fill="url(#clayLilac)" stroke="#000" stroke-width="2"/>
-                  <ellipse cx="34" cy="16" rx="28" ry="12" fill="url(#clayViolet)" stroke="#000" stroke-width="2"/>
-                </g>
-                <g transform="translate(94, 152)">
-                  <ellipse cx="32" cy="50" rx="28" ry="12" fill="url(#coinRim)" stroke="#000" stroke-width="2"/>
-                  <ellipse cx="32" cy="38" rx="28" ry="12" fill="url(#clayViolet)" stroke="#000" stroke-width="2"/>
-                  <ellipse cx="32" cy="26" rx="28" ry="12" fill="url(#clayLilac)" stroke="#000" stroke-width="2"/>
-                  <ellipse cx="32" cy="14" rx="28" ry="12" fill="url(#clayViolet)" stroke="#000" stroke-width="2"/>
-                </g>
-              </svg>
-            </div>
-
-            <div class="bg-white rounded-t-[36px] px-6 pt-7 pb-6 shadow-lg">
-              <h3 class="balance-text font-extrabold text-[23px] leading-tight text-center text-black">
-                Tu <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-lilac align-middle text-base">🔥</span> Puente a<br />
-                Liquidez y Retornos
-              </h3>
-              <p class="text-xs text-zinc-500 text-center mt-2.5 leading-relaxed px-2">
-                Adelanta tus hitos o respalda contratos verificados con retornos de hasta <strong class="text-electric font-extrabold tabular-nums">16,8% E.A.</strong>
-              </p>
-
-              <button type="button" onclick="highlightPhone2()" class="mt-6 w-full bg-black hover:bg-electric text-white font-extrabold text-xs py-4 rounded-full transition-colors">
-                Explorar oportunidades
-              </button>
-              <button type="button" onclick="openPublishModal()" class="mt-2.5 w-full text-center text-xs font-extrabold text-zinc-700 hover:text-electric py-1">
-                Soy Freelancer
-              </button>
-            </div>
-          </div>
-
-          <!-- ========================================================= -->
-          <!-- PHONE 2: INVESTMENT & MILESTONE MARKETPLACE HUB           -->
-          <!-- ========================================================= -->
-          <div id="phone2Container" class="w-full max-w-[336px] h-[688px] bg-white rounded-[46px] shadow-phone flex flex-col justify-between overflow-hidden relative transition-transform duration-300">
-            <div class="px-7 pt-4 flex items-center justify-between text-[11px] font-extrabold text-black tabular-nums">
-              <span>19:27</span>
-              <div class="flex items-center gap-1.5" aria-hidden="true">
-                <span class="tracking-tighter">•••</span>
-                <span class="w-4 h-2.5 rounded-xs bg-black inline-block"></span>
-              </div>
-            </div>
-
-            <div class="px-6 pt-3 flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <div class="w-10 h-10 rounded-full overflow-hidden border-[1.5px] border-black bg-lilac">
-                  <img
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
-                    alt="Avatar de Sofía Vargas"
-                    width="40"
-                    height="40"
-                    loading="lazy"
-                    class="editorial-photo w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <div class="text-[10px] text-zinc-500 font-bold">Nivel Pro 🔥</div>
-                  <div class="text-xs font-extrabold text-black">Sofía Vargas</div>
-                </div>
-              </div>
-              <button type="button" onclick="openPublishModal()" aria-label="Publicar nuevo hito" class="w-9 h-9 rounded-full bg-lilac/60 hover:bg-lilac border border-black/15 flex items-center justify-center text-black font-extrabold text-sm transition-colors">
-                +
-              </button>
-            </div>
-
-            <div class="px-6 pt-2 pb-20 overflow-y-auto no-scrollbar space-y-3.5 flex-1">
-              <h3 class="font-extrabold text-2xl text-black tracking-tight">Participaciones</h3>
-
-              <div class="flex flex-col items-center text-center">
-                <div class="relative flex items-center justify-center py-1">
-                  <div class="w-32 h-24 rounded-full bg-lilac/80 blur-xl absolute"></div>
-                  <svg class="w-36 h-28 relative z-10" viewBox="0 0 200 145" fill="none" aria-hidden="true" filter="url(#soft3DShadow)">
-                    <rect x="30" y="34" width="54" height="30" rx="6" transform="rotate(-22 30 34)" fill="url(#clayViolet)" stroke="#000" stroke-width="2"/>
-                    <rect x="114" y="22" width="54" height="30" rx="6" transform="rotate(20 114 22)" fill="url(#clayViolet)" stroke="#000" stroke-width="2"/>
-                    <rect x="28" y="80" width="54" height="30" rx="6" transform="rotate(14 28 80)" fill="url(#clayLilac)" stroke="#000" stroke-width="2"/>
-                    <rect x="112" y="76" width="54" height="30" rx="6" transform="rotate(-16 112 76)" fill="url(#clayViolet)" stroke="#000" stroke-width="2"/>
-                    <circle cx="100" cy="72" r="25" fill="#FFFFFF" stroke="#000" stroke-width="2.2"/>
-                    <circle cx="100" cy="72" r="19" fill="url(#clayLilac)"/>
-                    <path d="M100 59V72L109 77" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
-                  </svg>
-                </div>
-
-                <h4 class="font-extrabold text-base text-black">Haz crecer tu capital hoy</h4>
-                <p class="text-[11px] text-zinc-500 mt-0.5 max-w-[220px]">
-                  Respalda entregas confirmadas desde <span class="text-black font-bold tabular-nums">$ 500.000</span>.
-                </p>
-
-                <button type="button" onclick="openFundModal(selectedIndex)" class="mt-3 w-full bg-black hover:bg-electric text-white font-extrabold text-xs py-3.5 rounded-full transition-colors">
-                  Explorar más operaciones
-                </button>
-              </div>
-
-              <div class="bg-surface p-1 rounded-full grid grid-cols-2" role="tablist">
-                <button type="button" id="btnTabResumen" onclick="setPhone2Tab('resumen')" role="tab" aria-selected="true" class="py-1.5 rounded-full text-xs font-extrabold bg-white text-black shadow-2xs transition-all">
-                  Disponibles
-                </button>
-                <button type="button" id="btnTabActividad" onclick="setPhone2Tab('actividad')" role="tab" aria-selected="false" class="py-1.5 rounded-full text-xs font-semibold text-zinc-500 hover:text-black transition-all">
-                  Actividad
-                </button>
-              </div>
-
-              <div id="phone2List" class="space-y-2"></div>
-            </div>
-
-            <div class="absolute bottom-3 inset-x-5 bg-white/90 backdrop-blur-md border border-black/15 rounded-full p-1.5 flex items-center justify-between shadow-sm">
-              <button type="button" onclick="setPhone2Tab('resumen')" aria-label="Inicio" class="w-9 h-9 rounded-full bg-surface flex items-center justify-center text-xs font-bold">⌂</button>
-              <button type="button" onclick="openFundModal(selectedIndex)" class="px-4 py-2 rounded-full bg-electric text-white text-[11px] font-extrabold flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-lilac"></span>
-                <span>Participar</span>
-              </button>
-              <button type="button" onclick="openPublishModal()" aria-label="Publicar Hito" class="w-9 h-9 rounded-full bg-surface flex items-center justify-center text-xs font-bold">+</button>
-              <button type="button" onclick="scrollToId('calculadora')" aria-label="Simulador" class="w-9 h-9 rounded-full bg-surface flex items-center justify-center text-xs font-bold">★</button>
-            </div>
-          </div>
-
-          <!-- ========================================================= -->
-          <!-- PHONE 3: MILESTONE ANALYTICS & VIBRANT VIOLET BANNER      -->
-          <!-- ========================================================= -->
-          <div class="w-full max-w-[336px] h-[688px] bg-white rounded-[46px] shadow-phone flex flex-col justify-between overflow-hidden relative">
-            <div class="px-7 pt-4 flex items-center justify-between text-[11px] font-extrabold text-black tabular-nums">
-              <span>19:27</span>
-              <div class="flex items-center gap-1.5" aria-hidden="true">
-                <span class="tracking-tighter">•••</span>
-                <span class="w-4 h-2.5 rounded-xs bg-black inline-block"></span>
-              </div>
-            </div>
-
-            <div class="px-6 pt-3 flex items-center justify-between">
-              <button type="button" onclick="cycleProject(-1)" aria-label="Proyecto anterior" class="w-9 h-9 rounded-full bg-surface hover:bg-lilac flex items-center justify-center text-xs font-extrabold transition-colors">
-                ←
-              </button>
-              <div class="flex items-center gap-2">
-                <button type="button" onclick="cycleProject(1)" aria-label="Siguiente proyecto" class="w-9 h-9 rounded-full bg-surface hover:bg-lilac flex items-center justify-center text-xs font-extrabold transition-colors">
-                  →
-                </button>
-                <button type="button" onclick="openFundModal(selectedIndex)" aria-label="Destacar proyecto" class="w-9 h-9 rounded-full bg-surface hover:bg-lilac flex items-center justify-center text-xs font-extrabold transition-colors">
-                  ☆
-                </button>
-              </div>
-            </div>
-
-            <div class="px-6 pt-3 pb-6 overflow-y-auto no-scrollbar space-y-4 flex-1">
-              <div class="flex items-start justify-between gap-2">
-                <div>
-                  <h3 id="p3Title" class="font-extrabold text-xl leading-tight text-black">
-                    Hito de Desarrollo
-                  </h3>
-                  <p id="p3Client" class="text-xs text-zinc-500 mt-1">
-                    Confirmado por <span class="text-electric font-bold">Bancolombia</span> · 30 días
-                  </p>
-                </div>
-                <div id="p3Initial" class="w-10 h-10 rounded-full bg-lilac border border-black flex items-center justify-center font-extrabold text-sm text-black shrink-0">
-                  B
-                </div>
-              </div>
-
-              <!-- Twin Bento Analytics Cards -->
-              <div class="grid grid-cols-2 gap-2.5">
-                <div class="bg-surface rounded-2xl p-3.5 flex flex-col justify-between border border-black/5">
-                  <div>
-                    <div class="text-xs font-extrabold text-black leading-snug">
-                      Análisis de <span class="text-electric">entregas</span>
-                    </div>
-                    <div class="text-[10px] text-zinc-500 mt-0.5">Historial activo</div>
-                  </div>
-
-                  <div class="pt-4">
-                    <div class="flex items-end justify-between h-14 gap-1.5 px-0.5">
-                      <div class="w-2 h-7 bg-lilac-deep/60 rounded-full"></div>
-                      <div class="w-2 h-10 bg-lilac-deep/60 rounded-full"></div>
-                      <div class="w-2 h-6 bg-lilac-deep/60 rounded-full"></div>
-                      <div class="w-2 h-8 bg-lilac-deep/60 rounded-full"></div>
-                      <div class="w-2 h-14 bg-electric rounded-full"></div>
-                      <div class="w-2 h-9 bg-lilac-deep/60 rounded-full"></div>
-                      <div class="w-2 h-11 bg-lilac-deep/60 rounded-full"></div>
-                    </div>
-                    <div class="flex justify-between text-[9px] font-bold text-zinc-400 mt-1.5 px-0.5">
-                      <span>L</span><span>M</span><span>M</span><span>J</span><span class="text-electric">V</span><span>S</span><span>D</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="bg-lilac/65 rounded-2xl p-3.5 flex flex-col justify-between border border-black/10">
-                  <div>
-                    <div class="text-xs font-extrabold text-black leading-snug">
-                      Retorno <span class="italic font-semibold">estimado</span>
-                    </div>
-                    <div class="text-[10px] text-zinc-700 mt-0.5">Por participación</div>
-                  </div>
-
-                  <div class="pt-4">
-                    <div id="p3ReturnCOP" class="font-extrabold text-base text-black tracking-tight tabular-nums">
-                      $ 1.531.500
-                    </div>
-                    <div id="p3ReturnEA" class="text-[11px] font-extrabold text-electric mt-0.5 tabular-nums">
-                      Prom. 98,4%
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Vibrant Electric Violet Promo Banner (Replaced Heavy Black Patch) -->
-              <div class="bg-gradient-to-r from-electric to-[#5600C4] text-white rounded-2xl p-4 border-[1.5px] border-black flex items-center justify-between relative overflow-hidden shadow-[0_3px_0_#000000]">
-                <div class="space-y-1 relative z-10">
-                  <h4 class="font-extrabold text-sm leading-tight">Financia Inteligente</h4>
-                  <p class="text-[10px] text-lilac/95 max-w-[148px]">
-                    Respaldo directo con pago empresarial en cuenta de recaudo.
-                  </p>
-                  <button type="button" onclick="openFundModal(selectedIndex)" class="mt-2 inline-block bg-lilac hover:bg-white text-black font-extrabold text-[11px] px-4 py-1.5 rounded-full border border-black transition-colors">
-                    Participar
-                  </button>
-                </div>
-                <svg class="w-16 h-16 shrink-0 relative z-10" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                  <circle cx="44" cy="24" r="12" fill="url(#clayLilac)" stroke="#000" stroke-width="1.5"/>
-                  <ellipse cx="26" cy="46" rx="14" ry="7" fill="url(#clayLavender)" stroke="#000" stroke-width="1.2"/>
-                  <ellipse cx="26" cy="38" rx="14" ry="7" fill="url(#clayLilac)" stroke="#000" stroke-width="1.2"/>
-                </svg>
-              </div>
-
-              <div>
-                <div class="text-xs font-extrabold text-black mb-2">Hitos Recientes</div>
-                <div id="phone3List" class="space-y-2"></div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- =================================================================== -->
-    <!-- 6. SECTION 5: INTERACTIVE DUAL CALCULATOR WITH RANGE SLIDERS        -->
-    <!-- =================================================================== -->
-    <section id="calculadora" class="max-w-4xl mx-auto pt-4">
-      <div class="text-center mb-10">
-        <span class="text-xs font-extrabold uppercase tracking-widest text-electric block mb-2">SIMULADOR EN PESOS COLOMBIANOS</span>
-        <h2 class="balance-text font-extrabold text-3xl sm:text-5xl tracking-tight text-black">
-          Calcula tu adelanto o tu ganancia al instante.
-        </h2>
-      </div>
-
-      <div class="bg-white rounded-[36px] border-[2px] border-black p-6 sm:p-10 shadow-floating space-y-8">
-        
-        <div class="bg-lilac-soft p-1.5 rounded-full grid grid-cols-1 sm:grid-cols-2 gap-1 border-[1.5px] border-black/15" role="tablist">
-          <button type="button" id="simBtnFunder" onclick="setSimRole('funder')" role="tab" aria-selected="true" class="py-3.5 rounded-full text-xs sm:text-sm font-extrabold bg-black text-white border border-black shadow-[0_2px_0_#000000] transition-all">
-            Quiero financiar y ganar retornos
-          </button>
-          <button type="button" id="simBtnFreelancer" onclick="setSimRole('freelancer')" role="tab" aria-selected="false" class="py-3.5 rounded-full text-xs sm:text-sm font-extrabold text-zinc-700 hover:text-black transition-all">
-            Soy freelancer y quiero adelantar mi cobro
-          </button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-          <div class="md:col-span-7 space-y-4">
-            <div class="flex items-baseline justify-between">
-              <label for="simRangeInput" id="simAmountLabel" class="text-xs font-extrabold uppercase tracking-wider text-zinc-500">
-                Monto a participar
-              </label>
-              <span id="simSliderReadout" class="font-extrabold text-2xl sm:text-3xl text-electric tabular-nums">
-                $ 5.000.000
-              </span>
-            </div>
-
-            <input
-              id="simRangeInput"
-              type="range"
-              min="500000"
-              max="25000000"
-              step="500000"
-              value="5000000"
-              oninput="handleSliderChange(this.value)"
-              class="proofly-slider"
-              aria-label="Seleccionar monto en pesos colombianos"
-            />
-
-            <div class="grid grid-cols-4 gap-2 pt-1">
-              <button type="button" onclick="setSimAmount(1000000)" class="sim-amt-btn py-2 rounded-xl text-xs font-extrabold border border-black/15 bg-surface hover:bg-lilac/50 transition-all tabular-nums" data-amt="1000000">$ 1M</button>
-              <button type="button" onclick="setSimAmount(5000000)" class="sim-amt-btn py-2 rounded-xl text-xs font-extrabold border-[1.5px] border-black bg-lilac text-black transition-all tabular-nums" data-amt="5000000">$ 5M</button>
-              <button type="button" onclick="setSimAmount(10000000)" class="sim-amt-btn py-2 rounded-xl text-xs font-extrabold border border-black/15 bg-surface hover:bg-lilac/50 transition-all tabular-nums" data-amt="10000000">$ 10M</button>
-              <button type="button" onclick="setSimAmount(20000000)" class="sim-amt-btn py-2 rounded-xl text-xs font-extrabold border border-black/15 bg-surface hover:bg-lilac/50 transition-all tabular-nums" data-amt="20000000">$ 20M</button>
-            </div>
-          </div>
-
-          <div class="md:col-span-5 space-y-3">
-            <span class="text-xs font-extrabold uppercase tracking-wider text-zinc-500 block">
-              Plazo de pago de la empresa
-            </span>
-            <div class="grid grid-cols-3 gap-2">
-              <button type="button" onclick="setSimDays(30)" class="sim-days-btn py-3.5 rounded-2xl text-xs sm:text-sm font-extrabold border-[1.5px] border-black bg-lilac text-black shadow-[0_2px_0_#000000] transition-all tabular-nums" data-days="30">30 días</button>
-              <button type="button" onclick="setSimDays(45)" class="sim-days-btn py-3.5 rounded-2xl text-xs sm:text-sm font-extrabold border border-black/15 bg-surface hover:bg-lilac/50 transition-all tabular-nums" data-days="45">45 días</button>
-              <button type="button" onclick="setSimDays(60)" class="sim-days-btn py-3.5 rounded-2xl text-xs sm:text-sm font-extrabold border border-black/15 bg-surface hover:bg-lilac/50 transition-all tabular-nums" data-days="60">60 días</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-          <div class="bg-lilac-soft rounded-2xl p-5 border border-black/15">
-            <span id="simCol1Label" class="text-xs font-bold text-zinc-600 block">Capital aportado</span>
-            <div id="simCol1Val" class="font-extrabold text-2xl text-black mt-1 tabular-nums">$ 5.000.000</div>
-          </div>
-
-          <div class="bg-lilac-soft rounded-2xl p-5 border border-black/15">
-            <span id="simCol2Label" class="text-xs font-bold text-zinc-600 block">Ganancia neta (16,8% E.A.)</span>
-            <div id="simCol2Val" class="font-extrabold text-2xl text-emerald-600 mt-1 tabular-nums">+$ 65.000</div>
-          </div>
-
-          <div class="bg-lilac/70 rounded-2xl p-5 border-[1.5px] border-black">
-            <span id="simCol3Label" class="text-xs font-extrabold text-black block">Total al vencimiento</span>
-            <div id="simCol3Val" class="font-extrabold text-2xl text-electric mt-1 tabular-nums">$ 5.065.000</div>
-          </div>
-        </div>
-
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-          <p class="text-xs text-zinc-500 font-medium">
-            Valores expresados en pesos colombianos (COP) con liquidación directa en cuenta de recaudo.
-          </p>
-          <button type="button" id="simActionBtn" onclick="executeSimulatorAction()" class="w-full sm:w-auto bg-electric hover:bg-black text-white font-extrabold text-sm px-8 py-4 rounded-full border-[2px] border-black shadow-[0_4px_0_#000000] transition-all">
-            Participar con este monto →
-          </button>
-        </div>
-
-      </div>
-    </section>
-
-  </main>
+    </main>
 
   <!-- =================================================================== -->
   <!-- FINAL: BLACK FOOTER. THE PAGE ENDS IN THE PROOFLY WORDMARK.          -->
   <!-- =================================================================== -->
     <!-- =================================================================== -->
-  <!-- PRE-FOOTER CTA SECTION (Matching inspo.mp4 / Reference Image)       -->
+  <!-- =================================================================== -->
+  <!-- PRE-FOOTER CTA SECTION (Proofly Brand Style & Colors)               -->
   <!-- =================================================================== -->
   <section class="py-24 sm:py-32 px-6 sm:px-10 text-center relative overflow-hidden bg-white">
     <div class="max-w-4xl mx-auto flex flex-col items-center relative">
       
-      <!-- Pill Badge: READY TO GET PAID -->
-      <div class="inline-flex items-center gap-2 bg-[#F1EFF4] border border-black/10 rounded-full px-5 py-2 text-[11px] font-extrabold tracking-widest uppercase text-zinc-800 mb-8 shadow-xs">
+      <!-- Pill Badge: READY TO GET PAID with Lavender & Electric Accent -->
+      <div class="inline-flex items-center gap-2 bg-[#F8D4FD] border border-black/10 rounded-full px-5 py-2 text-[11px] font-extrabold tracking-widest uppercase text-electric mb-8 shadow-xs">
+        <span class="w-2 h-2 rounded-full bg-electric animate-pulse"></span>
         <span>READY TO GET PAID</span>
       </div>
 
-      <!-- Main Headline with Typewriter Accent -->
+      <!-- Main Headline with Electric Accent -->
       <h2 class="font-extrabold text-4xl sm:text-6xl lg:text-[72px] tracking-tight text-black leading-[1.08] max-w-3xl">
-        Make your milestones<br />work for you<span class="text-zinc-300">u</span>
+        Make your <span class="text-electric">milestones</span><br />work for you<span class="text-zinc-300">u</span>
       </h2>
 
       <!-- Button and Handwritten Arrow Area -->
@@ -3825,20 +3536,20 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
         <div class="relative flex items-center">
           <button
             type="button"
-            onclick="scrollToId('calculadora')"
-            class="cta-mint-btn z-10"
+            onclick="openProoflyApp('onboarding')"
+            class="cta-proofly-btn z-10"
           >
-            Get Started
+            Empezar Ahora ↗
           </button>
 
           <!-- Handwritten Annotation & Curved Arrow precisely 36px to the right -->
           <div class="cta-handwritten-note flex flex-col items-start absolute pointer-events-none select-none" style="left: calc(100% + 36px); top: -20px;">
             <div class="font-hand text-2xl sm:text-3xl font-bold text-black rotate-[-6deg] leading-tight whitespace-nowrap">
-              Start accepting<br />milestones today
+              Start accepting<br /><span class="text-electric">milestones today</span>
             </div>
-            <svg class="w-12 h-12 text-black mt-0.5 ml-1 -rotate-6" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-              <path d="M38 6 C36 26, 30 38, 10 40" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-              <path d="M20 32 L10 40 L20 48" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg class="w-12 h-12 text-electric mt-0.5 ml-1 -rotate-6" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <path d="M38 6 C36 26, 30 38, 10 40" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+              <path d="M20 32 L10 40 L20 48" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
         </div>
@@ -3847,62 +3558,63 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
   </section>
 
   <!-- =================================================================== -->
-  <!-- LIGHT MINIMALIST FOOTER (Matching inspo.mp4 / Reference Image)      -->
+  <!-- LIGHT MINIMALIST FOOTER (Proofly Signature Palette)                 -->
   <!-- =================================================================== -->
-  <footer id="footer" class="bg-[#F4F4F6] text-black relative overflow-hidden pt-12 sm:pt-16 pb-0 border-t border-black/5">
+  <footer id="footer" class="bg-white text-black relative overflow-hidden pt-12 sm:pt-16 pb-0 border-t border-[#F8D4FD]">
     <div class="max-w-[1380px] mx-auto px-6 sm:px-10 lg:px-12">
       
       <!-- Top Row: Copy on Left, Social Icons on Right -->
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-12 sm:pb-16 border-b border-black/10">
         
         <!-- Left: Two-line concise brand copy -->
-        <div class="space-y-1 max-w-md">
-          <p class="text-xs sm:text-sm text-zinc-800 font-semibold leading-relaxed">
-            Milestone payments made simple for modern freelancers.
-          </p>
-          <p class="text-xs sm:text-sm text-zinc-500 font-medium leading-relaxed">
+        <div class="space-y-1.5 max-w-md">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-electric"></span>
+            <p class="text-xs sm:text-sm text-black font-extrabold tracking-tight">
+              Milestone payments made simple for modern freelancers.
+            </p>
+          </div>
+          <p class="text-xs sm:text-sm text-zinc-500 font-medium leading-relaxed pl-4.5">
             Accept contracts, get paid in COP instantly on Base L2.
           </p>
         </div>
 
-        <!-- Right: Circular Social Media Icons in Dark Navy/Black -->
+        <!-- Right: Circular Social Media Icons in Proofly Electric Violet -->
         <div class="flex items-center gap-2.5 sm:gap-3">
           <!-- Facebook -->
-          <a href="#" aria-label="Facebook" class="social-circle">
+          <a href="#" aria-label="Facebook" class="social-circle-proofly">
             <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
           </a>
           <!-- Instagram -->
-          <a href="#" aria-label="Instagram" class="social-circle">
+          <a href="#" aria-label="Instagram" class="social-circle-proofly">
             <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
           </a>
           <!-- TikTok -->
-          <a href="#" aria-label="TikTok" class="social-circle">
+          <a href="#" aria-label="TikTok" class="social-circle-proofly">
             <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.24 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
           </a>
           <!-- X (Twitter) -->
-          <a href="#" aria-label="X" class="social-circle">
+          <a href="#" aria-label="X" class="social-circle-proofly">
             <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           </a>
           <!-- LinkedIn -->
-          <a href="#" aria-label="LinkedIn" class="social-circle">
+          <a href="#" aria-label="LinkedIn" class="social-circle-proofly">
             <svg viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
           </a>
         </div>
       </div>
     </div>
 
-    <!-- Giant Monumental Proofly Wordmark Cropped at the Bottom Fold (Edge-to-Edge SVG) -->
+    <!-- Giant Monumental Proofly Wordmark Cropped at the Bottom in Electric Violet (#7300FF) -->
     <div class="relative w-full overflow-hidden select-none pointer-events-none pt-6 -mb-16 sm:-mb-24 md:-mb-32 lg:-mb-44" aria-hidden="true">
       <svg viewBox="0 0 1400 340" class="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
-        <text x="50%" y="290" text-anchor="middle" fill="#0C1E28" font-family="'Plus Jakarta Sans', 'Syne', sans-serif" font-weight="900" font-style="italic" font-size="360" letter-spacing="-0.07em">
+        <text x="50%" y="290" text-anchor="middle" fill="#7300FF" font-family="'Plus Jakarta Sans', 'Syne', sans-serif" font-weight="900" font-style="italic" font-size="360" letter-spacing="-0.07em">
           Proofly
         </text>
       </svg>
     </div>
   </footer>
-
-
-  <!-- =================================================================== -->
+  
   <!-- Live Status Toast -->
   <div id="toast" role="status" aria-live="polite" class="fixed bottom-6 right-6 z-50 hidden bg-black text-white px-5 py-3.5 rounded-full shadow-lg flex items-center gap-2.5 text-xs font-extrabold">
     <span class="w-2 h-2 rounded-full bg-lilac"></span>
@@ -3960,7 +3672,7 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
       return '$ ' + Math.round(val).toLocaleString('es-CO');
     }
 
-    function renderPhones() {
+    function renderPhones() { return;
       const p2List = document.getElementById('phone2List');
       p2List.innerHTML = '';
 
@@ -4065,7 +3777,7 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
     }
 
     // Simulator Logic
-    function updateSimulator() {
+    function updateSimulator() { return;
       const ratePer30d = 0.013; // ~16.8% E.A.
       const factor = (ratePer30d * sim.days) / 30;
       const gain = Math.round(sim.amount * factor);
@@ -4376,5 +4088,608 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
       handleScrollChoreography();
     });
   </script>
+
+  <!-- =================================================================== -->
+  <!-- REAL PROOFLY APPLICATION (Mobile-First / Full App Experience)        -->
+  <!-- =================================================================== -->
+  <div id="prooflyAppOverlay" style="background-color: rgba(15, 12, 22, 0.78); backdrop-filter: blur(16px);" class="fixed inset-0 z-50 hidden flex-col overflow-hidden">
+    
+    <!-- Top Navigation Bar of the App -->
+    <header class="bg-white border-b border-black/10 px-4 sm:px-8 py-3.5 flex items-center justify-between shrink-0 z-20">
+      <div class="flex items-center gap-3">
+        <button type="button" onclick="closeProoflyApp()" class="inline-flex items-center gap-2 text-xs font-extrabold text-black hover:text-electric bg-[#F1EFF4] hover:bg-black hover:text-white px-3.5 py-2 rounded-full border border-black/10 transition-all cursor-pointer">
+          <span>←</span>
+          <span class="hidden sm:inline">Volver a la web</span>
+          <span class="sm:hidden">Volver</span>
+        </button>
+        <div class="h-4 w-px bg-black/15 hidden sm:block"></div>
+        <div class="flex items-center gap-2">
+          <span class="text-electric font-black text-lg">✳</span>
+          <span class="font-display font-extrabold text-lg tracking-tight">Proofly App</span>
+          <span class="rounded-full bg-electric/10 text-electric text-[10px] font-extrabold px-2 py-0.5 ml-1">v1.0 Base L2</span>
+        </div>
+      </div>
+
+      <!-- Viewport Toggle for Desktop -->
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="closeProoflyApp()" aria-label="Cerrar app" class="w-9 h-9 rounded-full bg-zinc-100 hover:bg-black hover:text-white flex items-center justify-center font-bold text-sm transition-all cursor-pointer">
+          ✕
+        </button>
+      </div>
+    </header>
+
+    <!-- App Stage Area -->
+    <main class="flex-1 overflow-hidden flex items-center justify-center p-0 md:p-6 bg-gradient-to-b from-[#F6F5F8] to-[#EFEAF4]">
+      
+      <!-- Container that switches between chassis and fluid -->
+      <div id="appViewportFrame" class="phone-chassis">
+        <div class="phone-screen bg-white flex flex-col h-full overflow-hidden relative">
+          
+          <!-- Dynamic Island on mobile frame -->
+          <div id="dynamicIsland" class="dynamic-island flex items-center justify-between px-3 pointer-events-none select-none">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#1c1c1e]"></span>
+            <span class="w-2 h-2 rounded-full bg-electric/60"></span>
+          </div>
+
+          <!-- ============================================================== -->
+          <!-- SCREEN 1: ONBOARDING GATEWAY (Matching media_1794080001308)     -->
+          <!-- ============================================================== -->
+          <div id="screenOnboarding" class="flex-1 flex flex-col justify-between bg-gradient-to-b from-[#F8D4FD] via-[#F4DEFB] to-white relative pt-12 px-6 pb-8 overflow-y-auto">
+            
+            <!-- Mobile Status Row -->
+            <div class="flex items-center justify-between text-xs font-bold text-black/75 px-1 pt-1">
+              <span>19:27</span>
+              <div class="flex items-center gap-1.5 text-[11px]">
+                <span>5G</span>
+                <span>100%</span>
+              </div>
+            </div>
+
+            <!-- Central Hero Illustration Area (Hand + Glowing Purple Coins + Arrows) -->
+            <div class="my-auto flex flex-col items-center justify-center relative py-6">
+              
+              <!-- Ambient Glow & Vector Shapes -->
+              <div class="w-64 h-64 rounded-full bg-[#E8A5F6]/40 blur-2xl absolute -top-4"></div>
+              
+              <div class="relative z-10 w-56 h-56 flex items-center justify-center">
+                <!-- Stack of Purple Coins & Hand Vector SVG -->
+                <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-[0_15px_25px_rgba(115,0,255,0.22)]" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Upward Pink Arrow -->
+                  <path d="M40 90 L60 40 L110 55" stroke="#E5A8F2" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M60 40 L40 65" stroke="#E5A8F2" stroke-width="14" stroke-linecap="round"/>
+                  
+                  <!-- Sparkles -->
+                  <path d="M150 50 L154 60 L164 64 L154 68 L150 78 L146 68 L136 64 L146 60 Z" fill="#E5A8F2"/>
+                  <path d="M30 110 L32 116 L38 118 L32 120 L30 126 L28 120 L22 118 L28 116 Z" fill="#E5A8F2"/>
+
+                  <!-- Coin 1 (Bottom) -->
+                  <ellipse cx="80" cy="150" rx="36" ry="14" fill="#5800C4"/>
+                  <ellipse cx="80" cy="146" rx="36" ry="14" fill="#7300FF"/>
+                  <ellipse cx="80" cy="146" rx="28" ry="10" stroke="#B876FF" stroke-width="2"/>
+
+                  <!-- Coin 2 -->
+                  <ellipse cx="80" cy="136" rx="36" ry="14" fill="#5800C4"/>
+                  <ellipse cx="80" cy="132" rx="36" ry="14" fill="#9322FF"/>
+                  <ellipse cx="80" cy="132" rx="28" ry="10" stroke="#E0B7FF" stroke-width="2"/>
+
+                  <!-- Coin 3 -->
+                  <ellipse cx="80" cy="122" rx="36" ry="14" fill="#5800C4"/>
+                  <ellipse cx="80" cy="118" rx="36" ry="14" fill="#A83CFF"/>
+                  <ellipse cx="80" cy="118" rx="28" ry="10" stroke="#FFFFFF" stroke-width="2"/>
+
+                  <!-- Coin 4 (Top tilted) -->
+                  <ellipse cx="94" cy="98" rx="30" ry="13" transform="rotate(-15 94 98)" fill="#5800C4"/>
+                  <ellipse cx="94" cy="94" rx="30" ry="13" transform="rotate(-15 94 94)" fill="#C25EFF"/>
+                  <ellipse cx="94" cy="94" rx="22" ry="8" transform="rotate(-15 94 94)" stroke="#FFFFFF" stroke-width="2"/>
+
+                  <!-- Stylized White Hand with Black Contour -->
+                  <path d="M120 70 C105 85, 95 90, 85 95 C80 97, 75 97, 85 102 C95 106, 125 108, 140 102 C150 98, 160 88, 175 92" stroke="#000000" stroke-width="4" stroke-linecap="round" fill="#FFFFFF"/>
+                  <path d="M100 82 C108 85, 120 85, 130 80" stroke="#000000" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+              </div>
+
+            </div>
+
+            <!-- Bottom White Sheet (Gateway Text + CTA) -->
+            <div class="bg-white rounded-[32px] p-6 shadow-[0_15px_35px_rgba(0,0,0,0.06)] border border-black/5 text-center space-y-4">
+              <h2 class="font-extrabold text-2xl sm:text-3xl text-black leading-tight tracking-tight">
+                Your <span class="text-electric">🔥 Gateway</span> to<br />Instant Liquidity
+              </h2>
+              <p class="text-xs sm:text-sm text-zinc-600 font-medium leading-relaxed px-2">
+                Anticipa tus facturas e hitos en COP sin esperar 60 días, o participa en oportunidades desde tu celular con retornos hasta 24.5% E.A.
+              </p>
+              
+              <div class="pt-2 space-y-3">
+                <button type="button" onclick="goToAppScreen('dashboard')" class="w-full bg-black hover:bg-electric text-white font-extrabold text-sm py-4 rounded-full border-[2px] border-black shadow-[0_4px_0_#000000] active:translate-y-0.5 transition-all cursor-pointer">
+                  Empezar Ahora →
+                </button>
+                <button type="button" onclick="goToAppScreen('dashboard')" class="w-full text-zinc-500 hover:text-black font-bold text-xs py-1 transition-colors cursor-pointer">
+                  Ya tengo una cuenta · Iniciar sesión
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ============================================================== -->
+          <!-- SCREEN 2: MAIN DASHBOARD & ROLE HUB (Opciones Planteadas)       -->
+          <!-- ============================================================== -->
+          <div id="screenDashboard" class="flex-1 flex flex-col bg-[#F9F8FA] hidden h-full overflow-hidden">
+            
+            <!-- Sticky Mobile Header (below dynamic island) -->
+            <div style="padding-top: 52px;" class="bg-white px-5 pb-3.5 border-b border-black/5 flex items-center justify-between shrink-0">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-electric text-white font-extrabold text-sm flex items-center justify-center border-2 border-black">
+                  SV
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-extrabold text-sm text-black">Sofía Vargas</span>
+                    <span class="rounded-full bg-electric/10 text-electric text-[9px] font-extrabold px-1.5 py-0.5">Tier 1 Semilla</span>
+                  </div>
+                  <p class="text-[11px] text-zinc-500 font-medium">Cupo: $ 2.000.000 COP</p>
+                </div>
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="goToAppScreen('portfolio')" aria-label="Ver analítica" class="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-bold hover:bg-black hover:text-white transition-all cursor-pointer">
+                  📊
+                </button>
+              </div>
+            </div>
+
+            <!-- Role Selector: Freelancer vs Inversionista -->
+            <div class="px-5 pt-3 pb-2 shrink-0">
+              <div class="grid grid-cols-2 gap-1.5 bg-[#EBE7F2] p-1.5 rounded-full border border-black/10 text-xs font-extrabold">
+                <button type="button" id="tabFreelancer" onclick="setAppRole('freelancer')" class="py-2 rounded-full bg-white text-black shadow-xs transition-all cursor-pointer">
+                  ⚡ Modo Freelancer
+                </button>
+                <button type="button" id="tabInvestor" onclick="setAppRole('investor')" class="py-2 rounded-full text-zinc-600 hover:text-black transition-all cursor-pointer">
+                  📈 Inversionista
+                </button>
+              </div>
+            </div>
+
+            <!-- Scrollable Content of the Dashboard -->
+            <div class="flex-1 overflow-y-auto px-5 py-3 space-y-4">
+              
+              <!-- ========================================================== -->
+              <!-- SUB-VIEW A: MODO FREELANCER (Opciones Planteadas)          -->
+              <!-- ========================================================== -->
+              <div id="viewFreelancer" class="space-y-4">
+                
+                <!-- Cupo Card -->
+                <div class="bg-gradient-to-br from-[#F8D4FD] to-[#F1C6FA] rounded-[24px] p-5 border-[1.5px] border-black shadow-[0_4px_0_#000000]">
+                  <div class="flex items-center justify-between text-xs font-bold text-black/80">
+                    <span>Cupo Disponible Hoy</span>
+                    <span class="rounded-full bg-black text-white text-[10px] px-2.5 py-0.5 font-extrabold">TIER 1</span>
+                  </div>
+                  <p class="text-3xl font-extrabold text-black tracking-tight mt-1.5">$ 2.000.000 <span class="text-xs font-bold text-zinc-700">COP</span></p>
+                  
+                  <div class="mt-3 pt-3 border-t border-black/10 flex items-center justify-between text-[11px] font-semibold text-zinc-800">
+                    <span>2 operaciones para ascender a Tier 2</span>
+                    <span class="font-extrabold text-electric">$ 8M COP ↗</span>
+                  </div>
+                </div>
+
+                <!-- Opcion 1: Anticipar Factura Electrónica (RADIAN) -->
+                <div class="bg-white rounded-[24px] p-5 border-[1.5px] border-black/10 shadow-xs space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-electric bg-electric/10 px-2.5 py-1 rounded-full">
+                      <span>⚡</span> Opción 1 · Factura Electrónica
+                    </span>
+                    <span class="text-[10px] font-bold text-zinc-400">Validación RADIAN</span>
+                  </div>
+
+                  <h3 class="font-extrabold text-base text-black">Anticipar Factura UBL 2.1</h3>
+                  <p class="text-xs text-zinc-500 font-medium">Verificamos los tres acuses en DIAN para aprobación y liquidación inmediata.</p>
+
+                  <div class="space-y-2.5 pt-1">
+                    <div>
+                      <label class="block text-[11px] font-bold text-zinc-700 mb-1">Empresa Pagadora</label>
+                      <select id="appInvoiceClient" onchange="recalculateAppQuote()" class="w-full bg-[#F6F5F8] border border-black/15 rounded-xl px-3 py-2 text-xs font-bold text-black focus:outline-electric">
+                        <option value="Mercado Libre Colombia SAS">Mercado Libre Colombia SAS (Tier A+)</option>
+                        <option value="Bancolombia S.A.">Bancolombia S.A. (Tier A+)</option>
+                        <option value="Rappi SAS">Rappi SAS (Tier A)</option>
+                      </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                      <div>
+                        <label class="block text-[11px] font-bold text-zinc-700 mb-1">Valor Factura</label>
+                        <input type="text" id="appInvoiceAmount" value="5.000.000" oninput="recalculateAppQuote()" class="w-full bg-[#F6F5F8] border border-black/15 rounded-xl px-3 py-2 text-xs font-bold text-black focus:outline-electric" />
+                      </div>
+                      <div>
+                        <label class="block text-[11px] font-bold text-zinc-700 mb-1">Plazo</label>
+                        <select id="appInvoiceDays" onchange="recalculateAppQuote()" class="w-full bg-[#F6F5F8] border border-black/15 rounded-xl px-3 py-2 text-xs font-bold text-black focus:outline-electric">
+                          <option value="30">30 días</option>
+                          <option value="45">45 días</option>
+                          <option value="60" selected>60 días</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Live Quote Box -->
+                    <div class="bg-[#F8F4FC] rounded-xl p-3 border border-electric/20 space-y-1.5 text-xs">
+                      <div class="flex justify-between text-zinc-600">
+                        <span>Desembolso neto hoy:</span>
+                        <span id="appQuoteAdvance" class="font-extrabold text-black">$ 4.887.500 COP</span>
+                      </div>
+                      <div class="flex justify-between text-[11px] text-zinc-500">
+                        <span>Descuento + Comisión (1%):</span>
+                        <span id="appQuoteFees" class="font-bold text-electric">-$ 112.500 COP</span>
+                      </div>
+                    </div>
+
+                    <button type="button" onclick="submitAppInvoice()" class="w-full bg-black hover:bg-electric text-white font-extrabold text-xs py-3 rounded-full border border-black shadow-[0_3px_0_#000000] active:translate-y-0.5 transition-all cursor-pointer">
+                      Radicar Factura y Solicitar Desembolso ↗
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Opcion 2: Anticipar Hito de Contrato (Milestones) -->
+                <div class="bg-white rounded-[24px] p-5 border-[1.5px] border-black/10 shadow-xs space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-black bg-[#F1EFF4] px-2.5 py-1 rounded-full">
+                      <span>🎯</span> Opción 2 · Hito Confirmado
+                    </span>
+                    <span class="text-[10px] font-bold text-zinc-400">Token Criptográfico</span>
+                  </div>
+
+                  <h3 class="font-extrabold text-base text-black">Anticipar Hito de Proyecto</h3>
+                  <p class="text-xs text-zinc-500 font-medium">El pagador aprueba con 1 clic mediante enlace seguro y token HMAC de un solo uso.</p>
+
+                  <div class="space-y-2.5 pt-1">
+                    <div>
+                      <label class="block text-[11px] font-bold text-zinc-700 mb-1">Nombre del Hito</label>
+                      <input type="text" id="appMilestoneTitle" value="Fase 2: Diseño UI/UX y Prototipado" class="w-full bg-[#F6F5F8] border border-black/15 rounded-xl px-3 py-2 text-xs font-bold text-black focus:outline-electric" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                      <div>
+                        <label class="block text-[11px] font-bold text-zinc-700 mb-1">Monto del Hito</label>
+                        <input type="text" id="appMilestoneAmount" value="2.500.000" class="w-full bg-[#F6F5F8] border border-black/15 rounded-xl px-3 py-2 text-xs font-bold text-black focus:outline-electric" />
+                      </div>
+                      <div>
+                        <label class="block text-[11px] font-bold text-zinc-700 mb-1">Cliente</label>
+                        <input type="text" id="appMilestoneClient" value="Mercado Libre" class="w-full bg-[#F6F5F8] border border-black/15 rounded-xl px-3 py-2 text-xs font-bold text-black focus:outline-electric" />
+                      </div>
+                    </div>
+
+                    <button type="button" onclick="submitAppMilestone()" class="w-full bg-electric hover:bg-black text-white font-extrabold text-xs py-3 rounded-full border border-black shadow-[0_3px_0_#000000] active:translate-y-0.5 transition-all cursor-pointer">
+                      Generar Enlace de Confirmación 🔗
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Historial Operaciones Recientes -->
+                <div class="space-y-2 pt-2">
+                  <p class="text-xs font-extrabold text-black uppercase tracking-wider">Tus Operaciones Activas</p>
+                  
+                  <div class="bg-white rounded-2xl p-3.5 border border-black/10 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-xl bg-[#D6F8D8] text-black font-black text-xs flex items-center justify-center border border-black">
+                        ✓
+                      </div>
+                      <div>
+                        <p class="text-xs font-extrabold text-black">Hito UI Mercado Libre</p>
+                        <p class="text-[10px] text-zinc-500 font-medium">Desembolsado en Bancolombia</p>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-xs font-extrabold text-emerald-600">+$ 8.347.000</p>
+                      <span class="rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-extrabold px-2 py-0.5">Pagado</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- ========================================================== -->
+              <!-- SUB-VIEW B: MODO INVERSIONISTA (Marketplace Base L2)       -->
+              <!-- ========================================================== -->
+              <div id="viewInvestor" class="space-y-4 hidden">
+                
+                <!-- Investment Portfolio Banner -->
+                <div class="bg-black text-white rounded-[24px] p-5 shadow-[0_4px_0_#7300FF] space-y-3">
+                  <div class="flex items-center justify-between text-xs font-bold text-zinc-400">
+                    <span>Capital Activo en Base L2</span>
+                    <span class="text-lilac font-extrabold">Retornos al Día</span>
+                  </div>
+                  <div class="flex items-baseline justify-between">
+                    <p class="text-3xl font-extrabold text-white tracking-tight">$ 12.500.000</p>
+                    <span class="text-emerald-400 font-extrabold text-xs">+$ 840.220 COP (19.4% E.A.)</span>
+                  </div>
+                </div>
+
+                <!-- Marketplace Header -->
+                <div class="flex items-center justify-between pt-1">
+                  <h3 class="font-extrabold text-sm text-black">Oportunidades Disponibles</h3>
+                  <span class="text-[11px] font-bold text-electric">3 activas hoy</span>
+                </div>
+
+                <!-- Opportunity 1 -->
+                <div class="bg-white rounded-[20px] p-4 border border-black/10 shadow-xs space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                      <span class="font-extrabold text-xs text-black">Mercado Libre Colombia</span>
+                    </div>
+                    <span class="text-xs font-extrabold text-electric bg-electric/10 px-2 py-0.5 rounded-full">18,2 % E.A.</span>
+                  </div>
+
+                  <p class="text-xs text-zinc-600 font-medium">Hito Frontend · $ 10.000.000 COP nominal · Plazo 25 días</p>
+
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-[11px] text-zinc-500 font-bold">
+                      <span>Fondeado: 60%</span>
+                      <span>Faltan $ 4.000.000 COP</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full bg-zinc-100 overflow-hidden">
+                      <div class="h-full bg-electric rounded-full w-[60%]"></div>
+                    </div>
+                  </div>
+
+                  <button type="button" onclick="investInMarketplace('Mercado Libre', 10000000, 18.2)" class="w-full bg-[#D6F8D8] hover:bg-black hover:text-white text-black font-extrabold text-xs py-2.5 rounded-full border border-black shadow-[0_2px_0_#000000] active:translate-y-0.5 transition-all cursor-pointer">
+                    Aportar Liquidez desde $ 100.000 COP →
+                  </button>
+                </div>
+
+                <!-- Opportunity 2 -->
+                <div class="bg-white rounded-[20px] p-4 border border-black/10 shadow-xs space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                      <span class="font-extrabold text-xs text-black">Bancolombia S.A.</span>
+                    </div>
+                    <span class="text-xs font-extrabold text-electric bg-electric/10 px-2 py-0.5 rounded-full">16,8 % E.A.</span>
+                  </div>
+
+                  <p class="text-xs text-zinc-600 font-medium">Factura Cloud · $ 8.500.000 COP nominal · Plazo 30 días</p>
+
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-[11px] text-zinc-500 font-bold">
+                      <span>Fondeado: 35%</span>
+                      <span>Faltan $ 5.525.000 COP</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full bg-zinc-100 overflow-hidden">
+                      <div class="h-full bg-electric rounded-full w-[35%]"></div>
+                    </div>
+                  </div>
+
+                  <button type="button" onclick="investInMarketplace('Bancolombia', 8500000, 16.8)" class="w-full bg-[#D6F8D8] hover:bg-black hover:text-white text-black font-extrabold text-xs py-2.5 rounded-full border border-black shadow-[0_2px_0_#000000] active:translate-y-0.5 transition-all cursor-pointer">
+                    Aportar Liquidez desde $ 100.000 COP →
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- Fixed Bottom Navigation Bar -->
+            <div class="bg-white border-t border-black/10 px-4 py-2 flex items-center justify-around shrink-0 z-20">
+              <button type="button" onclick="goToAppScreen('dashboard')" class="flex flex-col items-center justify-center w-16 text-electric cursor-pointer">
+                <span class="text-lg">🏠</span>
+                <span class="text-[10px] font-extrabold tracking-tight mt-0.5">Inicio</span>
+              </button>
+              <button type="button" onclick="setAppRole('freelancer'); goToAppScreen('dashboard');" class="flex flex-col items-center justify-center w-16 text-zinc-400 hover:text-black cursor-pointer">
+                <span class="text-lg">⚡</span>
+                <span class="text-[10px] font-extrabold tracking-tight mt-0.5">Operar</span>
+              </button>
+              <button type="button" onclick="goToAppScreen('portfolio')" class="flex flex-col items-center justify-center w-16 text-zinc-400 hover:text-black cursor-pointer">
+                <span class="text-lg">📈</span>
+                <span class="text-[10px] font-extrabold tracking-tight mt-0.5">Portafolio</span>
+              </button>
+              <button type="button" onclick="showToast('Perfil KYC Verificado · Nivel 1 Semilla')" class="flex flex-col items-center justify-center w-16 text-zinc-400 hover:text-black cursor-pointer">
+                <span class="text-lg">👤</span>
+                <span class="text-[10px] font-extrabold tracking-tight mt-0.5">Perfil</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- ============================================================== -->
+          <!-- SCREEN 3: PORTFOLIO & METRICS (Matching Screen 3 inspo)        -->
+          <!-- ============================================================== -->
+          <div id="screenPortfolio" class="flex-1 flex flex-col bg-white hidden h-full overflow-hidden">
+            
+            <!-- Sticky Mobile Header -->
+            <div style="padding-top: 52px;" class="px-5 pb-3.5 border-b border-black/5 flex items-center justify-between shrink-0">
+              <button type="button" onclick="goToAppScreen('dashboard')" class="text-xs font-extrabold text-zinc-600 hover:text-black flex items-center gap-1 cursor-pointer">
+                <span>←</span> Volver
+              </button>
+              <p class="font-extrabold text-sm text-black">Rendimiento & Retornos</p>
+              <span class="w-6"></span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+              
+              <!-- Metrics Cards -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="bg-[#F8D4FD] rounded-2xl p-4 border border-black/10">
+                  <p class="text-[10px] font-extrabold text-zinc-700 uppercase">Retorno Promedio</p>
+                  <p class="text-2xl font-extrabold text-black mt-1">18,5% <span class="text-xs">E.A.</span></p>
+                </div>
+                <div class="bg-black text-white rounded-2xl p-4 border border-black">
+                  <p class="text-[10px] font-extrabold text-zinc-400 uppercase">Recaudado</p>
+                  <p class="text-2xl font-extrabold text-emerald-400 mt-1">$ 840.220</p>
+                </div>
+              </div>
+
+              <!-- Spring Bar Chart Simulation (M T W T F S S) -->
+              <div class="bg-[#F9F8FB] rounded-2xl p-4 border border-black/10 space-y-3">
+                <div class="flex items-center justify-between text-xs font-bold">
+                  <span class="text-black">Actividad de Cobros Semanal</span>
+                  <span class="text-electric">85.2% tasa éxito</span>
+                </div>
+
+                <div class="flex items-end justify-between h-28 pt-4 px-2">
+                  <div class="flex flex-col items-center gap-1"><div class="w-6 bg-electric/30 rounded-t-lg h-10"></div><span class="text-[10px] font-bold text-zinc-400">M</span></div>
+                  <div class="flex flex-col items-center gap-1"><div class="w-6 bg-electric/40 rounded-t-lg h-16"></div><span class="text-[10px] font-bold text-zinc-400">T</span></div>
+                  <div class="flex flex-col items-center gap-1"><div class="w-6 bg-electric/30 rounded-t-lg h-12"></div><span class="text-[10px] font-bold text-zinc-400">W</span></div>
+                  <div class="flex flex-col items-center gap-1"><div class="w-6 bg-electric/50 rounded-t-lg h-20"></div><span class="text-[10px] font-bold text-zinc-400">T</span></div>
+                  <div class="flex flex-col items-center gap-1"><div class="w-6 bg-electric rounded-t-lg h-24 shadow-sm"></div><span class="text-[10px] font-extrabold text-electric">F</span></div>
+                  <div class="flex flex-col items-center gap-1"><div class="w-6 bg-electric/40 rounded-t-lg h-14"></div><span class="text-[10px] font-bold text-zinc-400">S</span></div>
+                  <div class="flex flex-col items-center gap-1"><div class="w-6 bg-electric/20 rounded-t-lg h-8"></div><span class="text-[10px] font-bold text-zinc-400">S</span></div>
+                </div>
+              </div>
+
+              <!-- Security / Smart Contract Assurance Card -->
+              <div class="bg-black text-white rounded-2xl p-5 border border-black space-y-2">
+                <div class="flex items-center gap-2 text-lilac font-extrabold text-xs">
+                  <span>🔒</span> Contratos Auditados en Base L2
+                </div>
+                <h4 class="font-extrabold text-sm text-white">Liquidación Waterfall sin Pérdida de Centavos</h4>
+                <p class="text-xs text-zinc-400 leading-relaxed">
+                  Cada peso recibido se distribuye de manera exacta mediante el Algoritmo del Mayor Resto y contratos inteligentes ERC-1155 inmutables.
+                </p>
+              </div>
+
+            </div>
+
+            <!-- Fixed Bottom Navigation Bar -->
+            <div class="bg-white border-t border-black/10 px-6 py-2.5 flex items-center justify-around shrink-0 z-20">
+              <button type="button" onclick="goToAppScreen('dashboard')" class="flex flex-col items-center text-zinc-400 hover:text-black cursor-pointer">
+                <span class="text-base">🏠</span>
+                <span class="text-[9px] font-extrabold mt-0.5">Inicio</span>
+              </button>
+              <button type="button" onclick="setAppRole('freelancer'); goToAppScreen('dashboard');" class="flex flex-col items-center text-zinc-400 hover:text-black cursor-pointer">
+                <span class="text-base">⚡</span>
+                <span class="text-[9px] font-extrabold mt-0.5">Operar</span>
+              </button>
+              <button type="button" onclick="goToAppScreen('portfolio')" class="flex flex-col items-center text-electric cursor-pointer">
+                <span class="text-base">📈</span>
+                <span class="text-[9px] font-extrabold mt-0.5">Portafolio</span>
+              </button>
+              <button type="button" onclick="alert('Perfil KYC Verificado · Nivel 1')" class="flex flex-col items-center text-zinc-400 hover:text-black cursor-pointer">
+                <span class="text-base">👤</span>
+                <span class="text-[9px] font-extrabold mt-0.5">Perfil</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+<script>
+
+    function openProoflyApp(mode) {
+      const overlay = document.getElementById('prooflyAppOverlay');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+      }
+      if (mode === 'freelancer' || mode === 'investor') {
+        goToAppScreen('dashboard');
+        setAppRole(mode);
+      } else {
+        goToAppScreen('onboarding');
+      }
+    }
+
+    function closeProoflyApp() {
+      const overlay = document.getElementById('prooflyAppOverlay');
+      if (overlay) {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+        document.body.style.overflow = '';
+      }
+    }
+
+    function goToAppScreen(screenName) {
+      const sOnboarding = document.getElementById('screenOnboarding');
+      const sDashboard = document.getElementById('screenDashboard');
+      const sPortfolio = document.getElementById('screenPortfolio');
+
+      if (sOnboarding) sOnboarding.classList.add('hidden');
+      if (sDashboard) sDashboard.classList.add('hidden');
+      if (sPortfolio) sPortfolio.classList.add('hidden');
+
+      if (screenName === 'onboarding' && sOnboarding) sOnboarding.classList.remove('hidden');
+      if (screenName === 'dashboard' && sDashboard) sDashboard.classList.remove('hidden');
+      if (screenName === 'portfolio' && sPortfolio) sPortfolio.classList.remove('hidden');
+    }
+
+    function setAppRole(role) {
+      const vFreelancer = document.getElementById('viewFreelancer');
+      const vInvestor = document.getElementById('viewInvestor');
+      const tabF = document.getElementById('tabFreelancer');
+      const tabI = document.getElementById('tabInvestor');
+
+      if (role === 'freelancer') {
+        if (vFreelancer) vFreelancer.classList.remove('hidden');
+        if (vInvestor) vInvestor.classList.add('hidden');
+        if (tabF) {
+          tabF.classList.add('bg-white', 'text-black', 'shadow-xs');
+          tabF.classList.remove('text-zinc-600');
+        }
+        if (tabI) {
+          tabI.classList.remove('bg-white', 'text-black', 'shadow-xs');
+          tabI.classList.add('text-zinc-600');
+        }
+      } else {
+        if (vFreelancer) vFreelancer.classList.add('hidden');
+        if (vInvestor) vInvestor.classList.remove('hidden');
+        if (tabI) {
+          tabI.classList.add('bg-white', 'text-black', 'shadow-xs');
+          tabI.classList.remove('text-zinc-600');
+        }
+        if (tabF) {
+          tabF.classList.remove('bg-white', 'text-black', 'shadow-xs');
+          tabF.classList.add('text-zinc-600');
+        }
+      }
+    }
+
+    function recalculateAppQuote() {
+      const amountInput = document.getElementById('appInvoiceAmount');
+      const daysInput = document.getElementById('appInvoiceDays');
+      const advEl = document.getElementById('appQuoteAdvance');
+      const feesEl = document.getElementById('appQuoteFees');
+
+      if (!amountInput || !daysInput || !advEl || !feesEl) return;
+      const cleanVal = parseFloat(amountInput.value.replace(/\./g, '').replace(/,/g, '')) || 5000000;
+      const days = parseInt(daysInput.value) || 60;
+
+      // Proofly formulas: discount 1.8% per 30d + Proofly fee 1%
+      const discountRate = (0.018 * (days / 30));
+      const prooflyFee = 0.01;
+      const totalCut = discountRate + prooflyFee;
+      
+      const fees = Math.round(cleanVal * totalCut);
+      const advance = Math.max(0, cleanVal - fees);
+
+      advEl.textContent = '$ ' + advance.toLocaleString('es-CO') + ' COP';
+      feesEl.textContent = '-$ ' + fees.toLocaleString('es-CO') + ' COP';
+    }
+
+    function submitAppInvoice() {
+      const amount = document.getElementById('appInvoiceAmount')?.value || '5.000.000';
+      const client = document.getElementById('appInvoiceClient')?.value || 'Mercado Libre';
+      showToast('Factura radicada en RADIAN: $' + amount + ' COP (' + client + '). Solicitud en proceso.');
+    }
+
+    function submitAppMilestone() {
+      const title = document.getElementById('appMilestoneTitle')?.value || 'Hito';
+      const token = 'prf_' + Math.random().toString(36).substring(2, 10);
+      showToast('Enlace generado: https://app.proofly.co/confirm/' + token);
+    }
+
+    function investInMarketplace(client, nominal, apy) {
+      showToast('Inversión simulada en ' + client + ' (' + apy + '% E.A.). Token ERC-1155 emitido.');
+    }
+
+    // Connect landing Empezar buttons to the App Onboarding
+    window.openAppOnboarding = function(role) {
+      openProoflyApp(role || 'onboarding');
+    };
+
+</script>
 </body>
 </html>
