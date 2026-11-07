@@ -1,24 +1,19 @@
 /**
- * @proofly/api - Servidor Principal
+ * @proofly/api - Servidor REST Principal
  */
 
-import http from 'node:http';
 import { validateEnv } from './config/env.schema.ts';
+import { createDependencies, createProoflyApiServer, seedDemoData } from './app.ts';
 
 const config = validateEnv(process.env);
+const deps = createDependencies();
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({
-    service: 'Proofly API Core',
-    status: 'online',
-    mode: config.ENV_MODE,
-    chainId: config.CHAIN_ID,
-    timestamp: new Date().toISOString()
-  }));
-});
+await seedDemoData(deps);
+
+const server = createProoflyApiServer(deps);
 
 server.listen(config.PORT, () => {
-  console.log(`[Proofly API] Corriendo en puerto ${config.PORT} en modo [${config.ENV_MODE.toUpperCase()}]`);
+  console.log(`[Proofly Core API] Corriendo en http://localhost:${config.PORT} [MODO: ${config.ENV_MODE.toUpperCase()}]`);
+  console.log(`[Proofly Core API] Base L2 Chain ID: ${config.CHAIN_ID}`);
+  console.log(`[Proofly Core API] Documentación OpenAPI en api/openapi.yaml`);
 });
-
