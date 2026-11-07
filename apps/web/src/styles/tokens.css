@@ -361,32 +361,82 @@ button:active { translate: 0 1px; }
 .proofly-pin-input:focus { outline: 3px solid #D8BAFF; outline-offset: 2px; border-color: #7300FF; }
 
 /* ── Footer wordmark "painted" reveal (S13) ──
-   A slanted gradient mask sweeps left→right as --paint goes 0 → 1, so the
-   cursive "Proofly" appears to be painted on. The angle follows the italic
-   slant of the script font. --paint is driven by GSAP; the registered
-   property lets the browser interpolate the mask smoothly. */
+   Two stacked copies of "Proofly": a light-grey skeleton that is always
+   visible (distinct from the ground), and a brand-violet colour layer on top
+   that a brush "paints" on left→right as --paint goes 0 → 1.
+
+   The reveal is NOT a soft gradient fade: the mask is a SHARP front (a narrow
+   hard edge) so colour fills the grey like a loaded brush, with a short
+   bristle texture at the leading edge instead of a straight line. --paint is
+   driven by GSAP; the registered property lets the browser interpolate it. */
 @property --paint {
   syntax: '<number>';
   inherits: false;
   initial-value: 1;
 }
+
+/* Stack the two layers exactly on top of each other. */
+.wordmark-stack { position: relative; }
+.wordmark-stack > .wordmark-skeleton { position: relative; }
+.wordmark-stack > .footer-wordmark {
+  position: absolute;
+  left: 0; right: 0;
+  margin-inline: auto;
+  text-align: center;
+}
+
+/* Skeleton: light grey, clearly above the ground colour, never blends in. */
+.wordmark-skeleton {
+  color: #DAD7E0;              /* light grey vs. the #F6F5F8 ground */
+  -webkit-text-stroke: 1px #CFCBD8;
+}
+
+/* Colour layer: revealed by a sharp brush front.
+   - Layer 1 (repeating): fine bristle streaks so the fill is not a flat block.
+   - Layer 2 (sweep): a short, slanted HARD transition = the wet brush edge.
+   The two masks are combined so colour only shows where both allow it. */
 .wordmark-paint {
   --paint: 0;
-  -webkit-mask-image: linear-gradient(
-    105deg,
-    #000 0%,
-    #000 calc(var(--paint) * 118% - 20%),
-    transparent calc(var(--paint) * 118% - 2%),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    105deg,
-    #000 0%,
-    #000 calc(var(--paint) * 118% - 20%),
-    transparent calc(var(--paint) * 118% - 2%),
-    transparent 100%
-  );
+  --edge: calc(var(--paint) * 122% - 8%);
+  -webkit-mask-image:
+    repeating-linear-gradient(
+      100deg,
+      #000 0,
+      #000 3px,
+      rgba(0,0,0,0.82) 5px,
+      #000 8px
+    ),
+    linear-gradient(
+      100deg,
+      #000 0%,
+      #000 calc(var(--edge) - 1.5%),
+      rgba(0,0,0,0.35) calc(var(--edge) + 1%),
+      transparent calc(var(--edge) + 3.5%),
+      transparent 100%
+    );
+  -webkit-mask-composite: source-in;
+  mask-image:
+    repeating-linear-gradient(
+      100deg,
+      #000 0,
+      #000 3px,
+      rgba(0,0,0,0.82) 5px,
+      #000 8px
+    ),
+    linear-gradient(
+      100deg,
+      #000 0%,
+      #000 calc(var(--edge) - 1.5%),
+      rgba(0,0,0,0.35) calc(var(--edge) + 1%),
+      transparent calc(var(--edge) + 3.5%),
+      transparent 100%
+    );
+  mask-composite: intersect;
 }
 @media (prefers-reduced-motion: reduce) {
-  .wordmark-paint { --paint: 1 !important; -webkit-mask-image: none !important; mask-image: none !important; }
+  .wordmark-paint {
+    --paint: 1 !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
 }

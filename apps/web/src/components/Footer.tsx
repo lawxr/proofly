@@ -37,27 +37,25 @@ export function Footer({ onPublish }: FooterProps) {
         }
       }
 
-      /* S13: giant cursive wordmark "painted" via a slanted mask sweep.
-         We animate a CSS var --paint on a wrapper; the mask uses it so this
-         never touches the wordmark's own transform (owned by the parallax). */
+      /* S13: the light-grey skeleton wordmark gets "painted" over with brand
+         violet by a sharp brush front sweeping left→right. We animate --paint
+         (0 → 1) on the colour layer itself; its mask uses that var, so this
+         never touches the layer's own transform (owned by the parallax). */
       if (wordmark) {
-        const wrap = wordmark.parentElement as HTMLElement | null;
-        if (wrap) {
-          wrap.classList.add('wordmark-paint');
-          if (reduced) {
-            wrap.style.setProperty('--paint', '1');
-          } else {
-            gsap.fromTo(
-              wrap,
-              { '--paint': 0 } as gsap.TweenVars,
-              {
-                '--paint': 1,
-                duration: 1.8,
-                ease: 'power2.inOut',
-                scrollTrigger: { trigger: wrap, start: 'top 85%' },
-              } as gsap.TweenVars,
-            );
-          }
+        const stack = wordmark.parentElement as HTMLElement | null;
+        if (reduced) {
+          wordmark.style.setProperty('--paint', '1');
+        } else {
+          gsap.fromTo(
+            wordmark,
+            { '--paint': 0 } as gsap.TweenVars,
+            {
+              '--paint': 1,
+              duration: 1.8,
+              ease: 'power2.inOut',
+              scrollTrigger: { trigger: stack ?? wordmark, start: 'top 85%' },
+            } as gsap.TweenVars,
+          );
         }
       }
     }, cta);
@@ -200,11 +198,16 @@ export function Footer({ onPublish }: FooterProps) {
           </div>
         </div>
 
-        {/* Giant Proofly wordmark — bleeds off the edges in brand violet (DESIGN.md) */}
-        <div className="pt-6 sm:pt-10 -mx-6 sm:-mx-14 select-none pointer-events-none overflow-hidden flex justify-center" aria-hidden="true">
+        {/* Giant Proofly wordmark — light-grey skeleton painted over in brand violet */}
+        <div className="wordmark-stack pt-6 sm:pt-10 -mx-6 sm:-mx-14 select-none pointer-events-none overflow-hidden flex justify-center" aria-hidden="true">
+          {/* Skeleton base: always visible, light grey, distinct from the ground */}
+          <div className="wordmark-skeleton font-script text-[25vw] sm:text-[22vw] leading-[0.72] tracking-tight whitespace-nowrap">
+            Proofly
+          </div>
+          {/* Paint layer: brand violet, revealed left→right by the brush mask */}
           <div
             ref={wordmarkRef}
-            className="footer-wordmark font-script text-[25vw] sm:text-[22vw] text-ink leading-[0.72] tracking-tight whitespace-nowrap"
+            className="footer-wordmark wordmark-paint font-script text-[25vw] sm:text-[22vw] text-ink leading-[0.72] tracking-tight whitespace-nowrap"
             style={{ transform: 'translateY(16%)' }}
           >
             Proofly
