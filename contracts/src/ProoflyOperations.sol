@@ -91,6 +91,16 @@ contract ProoflyOperations {
         kycRegistry = IProoflyKYCRegistry(kycRegistryAddress);
     }
 
+    function setOperator(address operator, bool isAllowed) external onlyAdmin {
+        if (operator == address(0)) revert("Invalid address");
+        operators[operator] = isAllowed;
+    }
+
+    function setReconciler(address reconciler, bool isAllowed) external onlyAdmin {
+        if (reconciler == address(0)) revert("Invalid address");
+        reconcilers[reconciler] = isAllowed;
+    }
+
     function mintOperation(
         bytes32 canonicalHmac,
         bytes32 dossierHash,

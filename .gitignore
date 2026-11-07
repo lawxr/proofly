@@ -1,3 +1,6 @@
 node_modules/
 .atl/
 .DS_Store
+contracts/out/
+contracts/cache/
+
