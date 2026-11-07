@@ -6,6 +6,7 @@
   "main": "./dist/main.js",
   "scripts": {
     "build": "tsc",
+    "test": "node --experimental-strip-types --test src/**/*.test.ts",
     "dev": "node --experimental-strip-types src/main.ts",
     "start": "node dist/main.js"
   },
