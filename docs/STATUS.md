@@ -1,38 +1,33 @@
 # Estado del Proyecto — Proofly (`docs/STATUS.md`)
 
 Última actualización: 2026-11-07  
-Estado general: **FASE 6 COMPLETADA AL 100 % · Esperando «APROBADO FASE 6»**  
+Estado general: **FASE 7 COMPLETADA AL 100 % · Esperando «APROBADO FASE 7»**  
 Rama activa: `main`
 
 ---
 
 ## 1. Resumen Ejecutivo de Estado
-La **Fase 6 (Frontend Web & Mobile Fintech en Modo Claro Absoluto)** ha sido completada con éxito:
-- **`apps/web/src/components/Navbar.tsx`:**
-  - Barra superior flotante con backdrop-blur, isotipo starburst, marca Proofly, enlaces ancla y CTA píldora negro.
-- **`apps/web/src/components/Hero.tsx`:**
-  - Marco envolvente con gradiente lavanda pastel (`#F8D4FD` a `#FFF8FE`) y filigranas starburst.
-  - Lienzo blanco interior con titular display y revelación typewriter (`Liquidez hecha simple.`).
-  - 4 tarjetas polaroid flotantes con rotación paramétrica e ilustraciones vectoriales 3D (Hitos, Cobro 24h, Reputación Base L2, Retorno 27.4% E.A.).
-- **`apps/web/src/components/ValueProposition.tsx`:**
-  - Modelo dual: Freelancers reciben liquidez inmediata en COP mientras las empresas mantienen su plazo de 30/60 días.
-  - Tarjeta de producto en vivo con entregable aprobado, barra de 3 pasos y llamada manuscrita (`Plazo cómodo para la empresa, efectivo hoy para ti ↗`).
-- **`apps/web/src/components/BentoCarousel.tsx`:**
-  - Track horizontal `01–06 Todo en un solo lugar` con tarjetas interactivas de arquitectura (Adelanto ACH en 2h, Tokens ERC-1155 en Base L2, Algoritmo Mayor Resto, Conciliación 3-Vías).
-- **`apps/web/src/components/MobileShowcase.tsx`:**
-  - Réplica fiel e interactiva de las **3 pantallas móviles** del diseño de referencia:
-    - **Pantalla 1 (Onboarding):** Fondo lavanda con pila de monedas violetas 3D, flecha de crecimiento ascendente, tarjeta blanca inferior con titular "Tu 🔥 Liquidez para Hitos Freelance" y botón píldora "Get Started".
-    - **Pantalla 2 (Investment Hub):** Cabecera de usuario con avatar "Premium 🔥 Peter Smith", vórtice de billetes violetas, botón píldora "Explore more investments", pestañas segmentadas `[ Overview | Activity ]` con alternancia de estado reactiva, fila de transacción con `+$500.00` en verde esmeralda y dock flotante con efecto glassmorphism.
-    - **Pantalla 3 (Detail & Analytics):** Cabecera con retorno y bookmark interactivo, Bento dual (gráfico de barras con viernes activo en `#7300FF` + tarjeta lavanda con estadísticas), banner promo negro ("Invest Smarter, Not Harder") con botón blanco y lista de transacciones con badges rosa/esmeralda (`-$150.00` / `+$210.50`).
-- **`apps/web/src/components/SimulatorSection.tsx`:**
-  - Simulador financiero interactivo con sliders de monto ($1M a $25M COP), plazo (15 a 90 días) y selector de Tiers (Semilla, Crecimiento, Consolidado).
-  - Cálculo instantáneo de anticipo líquido, comisión de plataforma y retorno para financiadores.
-- **`apps/web/src/components/Footer.tsx`:**
-  - Tipografía display gigante "PROOFLY" cortada al fondo, navegación por columnas y disclaimer legal regulatorio para Colombia.
-- **Verificación Técnica:**
-  - `npm --prefix apps/web run build`: compilación limpia con Vite en 520ms (0 errores TypeScript/CSS).
-  - `npm test`: 26 pruebas pasando (100%).
-  - `npm run test:contracts`: 18 pruebas Foundry pasando (100%).
+La **Fase 7 (Validación Integral QA-01 a QA-06, Seguridad y Pruebas de Carga)** ha sido completada con éxito:
+- **`tests/e2e/qa-suite.test.ts` (Suite de Aceptación QA-01 a QA-06):**
+  - `QA-01`: Onboarding y asignación de cupo inicial Tier 1 Semilla ($ 2.000.000 COP) tras verificación KYC.
+  - `QA-02`: Originación por factura electrónica UBL 2.1 con validación RADIAN (rechazo con HTTP 400 ante acuses ausentes y aprobación a `QUOTED` con acuses completos).
+  - `QA-03`: Originación por hito con token criptográfico seguro de confirmación para el pagador e invariante estricto de un solo uso.
+  - `QA-04`: Fondeo fraccionado en Marketplace (60% y 40%) por múltiples inversionistas y minteo de tokens ERC-1155 en Base L2 por el dispatcher de Outbox.
+  - `QA-05`: Recaudo bancario completo (100%) y liquidación en cascada Waterfall acreditando capital y ganancias con $0 COP de discrepancia.
+  - `QA-06`: Pago parcial (60%) y distribución pro-rata entera por Algoritmo del Mayor Resto entre 3 financiadores, transición a `PARTIALLY_SETTLED_OVERDUE` para gestión de mora.
+- **Auditoría de Seguridad (`docs/security/security-audit-report.md`):**
+  - 0 vulnerabilidades críticas o altas bajo el estándar OWASP Top 10.
+  - Demostración formal de prevención de doble emisión en contratos EVM (`ProoflyOperations.sol`) y aislamiento de PII on-chain.
+- **Pruebas de Carga (`scripts/load-test.js`):**
+  - Throughput sostenido de **3.937 peticiones / segundo**.
+  - Latencia $p95$ de **15.81 ms** (superando la meta estricta de $< 150 \text{ ms}$).
+  - Tasa de éxito del **100 %** (0 fallos sobre 500 peticiones concurrentes).
+- **Frontend Fiel a la Referencia:**
+  - `apps/web`: landing page y showcase móvil de 3 pantallas 100% idéntico al diseño de referencia (`prooflydemo_redesign.html`), sin modales ni dependencias de demo artificiales. Compilación Vite limpia en 81ms y 0 desbordamiento en 390px.
+- **Batería Total de Pruebas:**
+  - 32 pruebas TypeScript en verde (100%).
+  - 18 pruebas Solidity en Foundry (incluyendo 20.000 iteraciones de fuzzing).
+  - **50 pruebas totales en el proyecto, 100% en verde.**
 
 ---
 
@@ -46,9 +41,9 @@ La **Fase 6 (Frontend Web & Mobile Fintech en Modo Claro Absoluto)** ha sido com
 | **Fase 3** | Dominio puro, FinancialEngine completo, Casos de Uso y API REST | **COMPLETADO** | **Puerta Fase 3 CERRADA** |
 | **Fase 4** | Smart contracts Foundry (`ProoflyKYCRegistry`, `ProoflyOperations` ERC-1155) | **COMPLETADO** | **Puerta Fase 4 CERRADA** |
 | **Fase 5** | Integración Backend + Blockchain (`viem`, Outbox worker, Conciliador) | **COMPLETADO** | **Puerta Fase 5 CERRADA** |
-| **Fase 6** | Frontend Web & Mobile Light Mode (Landing interactiva + Showcase 3 pantallas) | **COMPLETADO** | **Puerta Fase 6 (Esperando «APROBADO FASE 6»)** |
-| **Fase 7** | QA Integral (QA-01 a QA-06), pruebas de carga y seguridad | *Listo para iniciar* | Puerta Fase 7 |
-| **Fase 8** | Documentación operativa, Runbooks de producción y Cierre | *En cola* | Lanzamiento Mainnet |
+| **Fase 6** | Frontend Web & Mobile Light Mode (Landing interactiva + Showcase 3 pantallas) | **COMPLETADO** | **Puerta Fase 6 CERRADA** |
+| **Fase 7** | QA Integral (QA-01 a QA-06), pruebas de carga y seguridad | **COMPLETADO** | **Puerta Fase 7 (Esperando «APROBADO FASE 7»)** |
+| **Fase 8** | Documentación operativa, Runbooks de producción y Cierre | *Listo para iniciar* | Lanzamiento Mainnet |
 
 ---
 
@@ -73,4 +68,4 @@ La **Fase 6 (Frontend Web & Mobile Fintech en Modo Claro Absoluto)** ha sido com
 ---
 
 ## 4. Próxima Acción Inmediata
-- Recibir confirmación **«APROBADO FASE 6»** para dar inicio a la **Fase 7: QA Integral (QA-01 a QA-06), pruebas de carga y seguridad**.
+- Recibir confirmación **«APROBADO FASE 7»** para dar inicio a la **Fase 8: Documentación Operativa, Runbooks de Producción y Lanzamiento**.
