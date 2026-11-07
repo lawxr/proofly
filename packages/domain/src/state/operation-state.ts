@@ -16,6 +16,8 @@ export const OperationStatus = {
 } as const;
 
 export type OperationStatus = (typeof OperationStatus)[keyof typeof OperationStatus];
+export const OperationState = OperationStatus;
+export type OperationState = OperationStatus;
 
 export interface StateTransitionEvent {
   from: OperationStatus;

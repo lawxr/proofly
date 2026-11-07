@@ -52,3 +52,4 @@ test('Property-based testing: Advance + Commercial Discount + Fee == Nominal Amo
     assert.ok(quote.effectiveAnnualRate > 0, 'Effective annual rate must be strictly positive');
   }
 });
+

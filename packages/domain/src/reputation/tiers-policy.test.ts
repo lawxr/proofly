@@ -19,3 +19,4 @@ test('TiersPolicy: 5+ successful ops with high score upgrades to Tier 3 (Pro)', 
   assert.equal(tier, FreelancerTier.TIER_3_PRO);
   assert.equal(TiersPolicy.TIER_CONFIG[tier].maxQuotaCents, 2500000000n); // $ 25.000.000 COP
 });
+

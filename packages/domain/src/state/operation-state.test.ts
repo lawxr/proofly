@@ -20,3 +20,4 @@ test('OperationStateMachine: invalid transitions throw error', () => {
     OperationStateMachine.assertCanTransition(OperationStatus.SETTLED, OperationStatus.DRAFT);
   });
 });
+
