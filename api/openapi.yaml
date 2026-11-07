@@ -1,0 +1,433 @@
+openapi: 3.1.0
+info:
+  title: Proofly Core API
+  version: 1.0.0
+  description: >
+    API principal de Proofly para la originación de liquidez para freelancers,
+    marketplace de financiación colectiva en Base L2 y liquidación en cascada (Waterfall).
+servers:
+  - url: https://api.proofly.co/api/v1
+    description: Entorno de Producción (Base Mainnet)
+  - url: https://sandbox-api.proofly.co/api/v1
+    description: Entorno de Sandbox (Base Sepolia + Mocks)
+  - url: http://localhost:3000/api/v1
+    description: Entorno Local de Desarrollo
+
+paths:
+  /quotes/simulate:
+    post:
+      summary: Simulación de cotización de adelanto para Freelancer
+      description: Calcula en milisegundos el descuento, comisiones y adelanto neto en COP.
+      operationId: simulateQuote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteSimulationRequest'
+      responses:
+        '200':
+          description: Cotización calculada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteSimulationResponse'
+
+  /operations/invoice:
+    post:
+      summary: Carga y originación por Factura Electrónica (UBL 2.1)
+      description: Valida el XML y consulta los 3 eventos en RADIAN/DIAN.
+      operationId: createInvoiceOperation
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [xmlFile]
+              properties:
+                xmlFile:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Factura validada y oferta generada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationResponse'
+
+  /operations/milestone:
+    post:
+      summary: Registro de Hito Contractual (Milestone)
+      description: Registra el entregable y despacha el enlace de confirmación al pagador.
+      operationId: createMilestoneOperation
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MilestoneCreationRequest'
+      responses:
+        '201':
+          description: Hito registrado; esperando confirmación del cliente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationResponse'
+
+  /milestones/{token}/confirm:
+    post:
+      summary: Confirmación de Hito por la Empresa Contratante
+      description: Enlace seguro sin registro previo para que el cliente apruebe el hito.
+      operationId: confirmMilestoneByClient
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Hito confirmado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MilestoneConfirmationResponse'
+
+  /operations/{id}/accept-quote:
+    post:
+      summary: Aceptación de cotización y firma de cesión electrónica
+      description: El freelancer aprueba la oferta y firma la cesión de derechos económicos.
+      operationId: acceptQuoteAndSignCession
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [electronicSignatureHash]
+              properties:
+                electronicSignatureHash:
+                  type: string
+      responses:
+        '200':
+          description: Operación publicada en el Marketplace de Financiadores
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationResponse'
+
+  /marketplace:
+    get:
+      summary: Listar operaciones disponibles para financiación
+      description: Retorna el catálogo activo para financiadores con scores y tasas.
+      operationId: listMarketplaceOperations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: minTermDays
+          in: query
+          schema:
+            type: integer
+        - name: maxTermDays
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de operaciones disponibles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MarketplaceOperationSummary'
+
+  /marketplace/{id}/simulate:
+    post:
+      summary: Simulación de participación en tiempo real para Financiador
+      description: Calcula la ganancia neta en COP y fecha estimada de retorno.
+      operationId: simulateParticipation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amountToFundCents]
+              properties:
+                amountToFundCents:
+                  type: integer
+                  format: int64
+                  example: 50000000 # $ 500.000 COP
+      responses:
+        '200':
+          description: Cálculo de ganancia para el monto ingresado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipationSimulationResponse'
+
+  /operations/{id}/participations:
+    post:
+      summary: Adquisición de participaciones de una operación
+      description: Compra de derechos fraccionados respaldados por el contrato ERC-1155.
+      operationId: purchaseParticipation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fundedCapitalCents]
+              properties:
+                fundedCapitalCents:
+                  type: integer
+                  format: int64
+      responses:
+        '201':
+          description: Participación adquirida con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipationResponse'
+
+  /settlement/reconcile:
+    post:
+      summary: Registro de recaudo y ejecución de Cascada Waterfall
+      description: Registra el abono bancario y distribuye capital y rendimientos.
+      operationId: reconcileBankReceipt
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReconciliationRequest'
+      responses:
+        '200':
+          description: Cascada ejecutada y saldos acreditados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconciliationResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    QuoteSimulationRequest:
+      type: object
+      required: [nominalAmountCents, termDays]
+      properties:
+        nominalAmountCents:
+          type: integer
+          format: int64
+          example: 150000000 # $ 1.500.000 COP
+        termDays:
+          type: integer
+          example: 30
+
+    QuoteSimulationResponse:
+      type: object
+      properties:
+        nominalAmountCents:
+          type: integer
+          format: int64
+        advanceAmountCents:
+          type: integer
+          format: int64
+        commercialDiscountCents:
+          type: integer
+          format: int64
+        prooflyFeeCents:
+          type: integer
+          format: int64
+        monthlyRate:
+          type: number
+        effectiveAnnualRate:
+          type: number
+          example: 0.2363 # 23.63 % E.A.
+
+    MilestoneCreationRequest:
+      type: object
+      required: [contractUuid, milestoneIndex, title, deliverableUrl, payerNit, payerEmail, nominalAmountCents, dueDate]
+      properties:
+        contractUuid:
+          type: string
+          format: uuid
+        milestoneIndex:
+          type: integer
+        title:
+          type: string
+        deliverableUrl:
+          type: string
+        payerNit:
+          type: string
+        payerEmail:
+          type: string
+          format: email
+        nominalAmountCents:
+          type: integer
+          format: int64
+        dueDate:
+          type: string
+          format: date
+
+    OperationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        canonicalHmac:
+          type: string
+        status:
+          type: string
+          enum: [DRAFT, PENDING_CLIENT_CONFIRMATION, PENDING_VERIFICATION, QUOTED, APPROVED_PENDING_FUNDING, ACTIVE_FUNDED, DISBURSED, SETTLED, PARTIALLY_SETTLED_OVERDUE, REJECTED_CANCELLED]
+        nominalAmountCents:
+          type: integer
+          format: int64
+        advanceAmountCents:
+          type: integer
+          format: int64
+        dueDate:
+          type: string
+          format: date
+
+    MilestoneConfirmationResponse:
+      type: object
+      properties:
+        confirmed:
+          type: boolean
+        operationId:
+          type: string
+          format: uuid
+        status:
+          type: string
+
+    MarketplaceOperationSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        operationType:
+          type: string
+        freelancerScore:
+          type: integer
+        companyScore:
+          type: integer
+        nominalAmountCents:
+          type: integer
+          format: int64
+        availableToFundCents:
+          type: integer
+          format: int64
+        termDays:
+          type: integer
+        dueDate:
+          type: string
+          format: date
+        effectiveAnnualRate:
+          type: number
+
+    ParticipationSimulationResponse:
+      type: object
+      properties:
+        fundedCapitalCents:
+          type: integer
+          format: int64
+        expectedYieldCents:
+          type: integer
+          format: int64
+        totalReturnAtMaturityCents:
+          type: integer
+          format: int64
+        effectiveAnnualRate:
+          type: number
+
+    ParticipationResponse:
+      type: object
+      properties:
+        participationId:
+          type: string
+          format: uuid
+        operationId:
+          type: string
+          format: uuid
+        fundedCapitalCents:
+          type: integer
+          format: int64
+        expectedYieldCents:
+          type: integer
+          format: int64
+
+    ReconciliationRequest:
+      type: object
+      required: [operationId, bankReference, receivedAmountCents, paymentProofHash]
+      properties:
+        operationId:
+          type: string
+          format: uuid
+        bankReference:
+          type: string
+        receivedAmountCents:
+          type: integer
+          format: int64
+        paymentProofHash:
+          type: string
+
+    ReconciliationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        totalDistributedCents:
+          type: integer
+          format: int64
+        prooflyFeeCollectedCents:
+          type: integer
+          format: int64
+        isFullySettled:
+          type: boolean
+
