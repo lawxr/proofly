@@ -199,7 +199,7 @@ export function Footer({ onPublish }: FooterProps) {
         </div>
 
         {/* Giant Proofly wordmark — light-grey skeleton painted over in brand violet */}
-        <div className="wordmark-stack pt-6 sm:pt-10 -mx-6 sm:-mx-14 select-none pointer-events-none overflow-hidden flex justify-center" aria-hidden="true">
+        <div className="wordmark-stack pt-6 sm:pt-10 -mx-6 sm:-mx-14 select-none pointer-events-none overflow-hidden" aria-hidden="true">
           {/* Skeleton base: always visible, light grey, distinct from the ground */}
           <div className="wordmark-skeleton font-script text-[25vw] sm:text-[22vw] leading-[0.72] tracking-tight whitespace-nowrap">
             Proofly

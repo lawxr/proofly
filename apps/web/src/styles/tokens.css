@@ -365,25 +365,19 @@ button:active { translate: 0 1px; }
    visible (distinct from the ground), and a brand-violet colour layer on top
    that a brush "paints" on left→right as --paint goes 0 → 1.
 
-   The reveal is NOT a soft gradient fade: the mask is a SHARP front (a narrow
-   hard edge) so colour fills the grey like a loaded brush, with a short
-   bristle texture at the leading edge instead of a straight line. --paint is
-   driven by GSAP; the registered property lets the browser interpolate it. */
+   Both layers share one CSS-grid cell so they center identically (pixel-
+   perfect). The reveal is a single sharp brush front — colour fills the grey
+   like a loaded brush, not a soft gradient. */
 @property --paint {
   syntax: '<number>';
   inherits: false;
   initial-value: 1;
 }
 
-/* Stack the two layers exactly on top of each other. */
-.wordmark-stack { position: relative; }
-.wordmark-stack > .wordmark-skeleton { position: relative; }
-.wordmark-stack > .footer-wordmark {
-  position: absolute;
-  left: 0; right: 0;
-  margin-inline: auto;
-  text-align: center;
-}
+/* Both layers occupy the same grid cell → identical centering. */
+.wordmark-stack { display: grid; justify-items: center; }
+.wordmark-stack > .wordmark-skeleton,
+.wordmark-stack > .footer-wordmark { grid-area: 1 / 1; }
 
 /* Skeleton: light grey, clearly above the ground colour, never blends in. */
 .wordmark-skeleton {
@@ -391,47 +385,24 @@ button:active { translate: 0 1px; }
   -webkit-text-stroke: 1px #CFCBD8;
 }
 
-/* Colour layer: revealed by a sharp brush front.
-   - Layer 1 (repeating): fine bristle streaks so the fill is not a flat block.
-   - Layer 2 (sweep): a short, slanted HARD transition = the wet brush edge.
-   The two masks are combined so colour only shows where both allow it. */
+/* Colour layer: revealed by a single sharp brush front sweeping left→right. */
 .wordmark-paint {
   --paint: 0;
   --edge: calc(var(--paint) * 122% - 8%);
-  -webkit-mask-image:
-    repeating-linear-gradient(
-      100deg,
-      #000 0,
-      #000 3px,
-      rgba(0,0,0,0.82) 5px,
-      #000 8px
-    ),
-    linear-gradient(
-      100deg,
-      #000 0%,
-      #000 calc(var(--edge) - 1.5%),
-      rgba(0,0,0,0.35) calc(var(--edge) + 1%),
-      transparent calc(var(--edge) + 3.5%),
-      transparent 100%
-    );
-  -webkit-mask-composite: source-in;
-  mask-image:
-    repeating-linear-gradient(
-      100deg,
-      #000 0,
-      #000 3px,
-      rgba(0,0,0,0.82) 5px,
-      #000 8px
-    ),
-    linear-gradient(
-      100deg,
-      #000 0%,
-      #000 calc(var(--edge) - 1.5%),
-      rgba(0,0,0,0.35) calc(var(--edge) + 1%),
-      transparent calc(var(--edge) + 3.5%),
-      transparent 100%
-    );
-  mask-composite: intersect;
+  -webkit-mask-image: linear-gradient(
+    100deg,
+    #000 0%,
+    #000 calc(var(--edge) - 1.5%),
+    transparent calc(var(--edge) + 2%),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    100deg,
+    #000 0%,
+    #000 calc(var(--edge) - 1.5%),
+    transparent calc(var(--edge) + 2%),
+    transparent 100%
+  );
 }
 @media (prefers-reduced-motion: reduce) {
   .wordmark-paint {
@@ -440,3 +411,7 @@ button:active { translate: 0 1px; }
     mask-image: none !important;
   }
 }
+.proofly-pin-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.proofly-pin-grid input { width: 100%; min-width: 0; height: 76px; border: 1.5px solid #D9C3F1; border-radius: 16px; background: #FFF8FE; color: #7300FF; font-size: 32px; text-align: center; }
+.proofly-pin-grid input:focus { outline: 3px solid #D8BAFF; outline-offset: 2px; border-color: #7300FF; }
+@media (max-width: 359px) { .proofly-pin-grid { gap: 8px; } .proofly-pin-grid input { height: 64px; border-radius: 12px; } }
