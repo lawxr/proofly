@@ -74,6 +74,7 @@ export default function AppShell() {
   const [raiseTerm, setRaiseTerm] = useState('30');
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   const [attachment, setAttachment] = useState<string>('');
+  const [investFilter, setInvestFilter] = useState<'ALL' | 'INVOICE' | 'MILESTONE'>('ALL');
   const [accepted, setAccepted] = useState(false);
   function toggleCheck(key: string) { setChecks(c => ({ ...c, [key]: !c[key] })); }
   const [notice, setNotice] = useState('');
@@ -182,11 +183,32 @@ export default function AppShell() {
     if (next) { const latest = data?.events[0]?.id || ''; setSeen(latest); try { localStorage.setItem('proofly-seen-event', latest); } catch { /* ignore */ } }
   }
 
-  const opRow = (op: Operation) => <button key={op.id} className="app-row" onClick={() => open(op)}>
-    <span className="app-row-icon"><Icon name={op.assetType === 'MILESTONE' ? 'growth' : 'file'} size={20}/></span>
-    <span className="app-row-body"><strong>{op.title}</strong><span>{op.payerLegalName} · {op.termDays} días</span></span>
-    <span className="app-row-end"><strong>{money(op.nominalAmountCents)}</strong><span className="app-row-rate">{percent(op.effectiveAnnualRate)}</span></span>
-  </button>;
+  // Rich opportunity card for the invest market: sells the return and shows risk + funding.
+  const opCard = (op: Operation) => {
+    const funded = Number(op.fundedCapitalCents);
+    const advance = Number(op.advanceAmountCents);
+    const pct = advance > 0 ? Math.min(100, Math.round(funded / advance * 100)) : 0;
+    // Estimated profit on the remaining fundable amount, at the operation's E.A. over its term.
+    const remaining = BigInt(op.remainingFundingCents);
+    const estProfit = remaining > 0n ? (remaining * BigInt(Math.round(op.effectiveAnnualRate * op.termDays / 365 * 1e6))) / 1000000n : 0n;
+    return <button key={op.id} className="app-op-card" onClick={() => open(op)}>
+      <div className="app-op-top">
+        <span className="app-op-icon"><Icon name={op.assetType === 'MILESTONE' ? 'growth' : 'file'} size={18}/></span>
+        <div className="app-op-ident"><strong>{op.title}</strong><span>{op.payerLegalName}</span></div>
+        <span className="app-op-rate">{percent(op.effectiveAnnualRate)}</span>
+      </div>
+      <div className="app-op-figures">
+        <div><span>Monto</span><strong>{money(op.nominalAmountCents)}</strong></div>
+        <div><span>Ganancia estimada</span><strong className="app-positive">+{money(estProfit.toString())}</strong></div>
+        <div><span>Plazo</span><strong>{op.termDays} días</strong></div>
+      </div>
+      <div className="app-op-progress"><i style={{ width: `${pct}%` }}/></div>
+      <div className="app-op-foot">
+        <span>{pct}% fondeada · faltan {money(op.remainingFundingCents)}</span>
+        <span className="app-op-scores" title="Entrega del freelancer · Solvencia de la empresa"><Icon name="check" size={13}/> {op.freelancerExecutionScore}/100 · {op.payerSolvencyScore}/100</span>
+      </div>
+    </button>;
+  };
   // Own operations show the lifecycle step, so the raise flow reads as a tracker.
   const mineRow = (op: Operation) => <button key={op.id} className="app-row" onClick={() => open(op)}>
     <span className="app-row-icon"><Icon name={op.assetType === 'MILESTONE' ? 'growth' : 'file'} size={20}/></span>
@@ -313,13 +335,30 @@ export default function AppShell() {
               </div>}
         </>}
 
-        {page === 'invest' && <>
-          <h1 className="app-title">Invertir</h1>
-          <p className="app-lead">Aporta capital a operaciones de otros y recibe un retorno al vencimiento.</p>
-          {market.length
-            ? <div className="app-list">{market.map(opRow)}</div>
-            : <p className="app-muted">Pronto habrá operaciones disponibles para invertir.</p>}
-        </>}
+        {page === 'invest' && (() => {
+          const filtered = market.filter(op => investFilter === 'ALL' || op.assetType === investFilter);
+          const bestRate = market.reduce((m, op) => Math.max(m, op.effectiveAnnualRate), 0);
+          return <>
+            <h1 className="app-title">Invertir</h1>
+            <p className="app-lead">Aporta capital a operaciones verificadas y recibe tu retorno al vencimiento, en pesos.</p>
+            {market.length > 0 && <section className="app-invest-summary">
+              <div><span>Oportunidades</span><strong>{market.length}</strong></div>
+              <div><span>Retorno hasta</span><strong className="app-positive">{percent(bestRate)}</strong></div>
+              <div><span>Respaldo</span><strong>Entregas confirmadas</strong></div>
+            </section>}
+            {market.length > 0 && <div className="app-segments" role="tablist">
+              {([['ALL', 'Todas'], ['INVOICE', 'Facturas'], ['MILESTONE', 'Hitos']] as const).map(([k, label]) =>
+                <button key={k} role="tab" aria-selected={investFilter === k} className={investFilter === k ? 'is-on' : ''} onClick={() => setInvestFilter(k)}>{label}</button>)}
+            </div>}
+            {filtered.length
+              ? <div className="app-op-grid">{filtered.map(opCard)}</div>
+              : <div className="app-empty">
+                  <span className="app-empty-icon"><Icon name="growth" size={26}/></span>
+                  <strong>{market.length ? 'Nada en este filtro' : 'Aún no hay operaciones'}</strong>
+                  <p>{market.length ? 'Prueba con otro tipo de operación.' : 'Cuando haya facturas o hitos disponibles para invertir, aparecerán aquí.'}</p>
+                </div>}
+          </>;
+        })()}
 
         {page === 'raise' && <>
           <div className="app-sec-head"><h1 className="app-title">Anticipar</h1><button className="app-primary app-primary-sm" onClick={() => openCreate('INVOICE')}><Icon name="plus" size={16}/>Nueva</button></div>
@@ -358,7 +397,6 @@ export default function AppShell() {
       const allConfirmed = required.every(k => checks[k]);
       const confirmedCount = required.filter(k => checks[k]).length;
       return <Modal title="Anticipar cobro" onClose={() => { setCreating(false); setError(''); }}>
-        <span className="app-account-badge"><Icon name="growth" size={14}/> Desde tu cuenta única Proofly</span>
         <div className="app-asset-tabs" role="tablist">
           <button type="button" role="tab" aria-selected={isInvoice} className={isInvoice ? 'is-on' : ''} onClick={() => { setKind('INVOICE'); setChecks({}); }}><Icon name="file" size={16}/> Factura</button>
           <button type="button" role="tab" aria-selected={!isInvoice} className={!isInvoice ? 'is-on' : ''} onClick={() => { setKind('MILESTONE'); setChecks({}); setAttachment(''); }}><Icon name="bolt" size={16}/> Hito</button>

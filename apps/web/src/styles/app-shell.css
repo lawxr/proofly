@@ -117,6 +117,31 @@
 .app-twin-go { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; background: #F4ECFE; color: #7300FF; display: grid; place-items: center; transition: background .18s, transform .18s; }
 .app-twin-card:hover .app-twin-go { background: #7300FF; color: #fff; transform: translateX(2px); }
 
+/* Invest market: summary strip, segmented filter, opportunity cards */
+.app-segments { display: inline-flex; gap: 4px; background: #F4ECFE; border-radius: 999px; padding: 4px; }
+.app-segments button { min-height: 38px; border: 0; border-radius: 999px; background: transparent; color: #6C577E; font-size: 13px; font-weight: 700; padding: 8px 18px; transition: background .16s, color .16s; }
+.app-segments button.is-on { background: #fff; color: #7300FF; box-shadow: 0 2px 8px -3px #38165533; }
+.app-invest-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #fff; border: 1px solid #EFE4FA; border-radius: 18px; padding: 16px; }
+.app-invest-summary > div { display: grid; gap: 3px; }
+.app-invest-summary span { font-size: 11px; color: #8B769D; }
+.app-invest-summary strong { font-size: 15px; font-weight: 800; letter-spacing: -.02em; }
+.app-op-grid { display: grid; gap: 14px; }
+.app-op-card { display: grid; gap: 14px; text-align: left; background: #fff; border: 1px solid #EFE4FA; border-radius: 20px; padding: 18px; color: #1E0B3B; box-shadow: 0 8px 22px -18px #3816551f; transition: transform .16s, box-shadow .16s; }
+.app-op-card:hover { transform: translateY(-2px); box-shadow: 0 16px 34px -20px #7300ff5c; }
+.app-op-top { display: flex; align-items: center; gap: 12px; }
+.app-op-icon { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: #F2E8FD; color: #7300FF; display: grid; place-items: center; }
+.app-op-ident { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.app-op-ident strong { font-size: 15px; font-weight: 800; letter-spacing: -.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-op-ident span { font-size: 12px; color: #8B769D; }
+.app-op-rate { background: #F2E8FD; color: #7300FF; font-size: 12px; font-weight: 800; padding: 6px 10px; border-radius: 999px; white-space: nowrap; }
+.app-op-figures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.app-op-figures span { display: block; font-size: 10px; color: #8B769D; }
+.app-op-figures strong { display: block; font-size: 14px; font-weight: 800; margin-top: 3px; letter-spacing: -.02em; }
+.app-op-progress { height: 6px; background: #F0E6FA; border-radius: 999px; overflow: hidden; }
+.app-op-progress i { display: block; height: 100%; background: linear-gradient(90deg, #7300FF, #A855F7); border-radius: 999px; }
+.app-op-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 11px; color: #8B769D; }
+.app-op-scores { display: inline-flex; align-items: center; gap: 4px; color: #187140; font-weight: 600; white-space: nowrap; }
+
 /* Designed empty state */
 .app-empty { display: grid; justify-items: center; text-align: center; gap: 8px; background: #fff; border: 1px dashed #E0CEF3; border-radius: 22px; padding: 30px 24px; }
 .app-empty-icon { width: 54px; height: 54px; border-radius: 50%; background: #F4ECFE; color: #7300FF; display: grid; place-items: center; margin-bottom: 4px; }
@@ -216,8 +241,7 @@
 .app-preview strong { color: #7300FF; }
 .app-done { display: grid; justify-items: center; gap: 8px; padding: 20px; background: #EDF8F1; border-radius: 18px; color: #187140; }
 
-/* Raise flow: account badge, asset tabs, quote, event checklist, attachment */
-.app-account-badge { display: inline-flex; align-items: center; gap: 7px; background: #F2E8FD; color: #7300FF; border-radius: 999px; padding: 7px 14px; font-size: 12px; font-weight: 700; margin-bottom: 16px; }
+/* Raise flow: asset tabs, quote, event checklist, attachment */
 .app-asset-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #F4ECFE; border-radius: 16px; padding: 5px; margin-bottom: 18px; }
 .app-asset-tabs button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border: 0; border-radius: 12px; background: transparent; color: #6C577E; font-weight: 700; font-size: 14px; transition: background .16s, color .16s; }
 .app-asset-tabs button.is-on { background: #7300FF; color: #fff; box-shadow: 0 6px 16px -8px #7300ff99; }

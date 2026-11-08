@@ -66,9 +66,10 @@ try {
   await page.locator('.app-screen-head .app-back').click();
   await page.locator('.app-title').waitFor();
 
-  // Invest in someone else's operation.
+  // Invest in someone else's operation (rich opportunity cards).
   await nav().getByRole('button', { name: 'Invertir', exact: true }).click();
-  await page.locator('.app-row').filter({ hasText: 'Diseño de identidad' }).click();
+  assert.ok(await page.locator('.app-op-card').count() >= 1, 'invest shows opportunity cards');
+  await page.locator('.app-op-card').filter({ hasText: 'Diseño de identidad' }).click();
   const amountInput = page.getByLabel('¿Cuánto quieres invertir? (COP)');
   await amountInput.waitFor();
   const remainingCents = await amountInput.getAttribute('data-remaining-cents');
@@ -143,7 +144,7 @@ try {
       await page.goto(`${base}/app/#${route}`);
       await page.locator('.proofly-app').waitFor();
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `${route} overflows at ${width}`);
-      const clipped = await page.locator('.app-twin-card, .app-row, .app-balance, .app-dock').evaluateAll(els => els.filter(el => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > innerWidth + 1).length);
+      const clipped = await page.locator('.app-twin-card, .app-op-card, .app-hero-balance, .app-invest-summary, .app-dock').evaluateAll(els => els.filter(el => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > innerWidth + 1).length);
       assert.equal(clipped, 0, `Clipped content on ${route} at ${width}`);
     }
   }
@@ -156,5 +157,5 @@ try {
   await page.goto(`${base}/app/`);
   await page.waitForURL('**/login');
   assert.deepEqual(errors, []);
-  console.log('PASS: signup without a name (KYC provides it); KYC in settings unlocks operating; redesigned raise form (asset tabs, live "recibes hoy", event checklist with states, conditional invoice attachment, submit gated on confirmations); invest live estimate + settlement; seed tier one active op; reload persists; five routes clean 320-1440; no JS errors.');
+  console.log('PASS: signup without a name (KYC provides it); KYC unlocks operating; invest market with summary, filter and rich opportunity cards; redesigned raise form (asset tabs, live quote, event checklist, conditional invoice attachment, gated submit); invest live estimate + settlement; seed tier one active op; reload persists; five routes clean 320-1440; no JS errors.');
 } finally { await browser.close(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }

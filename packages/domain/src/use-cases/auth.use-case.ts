@@ -21,12 +21,16 @@ export interface RegisterUserDto {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // A provisional display name from the email local-part, until KYC provides the
-// legal name. e.g. "ana.ruiz" -> "Ana Ruiz".
+// legal name. e.g. "ana.ruiz" -> "Ana Ruiz". If the local-part has no readable
+// word (only digits/symbols), fall back to a neutral label rather than a raw id.
 function provisionalName(email: string): string {
-  const local = email.split('@')[0] || 'Usuario';
-  const words = local.split(/[._-]+/).filter(Boolean).slice(0, 3)
+  const local = email.split('@')[0] || '';
+  const words = local.split(/[._+-]+/)
+    .map(w => w.replace(/\d+/g, '').trim())
+    .filter(w => w.length >= 2)
+    .slice(0, 3)
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-  return words.join(' ') || 'Usuario';
+  return words.length ? words.join(' ') : 'Nuevo usuario';
 }
 
 export class RegisterUserUseCase {
