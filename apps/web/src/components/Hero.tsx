@@ -115,14 +115,7 @@ export function Hero({ onPublish, onSimulate, onEcosistema, onAppMovil }: HeroPr
   return (
     <section id="hero" className="proofly-hero" ref={rootRef}>
         <header className="w-full flex items-center justify-between relative z-30 proofly-header">
-          <a href="#" aria-label="Proofly Inicio" className="inline-flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric rounded-lg">
-            <img
-              src="/assets/proofly/proofly-symbol.svg"
-              alt="Proofly símbolo"
-              width="32"
-              height="32"
-              className="w-8 h-8"
-            />
+          <a href="#" aria-label="Proofly Inicio" className="inline-flex items-center group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric rounded-lg">
             <span className="font-script text-3xl sm:text-4xl tracking-tight text-ink select-none">Proofly</span>
           </a>
 

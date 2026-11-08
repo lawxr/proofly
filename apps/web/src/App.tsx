@@ -4,8 +4,8 @@ import { Hero } from './components/Hero';
 import { ValueProposition } from './components/ValueProposition';
 import { BentoCarousel } from './components/BentoCarousel';
 import { Footer } from './components/Footer';
-import { DemoLogin } from './components/DemoLogin';
-const DemoApp = lazy(() => import('./components/DemoApp'));
+import { AuthScreen } from './components/AuthScreen';
+const AppShell = lazy(() => import('./components/AppShell'));
 
 export type Milestone = {
   title: string;
@@ -24,8 +24,8 @@ function scrollTo(id: string) {
 export default function App() {
   const openDemo = () => { window.location.assign('/login'); };
 
-  if (/^\/login\/?$/.test(window.location.pathname)) return <DemoLogin />;
-  if (/^\/app(?:\/|$)/.test(window.location.pathname)) return <Suspense fallback={<main className="proofly-login text-electric" role="status">Abriendo Proofly…</main>}><DemoApp /></Suspense>;
+  if (/^\/login\/?$/.test(window.location.pathname)) return <AuthScreen />;
+  if (/^\/app(?:\/|$)/.test(window.location.pathname)) return <Suspense fallback={<main className="proofly-login text-electric" role="status">Abriendo Proofly…</main>}><AppShell /></Suspense>;
 
   return (
     <div className="min-h-screen bg-canvas text-ink selection:bg-electric selection:text-white">

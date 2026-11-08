@@ -40,7 +40,7 @@ try {
   await page.getByRole('button', { name: /Anticipar/ }).first().waitFor();
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: '/private/tmp/proofly-violet-app-mobile.png', fullPage: true });
-  const ctaAboveDock = await page.locator('.demo-dual-card').first().evaluate(element => element.getBoundingClientRect().top < document.querySelector('.demo-mobile-dock').getBoundingClientRect().top - 8);
+  const ctaAboveDock = await page.locator('.app-dual-card').first().evaluate(element => element.getBoundingClientRect().top < document.querySelector('.app-mobile-dock').getBoundingClientRect().top - 8);
   assert.ok(ctaAboveDock, 'Home cards must sit above the fixed mobile dock.');
   assert.equal(await page.locator('.sidebar').count(), 0, 'The legacy blue UI must not be mounted.');
   // No "demo"/"sandbox" wording anywhere in the visible app.
@@ -63,14 +63,14 @@ try {
   const confirm = page.getByRole('button', { name: 'Confirmar participación', exact: true });
   await Promise.race([
     confirm.waitFor({ timeout: 8000 }),
-    page.locator('.demo-dialog .demo-error').waitFor({ timeout: 8000 }).then(async () => { throw new Error('simulate error: ' + await page.locator('.demo-dialog .demo-error').innerText()); }),
+    page.locator('.app-dialog .app-error').waitFor({ timeout: 8000 }).then(async () => { throw new Error('simulate error: ' + await page.locator('.app-dialog .app-error').innerText()); }),
   ]);
   await confirm.click();
   await page.getByRole('button', { name: 'Registrar recaudo total', exact: true }).click();
   await page.getByText('Recaudo distribuido', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
   await nav().getByRole('button', { name: 'Portafolio', exact: true }).click();
-  assert.equal(await page.locator('.demo-position').count(), 1);
+  assert.equal(await page.locator('.app-position').count(), 1);
   // Create an operation as the same person (raising liquidity).
   await nav().getByRole('button', { name: 'Operaciones', exact: true }).click();
   await page.getByRole('button', { name: 'Nueva operación', exact: true }).click();
@@ -102,15 +102,15 @@ try {
     await page.setViewportSize({ width, height: 844 });
     for (const route of ['home', 'operations', 'market', 'portfolio', 'history']) {
       await page.goto(`${base}/app/#${route}`);
-      await page.locator('.proofly-demo').waitFor();
+      await page.locator('.proofly-app').waitFor();
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${route} overflows at ${width}`);
-      const clipped = await page.locator('.demo-metric > strong, .demo-operation, .demo-mobile-dock, .demo-welcome').evaluateAll(elements => elements.filter(element => element.getBoundingClientRect().width > 0 && (element.scrollWidth > element.clientWidth + 1 || element.getBoundingClientRect().right > innerWidth + 1)).length);
+      const clipped = await page.locator('.app-metric > strong, .app-operation, .app-mobile-dock, .app-welcome').evaluateAll(elements => elements.filter(element => element.getBoundingClientRect().width > 0 && (element.scrollWidth > element.clientWidth + 1 || element.getBoundingClientRect().right > innerWidth + 1)).length);
       assert.equal(clipped, 0, `Clipped app content on ${route} at ${width}`);
     }
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(`${base}/app/#home`);
-  await page.locator('.demo-sidebar').waitFor({ state: 'visible' });
+  await page.locator('.app-sidebar').waitFor({ state: 'visible' });
   await page.screenshot({ path: '/private/tmp/proofly-violet-app-desktop.png', fullPage: true });
   await page.getByRole('button', { name: 'Salir', exact: true }).first().click();
   await page.waitForURL('**/login');

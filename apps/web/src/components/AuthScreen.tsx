@@ -6,7 +6,7 @@ type View = 'welcome' | 'login' | 'signup';
 function BrandAside() {
   return (
     <aside className="auth-aside" aria-hidden="true">
-      <a href="/" className="auth-aside-brand"><img src="/assets/proofly/proofly-symbol-white.svg" alt=""/>Proofly</a>
+      <a href="/" className="auth-aside-brand">Proofly</a>
       <div className="auth-aside-body">
         <img className="auth-aside-art" src="/assets/proofly/ilustracion-crecer.png" alt=""/>
         <h2>Invierte y anticipa tu capital.</h2>
@@ -37,7 +37,7 @@ async function post(path: string, body: Record<string, unknown>) {
   return { ok: response.ok, status: response.status, data } as const;
 }
 
-export function DemoLogin() {
+export function AuthScreen() {
   const [view, setView] = useState<View>('welcome');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
