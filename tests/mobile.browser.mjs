@@ -25,6 +25,9 @@ try {
   await page.goto(base);
   await page.getByRole('button', { name: 'Empezar', exact: true }).click();
   await page.waitForURL('**/login');
+  // Welcome screen → go to the sign-in form.
+  await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
+  await page.getByLabel('Correo electrónico').fill('andres@proofly.co');
   const boxes = page.locator('[data-pin-digit]');
   assert.equal(await boxes.count(), 4);
   await boxes.nth(0).fill('1');
@@ -37,21 +40,25 @@ try {
   }, pin);
   assert.ok(await boxes.evaluateAll(elements => elements.map(element => element.value).join('')) === pin, 'Four-box paste failed.');
   await page.screenshot({ path: '/private/tmp/proofly-four-digit-pin.png' });
-  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  // The form submit button carries the same label; target the one inside the form.
+  await page.locator('form.auth-form').getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
   await page.waitForURL('**/app/');
-  // A single identity: the same person invests and raises. Default intent is invest.
-  await page.getByRole('heading', { name: 'Haz crecer tu dinero', exact: true }).waitFor();
+  // A single identity: the same person invests and raises.
+  await page.getByRole('heading', { name: 'Tu capital, más flexible', exact: true }).waitFor();
+  // Home shows the two twin intent cards.
+  await page.getByRole('button', { name: /Invertir/ }).first().waitFor();
+  await page.getByRole('button', { name: /Anticipar/ }).first().waitFor();
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: '/private/tmp/proofly-violet-app-mobile.png', fullPage: true });
-  const ctaAboveDock = await page.locator('.demo-welcome .demo-primary').evaluate(element => element.getBoundingClientRect().bottom < document.querySelector('.demo-mobile-dock').getBoundingClientRect().top - 8);
-  assert.ok(ctaAboveDock, 'Home action must remain above the fixed mobile dock.');
+  const ctaAboveDock = await page.locator('.demo-dual-card').first().evaluate(element => element.getBoundingClientRect().top < document.querySelector('.demo-mobile-dock').getBoundingClientRect().top - 8);
+  assert.ok(ctaAboveDock, 'Home cards must sit above the fixed mobile dock.');
   assert.equal(await page.locator('.sidebar').count(), 0, 'The legacy blue UI must not be mounted.');
   // No "demo"/"sandbox" wording anywhere in the visible app.
   const forbidden = await page.evaluate(() => /\b(demo|sandbox|simulad)/i.test(document.body.innerText));
   assert.equal(forbidden, false, 'Visible app must not expose demo/sandbox wording.');
   // The two balances are shown as distinct, labelled cards (never summed).
-  await page.getByText('Cupo disponible para adelantos', { exact: true }).waitFor();
   await page.getByText('Capital invertido', { exact: true }).waitFor();
+  await page.getByText('Cupo para anticipar', { exact: true }).waitFor();
   const nav = () => page.getByRole('navigation', { name: 'Navegación móvil' });
   // Invest in someone else's operation from the market.
   await nav().getByRole('button', { name: 'Mercado', exact: true }).click();
@@ -74,8 +81,7 @@ try {
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
   await nav().getByRole('button', { name: 'Portafolio', exact: true }).click();
   assert.equal(await page.locator('.demo-position').count(), 1);
-  // Switch intent to raise, and create an operation as the same person.
-  await page.getByRole('button', { name: 'Financiarme', exact: true }).click();
+  // Create an operation as the same person (raising liquidity).
   await nav().getByRole('button', { name: 'Operaciones', exact: true }).click();
   await page.getByRole('button', { name: 'Nueva operación', exact: true }).click();
   await page.getByRole('dialog').getByLabel('Tipo de operación').selectOption('MILESTONE');

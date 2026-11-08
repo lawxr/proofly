@@ -1,0 +1,77 @@
+/* Login / signup — mobile-first, split-screen on desktop. Proofly light mode. */
+.auth-shell { min-height: 100svh; background: #FFF8FE; color: #1E0B3B; font-family: 'Plus Jakarta Sans', sans-serif; display: grid; grid-template-columns: 1fr; }
+.auth-shell * { box-sizing: border-box; }
+.auth-shell button { cursor: pointer; font: inherit; }
+
+/* Brand side — hidden on mobile, shown as the left half on desktop. */
+.auth-aside { display: none; }
+
+.auth-panel { display: grid; place-items: center; padding: 28px 22px; min-width: 0; }
+.auth-card { width: min(100%, 420px); display: grid; gap: 0; }
+
+/* Welcome */
+.auth-welcome { display: grid; justify-items: center; text-align: center; gap: 4px; }
+.auth-welcome-art { width: min(74%, 300px); height: auto; margin-bottom: 8px; filter: drop-shadow(0 18px 34px #7300ff22); }
+.auth-welcome h1 { font-size: clamp(30px, 8vw, 40px); font-weight: 800; letter-spacing: -.05em; line-height: 1.05; margin: 0; }
+.auth-welcome-sub { font-size: clamp(18px, 5vw, 22px); font-weight: 800; letter-spacing: -.04em; color: #1E0B3B; margin: 2px 0 0; }
+.auth-welcome-lead { font-size: 14px; line-height: 1.7; color: #5B4576; margin: 14px 0 26px; max-width: 360px; }
+.auth-welcome .auth-primary { width: 100%; }
+.auth-dots { display: flex; gap: 7px; margin-top: 26px; }
+.auth-dots i { width: 7px; height: 7px; border-radius: 50%; background: #E0CEF3; }
+.auth-dots i.is-active { width: 20px; border-radius: 999px; background: #7300FF; }
+
+/* Shared controls */
+.auth-primary { min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 24px; border: 0; border-radius: 999px; background: #7300FF; color: #fff; font-weight: 800; font-size: 14px; transition: background .18s, transform .18s; }
+.auth-primary:hover { background: #5200B8; transform: translateY(-1px); }
+.auth-primary:disabled { opacity: .6; cursor: wait; transform: none; }
+.auth-link { margin-top: 16px; min-height: 44px; background: transparent; border: 0; color: #7300FF; font-weight: 700; font-size: 14px; }
+.auth-link:hover { text-decoration: underline; }
+.auth-home { margin-top: 22px; min-height: 44px; display: flex; align-items: center; justify-content: center; color: #7300FF; font-size: 13px; text-decoration: none; }
+.auth-home:hover { text-decoration: underline; }
+
+/* Forms */
+.auth-form-wrap { position: relative; }
+.auth-back { position: absolute; top: -4px; left: -4px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #EADDF3; background: #fff; color: #7300FF; font-size: 18px; line-height: 1; }
+.auth-back:hover { background: #F4E9FF; }
+.auth-form-wrap h1 { font-size: clamp(26px, 6.5vw, 32px); font-weight: 800; letter-spacing: -.04em; margin: 44px 0 0; }
+.auth-form-lead { font-size: 14px; line-height: 1.7; color: #5B4576; margin: 10px 0 24px; }
+.auth-form { display: grid; gap: 16px; }
+.auth-label { display: grid; gap: 8px; font-size: 12px; font-weight: 700; color: #3A1670; }
+.auth-label input { width: 100%; min-height: 52px; border: 1px solid #E2D2F0; border-radius: 14px; background: #fff; color: #1E0B3B; font-size: 15px; padding: 12px 16px; }
+.auth-label input:focus { outline: 3px solid #D8BAFF; outline-offset: 1px; border-color: #7300FF; }
+.auth-pin { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; }
+.auth-pin legend { font-size: 12px; font-weight: 700; color: #3A1670; padding: 0; }
+.auth-form .auth-primary { width: 100%; margin-top: 4px; }
+.auth-note { font-size: 12px; line-height: 1.7; color: #6C577E; background: #F4E9FF; border: 1px solid #EADCF9; border-radius: 14px; padding: 12px 14px; margin: 0; }
+.auth-error { border: 1px solid #F5CAD8; background: #FFF2F6; border-radius: 12px; color: #A72353; padding: 12px 14px; font-size: 12px; line-height: 1.6; margin: 0; }
+.auth-switch { font-size: 13px; color: #5B4576; margin: 22px 0 0; text-align: center; }
+.auth-switch button { background: transparent; border: 0; color: #7300FF; font-weight: 700; }
+.auth-switch button:hover { text-decoration: underline; }
+
+/* PIN grid (reuses tokens.css .proofly-pin-grid base; tighten height here) */
+.auth-pin .proofly-pin-grid input { height: 64px; font-size: 28px; }
+
+/* Desktop: split screen. */
+@media (min-width: 1024px) {
+  .auth-shell { grid-template-columns: 1.05fr 1fr; }
+  .auth-aside { display: flex; flex-direction: column; justify-content: space-between; padding: 44px 48px; color: #fff; background: linear-gradient(150deg, #7300FF 0%, #5200B8 55%, #3A0E72 100%); position: relative; overflow: hidden; }
+  .auth-aside::after { content: ''; position: absolute; inset: auto -120px -140px auto; width: 360px; height: 360px; border-radius: 50%; background: #ffffff1f; }
+  .auth-aside-brand { display: inline-flex; align-items: center; gap: 10px; font-family: 'Pacifico', cursive; font-size: 30px; color: #fff; text-decoration: none; z-index: 1; }
+  .auth-aside-brand img { width: 30px; height: 30px; }
+  .auth-aside-body { z-index: 1; max-width: 420px; }
+  .auth-aside-art { width: 260px; height: auto; margin-bottom: 20px; filter: drop-shadow(0 20px 40px #0003); }
+  .auth-aside-body h2 { font-size: 36px; font-weight: 800; letter-spacing: -.045em; line-height: 1.1; margin: 0 0 14px; }
+  .auth-aside-body p { font-size: 15px; line-height: 1.75; color: #EADCFF; margin: 0; }
+  .auth-aside-foot { z-index: 1; font-size: 12px; color: #D9C3F1; margin: 0; }
+  .auth-panel { padding: 48px; }
+  .auth-card { width: min(100%, 400px); }
+  /* The brand aside already carries the art and pitch; keep the welcome panel
+     focused on the actions so nothing is duplicated on desktop. */
+  .auth-welcome { justify-items: stretch; text-align: left; }
+  .auth-welcome-art { display: none; }
+  .auth-welcome-lead { max-width: none; }
+}
+@media (max-width: 359px) {
+  .auth-panel { padding: 24px 18px; }
+  .auth-pin .proofly-pin-grid input { height: 56px; font-size: 24px; }
+}
