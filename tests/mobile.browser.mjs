@@ -111,9 +111,11 @@ try {
   await page.getByLabel('Nombre completo').fill('Carlos Editado');
   await page.getByRole('button', { name: 'Guardar nombre', exact: true }).click();
   await page.getByText('Nombre actualizado.', { exact: true }).waitFor();
+  // Back to home: the header greeting reflects the new name.
+  await page.locator('.app-screen-head .app-back').click();
   await page.getByText('¡Hola, Carlos!', { exact: true }).waitFor();
 
-  // Responsive: four routes, no overflow or clipping at key widths.
+  // Responsive: routes, no overflow or clipping at key widths.
   for (const width of [320, 390, 430, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const route of ['home', 'invest', 'raise', 'activity', 'settings']) {

@@ -179,10 +179,54 @@ export default function AppShell() {
     <span className="app-row-end"><strong>{money(op.advanceAmountCents)}</strong><span className="app-row-sub">por anticipar</span></span>
   </button>;
 
+  // Settings is a full-screen stacked page: its own nav header, no dock, no profile/bell.
+  if (page === 'settings') return <div className="proofly-app">
+    <div className="app-shell app-shell-plain">
+      <header className="app-screen-head">
+        <button className="app-back" onClick={() => go('home')} aria-label="Volver"><Icon name="arrow" size={18}/></button>
+        <h1>Ajustes</h1>
+      </header>
+      <main className="app-main app-main-plain">
+        <div className="app-settings">
+          <div className="app-settings-id"><span className="app-avatar app-avatar-lg">{initials(data.me.name)}</span><div><strong>{data.me.name}</strong><span>Nivel {tier} · cupo {money(data.me.availableLimitCents)}</span></div></div>
+
+          {acctMsg && <p className="app-ok" role="status">{acctMsg}</p>}
+          {acctErr && <p className="app-error" role="alert">{acctErr}</p>}
+
+          <form className="app-settings-group" onSubmit={saveProfile}>
+            <h3>Perfil</h3>
+            <label className="app-form-label">Nombre completo<input name="legalName" defaultValue={data.me.name} required minLength={3} maxLength={80}/></label>
+            <button className="app-secondary" type="submit">Guardar nombre</button>
+          </form>
+
+          <form className="app-settings-group" onSubmit={savePassword}>
+            <h3>Contraseña</h3>
+            <label className="app-form-label">Contraseña actual<input name="current" type="password" autoComplete="current-password" required minLength={8}/></label>
+            <label className="app-form-label">Nueva contraseña<input name="next" type="password" autoComplete="new-password" required minLength={8} placeholder="Mínimo 8 caracteres"/></label>
+            <button className="app-secondary" type="submit">Cambiar contraseña</button>
+          </form>
+
+          <div className="app-settings-group">
+            <h3>Tu nivel</h3>
+            <dl className="app-settings-facts">
+              <div><dt>Nivel actual</dt><dd>{tier}</dd></div>
+              <div><dt>Cupo máximo</dt><dd>{money(data.me.maxQuotaCents)}</dd></div>
+              <div><dt>Puntaje de entrega</dt><dd>{data.me.executionScore}/100</dd></div>
+              <div><dt>Capital invertido</dt><dd>{money(invested)}</dd></div>
+            </dl>
+            <p className="app-muted">Tu nivel sube al liquidar operaciones: Semilla → Crecimiento → Pro.</p>
+          </div>
+
+          <button className="app-signout" onClick={logout}><Icon name="exit" size={18}/>Salir de la cuenta</button>
+        </div>
+      </main>
+    </div>
+  </div>;
+
   return <div className="proofly-app">
     <div className="app-shell">
       <header className="app-top">
-        <button className="app-id" onClick={() => go('settings')} aria-label="Abrir tu cuenta" aria-current={page === 'settings' ? 'page' : undefined}><span className="app-avatar">{initials(data.me.name)}</span><div><span>¡Hola, {firstName(data.me.name)}!</span><strong>Nivel {tier}</strong></div><span className="app-id-chevron" aria-hidden="true"><Icon name="chevron" size={16}/></span></button>
+        <button className="app-id" onClick={() => go('settings')} aria-label="Abrir tu cuenta"><span className="app-avatar">{initials(data.me.name)}</span><div><span>¡Hola, {firstName(data.me.name)}!</span><strong>Nivel {tier}</strong></div><span className="app-id-chevron" aria-hidden="true"><Icon name="chevron" size={16}/></span></button>
         <div className="app-notif-anchor">
           <button className="app-icon-btn app-bell" onClick={toggleNotifications} aria-haspopup="true" aria-expanded={notifOpen} aria-label={unread ? `Notificaciones, ${unread} sin leer` : 'Notificaciones'}><Icon name="bell" size={20}/>{unread > 0 && <span className="app-badge" aria-hidden="true">{unread > 9 ? '9+' : unread}</span>}</button>
           {notifOpen && <>
@@ -248,41 +292,6 @@ export default function AppShell() {
             : <p className="app-muted">Aquí verás cada movimiento de tu cuenta.</p>}
         </>}
 
-        {page === 'settings' && <>
-          <div className="app-sec-head"><button className="app-back" onClick={() => go('home')} aria-label="Volver"><Icon name="arrow" size={18}/></button><h1 className="app-title">Ajustes</h1></div>
-          <div className="app-settings">
-            <div className="app-settings-id"><span className="app-avatar app-avatar-lg">{initials(data.me.name)}</span><div><strong>{data.me.name}</strong><span>Nivel {tier} · cupo {money(data.me.availableLimitCents)}</span></div></div>
-
-            {acctMsg && <p className="app-ok" role="status">{acctMsg}</p>}
-            {acctErr && <p className="app-error" role="alert">{acctErr}</p>}
-
-            <form className="app-settings-group" onSubmit={saveProfile}>
-              <h3>Perfil</h3>
-              <label className="app-form-label">Nombre completo<input name="legalName" defaultValue={data.me.name} required minLength={3} maxLength={80}/></label>
-              <button className="app-secondary" type="submit">Guardar nombre</button>
-            </form>
-
-            <form className="app-settings-group" onSubmit={savePassword}>
-              <h3>Contraseña</h3>
-              <label className="app-form-label">Contraseña actual<input name="current" type="password" autoComplete="current-password" required minLength={8}/></label>
-              <label className="app-form-label">Nueva contraseña<input name="next" type="password" autoComplete="new-password" required minLength={8} placeholder="Mínimo 8 caracteres"/></label>
-              <button className="app-secondary" type="submit">Cambiar contraseña</button>
-            </form>
-
-            <div className="app-settings-group">
-              <h3>Tu nivel</h3>
-              <dl className="app-settings-facts">
-                <div><dt>Nivel actual</dt><dd>{tier}</dd></div>
-                <div><dt>Cupo máximo</dt><dd>{money(data.me.maxQuotaCents)}</dd></div>
-                <div><dt>Puntaje de entrega</dt><dd>{data.me.executionScore}/100</dd></div>
-                <div><dt>Capital invertido</dt><dd>{money(invested)}</dd></div>
-              </dl>
-              <p className="app-muted">Tu nivel sube al liquidar operaciones: Semilla → Crecimiento → Pro.</p>
-            </div>
-
-            <button className="app-signout" onClick={logout}><Icon name="exit" size={18}/>Salir de la cuenta</button>
-          </div>
-        </>}
       </main>
 
       <nav className="app-dock" aria-label="Navegación">{NAV.map(item => <button key={item.id} onClick={() => go(item.id)} aria-current={page === item.id ? 'page' : undefined}><Icon name={item.icon} size={22}/><span>{item.label}</span></button>)}</nav>
