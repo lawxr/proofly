@@ -187,8 +187,11 @@
 .app-hero-trend { font-size: 12px; color: #D7C4FF; }
 .app-hero-trend.is-up { color: #8CF5B6; font-weight: 700; }
 .app-hero-spark { position: relative; z-index: 1; display: flex; align-items: flex-end; gap: 6px; height: 40px; margin: 16px 0; }
-.app-hero-spark i { flex: 1; border-radius: 4px 4px 0 0; background: #ffffff38; }
+.app-hero-spark i { flex: 1; border-radius: 4px 4px 0 0; background: #ffffff38; transition: height .5s cubic-bezier(.22,1,.36,1); }
 .app-hero-spark i:last-child { background: #fff; }
+/* No data yet: an honest flat baseline instead of a fabricated trend. */
+.app-hero-baseline { position: relative; z-index: 1; height: 40px; margin: 16px 0; display: flex; align-items: flex-end; }
+.app-hero-baseline::after { content: ''; width: 100%; height: 2px; border-radius: 2px; background: repeating-linear-gradient(90deg, #ffffff40 0 10px, transparent 10px 18px); }
 .app-hero-quota { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding-top: 14px; border-top: 1px solid #ffffff2e; }
 .app-hero-quota span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #E4D3FF; }
 .app-hero-quota strong { font-size: 17px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }

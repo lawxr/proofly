@@ -51,7 +51,10 @@ try {
   // Balance hero shows both sides separately (never a single summed total).
   await page.locator('.app-hero-balance').getByText('Capital invertido', { exact: true }).waitFor();
   await page.locator('.app-hero-balance').getByText('Cupo para anticipar', { exact: true }).waitFor();
-  assert.ok(await page.locator('.app-hero-spark i').count() >= 5, 'balance hero shows a spark trend');
+  // Fresh account has no investment history yet: an honest flat baseline, not a
+  // fabricated spark. The real cumulative spark appears once there are 2+ investments.
+  await page.locator('.app-hero-baseline').waitFor();
+  assert.equal(await page.locator('.app-hero-spark i').count(), 0, 'no fabricated trend without data');
   // A fresh account shows a designed empty state with actions, not bare text.
   await page.locator('.app-empty .app-empty-actions').waitFor();
   const nav = () => page.getByRole('navigation', { name: 'Navegación' });
@@ -166,5 +169,5 @@ try {
   await page.goto(`${base}/app/`);
   await page.waitForURL('**/login');
   assert.deepEqual(errors, []);
-  console.log('PASS: signup without a name (KYC provides it); KYC unlocks operating; invest market with summary, filter and rich opportunity cards; redesigned raise form (asset tabs, live quote, event checklist, conditional invoice attachment, gated submit); invest live estimate + settlement; seed tier one active op; contracts tab groups raised operations; reload persists; five routes clean 320-1440; no JS errors.');
+  console.log('PASS: signup without a name (KYC provides it); KYC unlocks operating; invest market with summary, filter and rich opportunity cards; redesigned raise form (asset tabs, live quote, event checklist, conditional invoice attachment, gated submit); invest live estimate + settlement; seed tier one active op; honest baseline with no investment history; contracts tab groups raised operations; reload persists; five routes clean 320-1440; no JS errors.');
 } finally { await browser.close(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }

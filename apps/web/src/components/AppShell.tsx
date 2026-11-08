@@ -14,7 +14,7 @@ type Projection = { fundedCapitalCents: string; netEstimatedProfitCents: string;
 type Snapshot = {
   me: { id: string; name: string; tier: string; kycStatus: string; availableLimitCents: string; maxQuotaCents: string; executionScore: number };
   operations: Operation[];
-  investments: { id: string; operationId: string; fundedCapitalCents: string; projection: Projection; settlement?: { profitEarnedCents: string; totalDistributedCents: string } }[];
+  investments: { id: string; operationId: string; fundedCapitalCents: string; createdAt: string; projection: Projection; settlement?: { profitEarnedCents: string; totalDistributedCents: string } }[];
   events: { id: string; operationId: string; kind: string; title: string; date: string }[];
 };
 const NAV: { id: Page; label: string; icon: string }[] = [
@@ -40,6 +40,37 @@ function cents(value: string) {
   if (result <= 0n) throw new Error('El valor debe ser mayor que cero.');
   return result.toString();
 }
+// Animate a number from its previous value to the next one. Honors
+// prefers-reduced-motion by snapping straight to the target.
+function useCountUp(target: number, duration = 650) {
+  const [value, setValue] = useState(target);
+  const fromRef = useRef(target);
+  useEffect(() => {
+    const from = fromRef.current;
+    if (from === target) return;
+    const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { fromRef.current = target; setValue(target); return; }
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      setValue(from + (target - from) * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else fromRef.current = target;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return value;
+}
+
+// A money amount (in cents) that counts up on change.
+function CountUpMoney({ cents }: { cents: bigint }) {
+  const value = useCountUp(Number(cents));
+  return <>{money(Math.round(value).toString())}</>;
+}
+
 function Icon({ name, size = 22 }: { name: string; size?: number }) {
   const paths: Record<string, ReactNode> = {
     home: <><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="M9 21v-8h6v8"/></>,
@@ -199,6 +230,19 @@ export default function AppShell() {
   const active = data.operations.find(op => op.id === selected);
   const invested = sum(data.investments.map(i => i.fundedCapitalCents));
   const profit = sum(data.investments.map(i => i.projection?.netEstimatedProfitCents || '0'));
+
+  // Real capital trend: cumulative invested capital over time, built from the
+  // investments ordered by date. Each bar is a real cumulative point; no data
+  // means no chart (we show a flat baseline instead of inventing a trend).
+  const spark = (() => {
+    const ordered = [...data.investments].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    if (ordered.length < 2) return [] as number[];
+    let acc = 0n;
+    const cumulative = ordered.map(i => { acc += BigInt(i.fundedCapitalCents); return Number(acc); });
+    const peak = cumulative[cumulative.length - 1] || 1;
+    // Keep the last 7 points and scale to a 24..100% band so bars read well.
+    return cumulative.slice(-7).map(v => 24 + Math.round((v / peak) * 76));
+  })();
   const tier = TIER[data.me.tier] || 'Semilla';
   const ownActive = active ? active.freelancerId === data.me.id : false;
   const unread = (() => { let n = 0; for (const ev of data.events) { if (ev.id === seen) break; n++; } return n; })();
@@ -324,13 +368,15 @@ export default function AppShell() {
           <section className="app-hero-balance">
             <div className="app-hero-main">
               <span className="app-hero-label">Capital invertido</span>
-              <strong className="app-hero-amount">{money(invested)}</strong>
-              <span className={`app-hero-trend ${profit > 0n ? 'is-up' : ''}`}>{profit > 0n ? `▲ ${money(profit)} de ganancia estimada` : 'Empieza a invertir y haz crecer tu capital'}</span>
+              <strong className="app-hero-amount"><CountUpMoney cents={invested}/></strong>
+              <span className={`app-hero-trend ${profit > 0n ? 'is-up' : ''}`}>{profit > 0n ? <>▲ <CountUpMoney cents={profit}/> de ganancia estimada</> : 'Empieza a invertir y haz crecer tu capital'}</span>
             </div>
-            <div className="app-hero-spark" aria-hidden="true">{[38,52,44,70,58,84,66].map((h, i) => <i key={i} style={{ height: `${h}%` }}/>)}</div>
+            {spark.length
+              ? <div className="app-hero-spark" aria-hidden="true">{spark.map((h, i) => <i key={i} style={{ height: `${h}%` }}/>)}</div>
+              : <div className="app-hero-baseline" aria-hidden="true"/>}
             <div className="app-hero-quota">
               <span><Icon name="bolt" size={15}/> Cupo para anticipar</span>
-              <strong>{money(data.me.availableLimitCents)}</strong>
+              <strong><CountUpMoney cents={BigInt(data.me.availableLimitCents)}/></strong>
             </div>
           </section>
 
