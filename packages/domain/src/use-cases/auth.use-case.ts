@@ -14,54 +14,52 @@ import type { KycPort } from '../ports/external-services.port.ts';
 
 export interface RegisterUserDto {
   email: string;
-  legalName: string;
   taxId: string;
   password: string;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// A provisional display name from the email local-part, until KYC provides the
+// legal name. e.g. "ana.ruiz" -> "Ana Ruiz".
+function provisionalName(email: string): string {
+  const local = email.split('@')[0] || 'Usuario';
+  const words = local.split(/[._-]+/).filter(Boolean).slice(0, 3)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  return words.join(' ') || 'Usuario';
+}
+
 export class RegisterUserUseCase {
   userRepo: UserRepositoryPort;
-  kyc?: KycPort;
   newId: () => string;
 
-  constructor(userRepo: UserRepositoryPort, kyc?: KycPort, newId: () => string = () => crypto.randomUUID()) {
+  constructor(userRepo: UserRepositoryPort, newId: () => string = () => crypto.randomUUID()) {
     this.userRepo = userRepo;
-    this.kyc = kyc;
     this.newId = newId;
   }
 
   async execute(dto: RegisterUserDto): Promise<UserEntity> {
     const email = dto.email?.trim().toLowerCase();
-    const legalName = dto.legalName?.trim();
     const taxId = dto.taxId?.trim();
     if (!email || !EMAIL_RE.test(email)) throw new Error('Enter a valid email address.');
-    if (!legalName || legalName.length < 3 || legalName.length > 80) throw new Error('Enter your full name (3-80 characters).');
     if (!taxId || !/^\d{5,20}$/.test(taxId)) throw new Error('Enter a valid document number.');
 
     const existing = await this.userRepo.findByEmail(email);
     if (existing) throw new Error('An account with this email already exists.');
 
-    // Identity verification runs through the configured KYC provider. Today that
-    // provider is a deterministic adapter; swapping it for a real one (Truora)
-    // is an adapter change, not a change here.
-    let kycStatus = KycStatus.PENDING;
-    if (this.kyc) {
-      const result = await this.kyc.verifyIdentity({ taxId, legalName });
-      kycStatus = result.verified ? KycStatus.VERIFIED : KycStatus.REJECTED;
-    }
-
+    // Per the product flow, identity verification (KYC) is a separate step after
+    // sign-up; the legal name comes from that verification, not from a free-text
+    // field. The account starts with KYC pending and a provisional display name.
     const passwordHash = await hashPassword(dto.password);
     const now = new Date();
     const seedTier = FreelancerTier.TIER_1_SEED;
     const user = new UserEntity({
       id: this.newId(),
       email,
-      legalName,
+      legalName: provisionalName(email),
       taxId,
       role: UserRole.FREELANCER,
-      kycStatus,
+      kycStatus: KycStatus.PENDING,
       passwordHash,
       tier: seedTier,
       availableLimitCents: TiersPolicy.TIER_CONFIG[seedTier].maxQuotaCents,
@@ -99,24 +97,39 @@ export class LoginUseCase {
   }
 }
 
-export interface UpdateProfileDto {
+export interface VerifyIdentityDto {
   userId: string;
   legalName: string;
 }
 
-export class UpdateProfileUseCase {
+/**
+ * KYC verification: the step after sign-up. Runs the configured KYC provider
+ * (today a deterministic adapter; a real provider like Truora is a drop-in),
+ * and on success sets the verified legal name and KYC status on the account.
+ */
+export class VerifyIdentityUseCase {
   userRepo: UserRepositoryPort;
+  kyc: KycPort;
 
-  constructor(userRepo: UserRepositoryPort) {
+  constructor(userRepo: UserRepositoryPort, kyc: KycPort) {
     this.userRepo = userRepo;
+    this.kyc = kyc;
   }
 
-  async execute(dto: UpdateProfileDto): Promise<UserEntity> {
+  async execute(dto: VerifyIdentityDto): Promise<UserEntity> {
     const legalName = dto.legalName?.trim();
-    if (!legalName || legalName.length < 3 || legalName.length > 80) throw new Error('Enter your full name (3-80 characters).');
+    if (!legalName || legalName.length < 3 || legalName.length > 80) throw new Error('Enter your full legal name (3-80 characters).');
     const user = await this.userRepo.findById(dto.userId);
     if (!user) throw new Error('User not found.');
+    const result = await this.kyc.verifyIdentity({ taxId: user.taxId, legalName });
+    if (!result.verified) {
+      user.kycStatus = KycStatus.REJECTED;
+      user.updatedAt = new Date();
+      await this.userRepo.save(user);
+      throw new Error('Identity verification could not be completed.');
+    }
     user.legalName = legalName;
+    user.kycStatus = KycStatus.VERIFIED;
     user.updatedAt = new Date();
     await this.userRepo.save(user);
     return user;

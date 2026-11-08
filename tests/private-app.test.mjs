@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { RegisterUserUseCase } from '../packages/domain/src/index.ts';
+import { RegisterUserUseCase, VerifyIdentityUseCase } from '../packages/domain/src/index.ts';
 import { createAppService } from '../scripts/app-service.mjs';
 
 // Build a shared in-memory deps, register a real user, and drive the app
@@ -8,8 +8,10 @@ import { createAppService } from '../scripts/app-service.mjs';
 async function setup() {
   const { createDependencies: make } = await import('../apps/api/src/app.ts');
   const deps = make();
-  const register = new RegisterUserUseCase(deps.userRepo, deps.kycVerifier, () => 'me-' + Math.random().toString(16).slice(2));
-  const me = await register.execute({ email: `me-${Date.now()}@proofly.co`, legalName: 'Persona Real', taxId: '1098765432', password: 'una-clave-segura' });
+  const register = new RegisterUserUseCase(deps.userRepo, () => 'me-' + Math.random().toString(16).slice(2));
+  const me = await register.execute({ email: `me-${Date.now()}@proofly.co`, taxId: '1098765432', password: 'una-clave-segura' });
+  // KYC is required before operating: verify identity right after sign-up.
+  await new VerifyIdentityUseCase(deps.userRepo, deps.kycVerifier).execute({ userId: me.id, legalName: 'Persona Real' });
   const app = await createAppService(deps);
   return { app, meId: me.id, deps };
 }
@@ -101,9 +103,12 @@ test('a seed user cannot hold two active operations at once', async () => {
 test('two different users see their own operations and investments separately', async () => {
   const { createDependencies: make } = await import('../apps/api/src/app.ts');
   const deps = make();
-  const register = new RegisterUserUseCase(deps.userRepo, deps.kycVerifier);
-  const a = await register.execute({ email: 'a@proofly.co', legalName: 'Usuario A', taxId: '1000000001', password: 'una-clave-segura' });
-  const b = await register.execute({ email: 'b@proofly.co', legalName: 'Usuario B', taxId: '1000000002', password: 'una-clave-segura' });
+  const register = new RegisterUserUseCase(deps.userRepo);
+  const verify = new VerifyIdentityUseCase(deps.userRepo, deps.kycVerifier);
+  const a = await register.execute({ email: 'ana.ruiz@proofly.co', taxId: '1000000001', password: 'una-clave-segura' });
+  const b = await register.execute({ email: 'beto.diaz@proofly.co', taxId: '1000000002', password: 'una-clave-segura' });
+  await verify.execute({ userId: a.id, legalName: 'Ana Ruiz Gómez' });
+  await verify.execute({ userId: b.id, legalName: 'Beto Díaz Pérez' });
   const app = await createAppService(deps);
 
   const market = (await app.snapshot(a.id)).operations[0];
@@ -113,6 +118,6 @@ test('two different users see their own operations and investments separately', 
   const snapB = await app.snapshot(b.id);
   assert.equal(snapA.investments.length, 1);
   assert.equal(snapB.investments.length, 0, 'B must not see A\'s investments');
-  assert.equal(snapA.me.name, 'Usuario A');
-  assert.equal(snapB.me.name, 'Usuario B');
+  assert.equal(snapA.me.name, 'Ana Ruiz Gómez'); // verified legal name from KYC
+  assert.equal(snapB.me.name, 'Beto Díaz Pérez');
 });

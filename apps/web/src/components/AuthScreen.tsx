@@ -66,7 +66,7 @@ export function AuthScreen() {
     setPending(true); setError('');
     try {
       const { ok, status, data } = await post('/api/auth/signup', {
-        legalName: form.get('name'), email: form.get('email'), taxId: form.get('taxId'), password: form.get('password'),
+        email: form.get('email'), taxId: form.get('taxId'), password: form.get('password'),
       });
       if (ok) { window.location.assign('/app/'); return; }
       setError(status === 409 ? 'Ya existe una cuenta con este correo.'
@@ -108,9 +108,6 @@ export function AuthScreen() {
               <h1>Crea tu cuenta</h1>
               <p className="auth-form-lead">Con una sola cuenta puedes invertir y anticipar tu capital.</p>
               <form onSubmit={signUp} className="auth-form">
-                <label className="auth-label">Nombre completo
-                  <input type="text" name="name" autoComplete="name" placeholder="Tu nombre" required minLength={3} maxLength={80}/>
-                </label>
                 <label className="auth-label">Correo electrónico
                   <input type="email" name="email" autoComplete="email" placeholder="tu@correo.com" required/>
                 </label>
@@ -120,6 +117,7 @@ export function AuthScreen() {
                 <label className="auth-label">Contraseña
                   <input type="password" name="password" autoComplete="new-password" placeholder="Mínimo 8 caracteres" required minLength={8}/>
                 </label>
+                <p className="auth-note">Verificaremos tu identidad (KYC) después de crear tu cuenta. Tu nombre legal se toma de esa verificación.</p>
                 {error && <p role="alert" className="auth-error">{error}</p>}
                 <button type="submit" disabled={pending} className="auth-primary">{pending ? 'Creando cuenta…' : 'Crear cuenta'}</button>
               </form>

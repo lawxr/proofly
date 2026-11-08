@@ -148,7 +148,7 @@ export async function createAppService(deps) {
     const operations = await allOperations();
     const investments = await deps.investmentRepo.findByInvestorId(meId);
     const name = me.legalName.replace(/\s*\(.*\)\s*$/, '').trim() || me.legalName;
-    return plain({ me: { id: me.id, name, tier: me.tier,
+    return plain({ me: { id: me.id, name, tier: me.tier, kycStatus: me.kycStatus,
       availableLimitCents: me.availableLimitCents, maxQuotaCents: me.tier ? TiersPolicy.TIER_CONFIG[me.tier].maxQuotaCents : '0',
       executionScore: me.executionScore },
       operations: operations.map(serialize), investments: investments.map(investment => ({

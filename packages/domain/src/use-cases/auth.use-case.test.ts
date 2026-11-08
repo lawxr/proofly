@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { hashPassword, verifyPassword } from '../security/password.ts';
-import { RegisterUserUseCase, LoginUseCase, UpdateProfileUseCase, ChangePasswordUseCase } from './auth.use-case.ts';
+import { RegisterUserUseCase, LoginUseCase, ChangePasswordUseCase } from './auth.use-case.ts';
 import { UserEntity, UserRole, KycStatus } from '../models/user.ts';
 import type { UserRepositoryPort } from '../ports/user-repository.port.ts';
 import type { FreelancerTier } from '../reputation/tiers-policy.ts';
@@ -31,41 +31,39 @@ describe('Auth', () => {
 
   it('register creates a seed-tier user with a hashed password; login verifies it', async () => {
     const repo = new MemUserRepo();
-    const register = new RegisterUserUseCase(repo, undefined, () => 'user-1');
-    const user = await register.execute({ email: 'Persona@Proofly.CO', legalName: 'Persona Real', taxId: '1098765432', password: 'una-clave-segura' });
-    assert.equal(user.email, 'persona@proofly.co'); // normalized
+    const register = new RegisterUserUseCase(repo, () => 'user-1');
+    // No name field: it comes from KYC later. A provisional name is derived from the email.
+    const user = await register.execute({ email: 'Ana.Ruiz@Proofly.CO', taxId: '1098765432', password: 'una-clave-segura' });
+    assert.equal(user.email, 'ana.ruiz@proofly.co'); // normalized
+    assert.equal(user.legalName, 'Ana Ruiz'); // provisional, from email local-part
     assert.equal(user.role, UserRole.FREELANCER);
-    assert.equal(user.kycStatus, KycStatus.PENDING);
+    assert.equal(user.kycStatus, KycStatus.PENDING); // KYC is a later step
     assert.ok(user.passwordHash && user.passwordHash.startsWith('scrypt$'));
     assert.ok(user.tier);
 
     const login = new LoginUseCase(repo);
-    const loggedIn = await login.execute({ email: 'persona@proofly.co', password: 'una-clave-segura' });
+    const loggedIn = await login.execute({ email: 'ana.ruiz@proofly.co', password: 'una-clave-segura' });
     assert.equal(loggedIn.id, 'user-1');
-    await assert.rejects(login.execute({ email: 'persona@proofly.co', password: 'mala-clave-xxx' }), /Invalid credentials/);
+    await assert.rejects(login.execute({ email: 'ana.ruiz@proofly.co', password: 'mala-clave-xxx' }), /Invalid credentials/);
     await assert.rejects(login.execute({ email: 'noexiste@proofly.co', password: 'una-clave-segura' }), /Invalid credentials/);
   });
 
   it('duplicate email is rejected', async () => {
     const repo = new MemUserRepo();
     const register = new RegisterUserUseCase(repo);
-    await register.execute({ email: 'dup@proofly.co', legalName: 'Dup Uno', taxId: '1098765432', password: 'una-clave-segura' });
-    await assert.rejects(register.execute({ email: 'dup@proofly.co', legalName: 'Dup Dos', taxId: '1098765433', password: 'otra-clave-segura' }), /already exists/);
+    await register.execute({ email: 'dup@proofly.co', taxId: '1098765432', password: 'una-clave-segura' });
+    await assert.rejects(register.execute({ email: 'dup@proofly.co', taxId: '1098765433', password: 'otra-clave-segura' }), /already exists/);
   });
 
-  it('update profile persists a new legal name and validates it', async () => {
+  it('a missing or invalid document is rejected', async () => {
     const repo = new MemUserRepo();
-    const u = await new RegisterUserUseCase(repo, undefined, () => 'u1').execute({ email: 'p@proofly.co', legalName: 'Nombre Viejo', taxId: '1098765432', password: 'una-clave-segura' });
-    const update = new UpdateProfileUseCase(repo);
-    const updated = await update.execute({ userId: u.id, legalName: 'Nombre Nuevo' });
-    assert.equal(updated.legalName, 'Nombre Nuevo');
-    assert.equal((await repo.findById('u1'))?.legalName, 'Nombre Nuevo');
-    await assert.rejects(update.execute({ userId: u.id, legalName: 'ab' }), /3-80/);
+    const register = new RegisterUserUseCase(repo);
+    await assert.rejects(register.execute({ email: 'x@proofly.co', taxId: 'abc', password: 'una-clave-segura' }), /document/);
   });
 
   it('change password requires the current one and updates the hash', async () => {
     const repo = new MemUserRepo();
-    const u = await new RegisterUserUseCase(repo, undefined, () => 'u2').execute({ email: 'c@proofly.co', legalName: 'Persona Real', taxId: '1098765432', password: 'clave-actual-xx' });
+    const u = await new RegisterUserUseCase(repo, () => 'u2').execute({ email: 'c@proofly.co', taxId: '1098765432', password: 'clave-actual-xx' });
     const change = new ChangePasswordUseCase(repo);
     await assert.rejects(change.execute({ userId: u.id, currentPassword: 'clave-equivocada', newPassword: 'clave-nueva-xxx' }), /incorrect/);
     await change.execute({ userId: u.id, currentPassword: 'clave-actual-xx', newPassword: 'clave-nueva-xxx' });

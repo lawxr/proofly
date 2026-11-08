@@ -64,6 +64,13 @@
 .app-settings-facts dt { font-size: 11px; color: #8B769D; }
 .app-settings-facts dd { font-size: 16px; font-weight: 800; margin: 6px 0 0; }
 .app-ok { border: 1px solid #BBE8CC; background: #EDF8F1; border-radius: 12px; color: #187140; padding: 12px 14px; font-size: 13px; margin: 0; }
+.app-kyc-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff; border-radius: 12px; padding: 12px 14px; }
+.app-kyc-label { font-size: 11px; color: #8B769D; }
+.app-kyc-value { font-size: 15px; font-weight: 700; margin: 2px 0 0; }
+.app-kyc-badge { font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 999px; white-space: nowrap; }
+.app-kyc-badge.is-verified { background: #E7F7EE; color: #187140; }
+.app-kyc-badge.is-pending { background: #FDF2E2; color: #B7791F; }
+.app-settings-group button:disabled { opacity: .55; }
 .app-signout { width: 100%; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #F2D4DD; background: #fff; color: #C02751; border-radius: 999px; font-weight: 700; font-size: 14px; }
 .app-signout:hover { background: #FFF2F6; }
 

@@ -101,26 +101,26 @@ export function createProoflyServer({ root = process.cwd(), secureCookies = proc
         res.setHeader('Set-Cookie', cookieValue('', 0)); res.writeHead(204); return res.end();
       }
 
-      // --- Authenticated account settings ---
-      if (pathname === '/api/account/profile' || pathname === '/api/account/password') {
+      // --- Authenticated account: password change and KYC verification ---
+      if (pathname === '/api/account/password' || pathname === '/api/account/kyc') {
         const s = session(req);
         if (!s) return json(res, 401, 'unauthenticated');
         if (!sameOrigin(req)) return json(res, 403, 'invalid_origin');
+        if (req.method !== 'POST') return json(res, 405, 'method_not_allowed');
         if (!account) return json(res, 503, 'account_unavailable');
         const data = await readJsonBody(req, res);
         if (data === undefined) return;
         try {
-          if (pathname.endsWith('profile')) {
-            if (req.method !== 'PATCH') return json(res, 405, 'method_not_allowed');
-            const user = await account.updateProfile({ userId: s.userId, legalName: data.legalName });
-            return json(res, 200, { code: 'updated', name: user.legalName });
+          if (pathname.endsWith('kyc')) {
+            const user = await account.verifyIdentity({ userId: s.userId, legalName: data.legalName });
+            return json(res, 200, { code: 'verified', name: user.legalName });
           }
-          if (req.method !== 'POST') return json(res, 405, 'method_not_allowed');
           await account.changePassword({ userId: s.userId, currentPassword: data.currentPassword, newPassword: data.newPassword });
           return json(res, 200, { code: 'updated' });
         } catch (error) {
           const message = error instanceof Error ? error.message : 'account_failed';
           if (/current password is incorrect/i.test(message)) return json(res, 403, 'wrong_password');
+          if (/could not be completed/i.test(message)) return json(res, 422, 'kyc_failed');
           return json(res, 400, { code: 'invalid_request', message });
         }
       }

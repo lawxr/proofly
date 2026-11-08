@@ -9,14 +9,14 @@ if (base) {
   // external target
 } else {
   const { createDependencies: make } = await import('../apps/api/src/app.ts');
-  const { UpdateProfileUseCase, ChangePasswordUseCase } = await import('../packages/domain/src/index.ts');
+  const { ChangePasswordUseCase, VerifyIdentityUseCase } = await import('../packages/domain/src/index.ts');
   const deps = make();
-  const register = new RegisterUserUseCase(deps.userRepo, deps.kycVerifier);
+  const register = new RegisterUserUseCase(deps.userRepo);
   const login = new LoginUseCase(deps.userRepo);
   const app = await createAppService(deps);
   server = createProoflyServer({ appHandler: app.handle.bind(app),
     auth: { register: dto => register.execute(dto), login: dto => login.execute(dto) },
-    account: { updateProfile: dto => new UpdateProfileUseCase(deps.userRepo).execute(dto), changePassword: dto => new ChangePasswordUseCase(deps.userRepo).execute(dto) } });
+    account: { changePassword: dto => new ChangePasswordUseCase(deps.userRepo).execute(dto), verifyIdentity: dto => new VerifyIdentityUseCase(deps.userRepo, deps.kycVerifier).execute(dto) } });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${server.address().port}`;
 }
@@ -28,10 +28,10 @@ try {
   await page.goto(base);
   await page.getByRole('button', { name: 'Empezar', exact: true }).click();
   await page.waitForURL('**/login');
-  // Welcome screen → create a real account (signup) with email + password.
+  // Welcome screen → create a real account. No name field: it comes from KYC later.
   await page.getByRole('button', { name: 'Crear cuenta en Proofly', exact: true }).click();
-  await page.getByLabel('Nombre completo').fill('Andrés Prueba');
-  await page.getByLabel('Correo electrónico').fill(`andres-${Date.now()}@proofly.co`);
+  assert.equal(await page.getByLabel('Nombre completo').count(), 0, 'signup must not ask for a name');
+  await page.getByLabel('Correo electrónico').fill(`andres.prueba-${Date.now()}@proofly.co`);
   await page.getByLabel('Documento (NIT o cédula)').fill('1098765432');
   await page.getByLabel('Contraseña').fill('una-clave-segura');
   await page.locator('form.auth-form').getByRole('button', { name: 'Crear cuenta', exact: true }).click();
@@ -55,6 +55,16 @@ try {
   // A fresh account shows a designed empty state with actions, not bare text.
   await page.locator('.app-empty .app-empty-actions').waitFor();
   const nav = () => page.getByRole('navigation', { name: 'Navegación' });
+
+  // KYC is required before operating: a fresh account verifies identity first.
+  await page.getByRole('button', { name: 'Abrir tu cuenta', exact: true }).click();
+  await page.waitForFunction(() => location.hash === '#settings');
+  await page.locator('.app-kyc-badge.is-pending').waitFor();
+  await page.getByLabel('Nombre legal completo').fill('Andrés Prueba Gómez');
+  await page.getByRole('button', { name: 'Verificar identidad', exact: true }).click();
+  await page.getByText('Identidad verificada.', { exact: true }).waitFor();
+  await page.locator('.app-screen-head .app-back').click();
+  await page.locator('.app-title').waitFor();
 
   // Invest in someone else's operation.
   await nav().getByRole('button', { name: 'Invertir', exact: true }).click();
@@ -113,12 +123,12 @@ try {
   await page.getByRole('button', { name: 'Abrir tu cuenta', exact: true }).click();
   await page.waitForFunction(() => location.hash === '#settings');
   await page.getByRole('heading', { name: 'Ajustes', exact: true }).waitFor();
-  await page.getByLabel('Nombre completo').fill('Carlos Editado');
-  await page.getByRole('button', { name: 'Guardar nombre', exact: true }).click();
-  await page.getByText('Nombre actualizado.', { exact: true }).waitFor();
-  // Back to home: the header greeting reflects the new name.
+  // The name is not editable; after KYC it shows as verified (comes from verification).
+  assert.equal(await page.getByLabel('Nombre completo').count(), 0, 'name must not be editable in settings');
+  await page.locator('.app-kyc-badge.is-verified').waitFor();
+  // Back to home.
   await page.locator('.app-screen-head .app-back').click();
-  await page.getByText('¡Hola, Carlos!', { exact: true }).waitFor();
+  await page.locator('.app-title').waitFor();
 
   // Responsive: routes, no overflow or clipping at key widths.
   for (const width of [320, 390, 430, 768, 1440]) {
@@ -140,5 +150,5 @@ try {
   await page.goto(`${base}/app/`);
   await page.waitForURL('**/login');
   assert.deepEqual(errors, []);
-  console.log('PASS: real signup → session; simplified MVP + desktop two-zone layout; 4-tab nav; notifications dropdown (opens downward, closes on Escape/outside); settings as a full-screen page with logout; dedicated invest flow with live estimate; raise flow with live quote; invest in market + settlement; seed tier owner creates one operation and cannot invest in it; reload persists; five routes clean at 320/390/430/768/1440; no JS errors.');
+  console.log('PASS: signup without a name (KYC provides it) → session; KYC verification in settings unlocks operating; MVP + desktop two-zone; 4-tab nav; notifications dropdown; settings full-screen (name not editable, password + logout); invest + raise live estimates; invest in market + settlement; seed tier one active op; reload persists; five routes clean 320-1440; no JS errors.');
 } finally { await browser.close(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }

@@ -11,7 +11,7 @@ type Operation = {
 };
 type Projection = { fundedCapitalCents: string; netEstimatedProfitCents: string; totalEstimatedPayoutCents: string; effectiveAnnualRate: number };
 type Snapshot = {
-  me: { id: string; name: string; tier: string; availableLimitCents: string; maxQuotaCents: string; executionScore: number };
+  me: { id: string; name: string; tier: string; kycStatus: string; availableLimitCents: string; maxQuotaCents: string; executionScore: number };
   operations: Operation[];
   investments: { id: string; operationId: string; fundedCapitalCents: string; projection: Projection; settlement?: { profitEarnedCents: string; totalDistributedCents: string } }[];
   events: { id: string; operationId: string; kind: string; title: string; date: string }[];
@@ -79,16 +79,17 @@ export default function AppShell() {
   const [acctMsg, setAcctMsg] = useState('');
   const [acctErr, setAcctErr] = useState('');
 
-  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+  async function verifyKyc(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const legalName = new FormData(event.currentTarget).get('legalName');
     setAcctMsg(''); setAcctErr('');
     try {
-      const r = await fetch('/api/account/profile', { method: 'PATCH', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ legalName }) });
+      const r = await fetch('/api/account/kyc', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ legalName }) });
       const body = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error((body as { message?: string }).message || 'No pudimos guardar tu nombre.');
-      await refresh(); setAcctMsg('Nombre actualizado.');
-    } catch (e) { setAcctErr(e instanceof Error ? e.message : 'No pudimos guardar.'); }
+      if (r.status === 422) throw new Error('No pudimos verificar tu identidad. Revisa tus datos.');
+      if (!r.ok) throw new Error((body as { message?: string }).message || 'No pudimos verificar tu identidad.');
+      await refresh(); setAcctMsg('Identidad verificada.');
+    } catch (e) { setAcctErr(e instanceof Error ? e.message : 'No pudimos verificar tu identidad.'); }
   }
   async function savePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -202,11 +203,22 @@ export default function AppShell() {
           {acctMsg && <p className="app-ok" role="status">{acctMsg}</p>}
           {acctErr && <p className="app-error" role="alert">{acctErr}</p>}
 
-          <form className="app-settings-group" onSubmit={saveProfile}>
-            <h3>Perfil</h3>
-            <label className="app-form-label">Nombre completo<input name="legalName" defaultValue={data.me.name} required minLength={3} maxLength={80}/></label>
-            <button className="app-secondary" type="submit">Guardar nombre</button>
-          </form>
+          {data.me.kycStatus === 'VERIFIED'
+            ? <div className="app-settings-group">
+                <h3>Identidad</h3>
+                <div className="app-kyc-row">
+                  <div><dt className="app-kyc-label">Nombre</dt><dd className="app-kyc-value">{data.me.name}</dd></div>
+                  <span className="app-kyc-badge is-verified">Verificado</span>
+                </div>
+                <p className="app-muted">Tu identidad está verificada. El nombre proviene de tu documento.</p>
+              </div>
+            : <form className="app-settings-group" onSubmit={verifyKyc}>
+                <h3>Verifica tu identidad</h3>
+                <div className="app-kyc-row"><div><dt className="app-kyc-label">Estado</dt><dd className="app-kyc-value">Sin verificar</dd></div><span className="app-kyc-badge is-pending">Pendiente</span></div>
+                <p className="app-muted">Para invertir o anticipar debes verificar tu identidad. Ingresa tu nombre tal como aparece en tu documento.</p>
+                <label className="app-form-label">Nombre legal completo<input name="legalName" placeholder="Como aparece en tu documento" required minLength={3} maxLength={80}/></label>
+                <button className="app-primary" type="submit">Verificar identidad</button>
+              </form>}
 
           <form className="app-settings-group" onSubmit={savePassword}>
             <h3>Contraseña</h3>

@@ -38,7 +38,7 @@ async function fixture(t, options = {}) {
   const request = (path, init) => fetch(origin + path, { redirect: 'manual', ...init });
   const signup = (body = {}, headers = {}) => request('/api/auth/signup', {
     method: 'POST', headers: { 'content-type': 'application/json', origin, ...headers },
-    body: JSON.stringify({ legalName: 'Persona Real', email: 'persona@proofly.co', taxId: '1098765432', password: 'una-clave-segura', ...body }),
+    body: JSON.stringify({ email: 'persona@proofly.co', taxId: '1098765432', password: 'una-clave-segura', ...body }),
   });
   const signin = (body = {}, headers = {}) => request('/api/auth/login', {
     method: 'POST', headers: { 'content-type': 'application/json', origin, ...headers },

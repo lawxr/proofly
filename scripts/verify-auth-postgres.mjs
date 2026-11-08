@@ -27,14 +27,15 @@ const email = `real-${Date.now()}@proofly.co`;
 try {
   const signup = await fetch(base + '/api/auth/signup', {
     method: 'POST', headers: { 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' },
-    body: JSON.stringify({ legalName: 'Usuario Persistido', email, taxId: '1098765432', password: 'una-clave-segura' }),
+    body: JSON.stringify({ email, taxId: '1098765432', password: 'una-clave-segura' }),
   });
   assert.equal(signup.status, 200, 'signup failed');
   const cookie = signup.headers.get('set-cookie').split(';')[0];
 
   // The authenticated snapshot works against Postgres-backed repos.
   const snap = await (await fetch(base + '/api/app', { headers: { cookie } })).json();
-  assert.equal(snap.me.name, 'Usuario Persistido');
+  assert.ok(typeof snap.me.name === 'string' && snap.me.name.length > 0); // provisional name until KYC
+  assert.equal(snap.me.kycStatus, 'PENDING'); // KYC is a later step
 
   // The user is really in Postgres (read back directly through the repo).
   const persisted = await deps.userRepo.findByEmail(email);
@@ -48,10 +49,13 @@ try {
   });
   assert.equal(relogin.status, 200, 'login against persisted user failed');
 
-  console.log('PASS: signup real → usuario persistido en Postgres con password hasheado (scrypt); snapshot autenticado y login contra la DB funcionan.');
-} finally {
+  console.log('PASS: signup real → usuario persistido en Postgres con password hasheado (scrypt), KYC pendiente; snapshot autenticado y login contra la DB funcionan.');
   server.closeAllConnections();
   await new Promise(r => server.close(r));
-  if (deps.userRepo && typeof deps.operationRepo === 'object') { /* pool cleanup via process exit */ }
   process.exit(0);
+} catch (error) {
+  console.error('FAIL:', error instanceof Error ? error.message : error);
+  server.closeAllConnections();
+  await new Promise(r => server.close(r));
+  process.exit(1);
 }
