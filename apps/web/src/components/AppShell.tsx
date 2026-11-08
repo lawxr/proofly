@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import '../styles/app-shell.css';
 
-type Page = 'home' | 'invest' | 'raise' | 'activity';
+type Page = 'home' | 'invest' | 'raise' | 'activity' | 'settings';
+const PAGES: Page[] = ['home', 'invest', 'raise', 'activity', 'settings'];
 type Operation = {
   id: string; freelancerId: string; title: string; assetType: 'INVOICE' | 'MILESTONE'; payerLegalName: string;
   nominalAmountCents: string; advanceAmountCents: string; prooflyFeeCents: string; commercialDiscountCents: string;
@@ -62,7 +63,7 @@ function Modal({ title, children, onClose }: { title: string; children: ReactNod
 
 export default function AppShell() {
   const [data, setData] = useState<Snapshot | null>(null);
-  const [page, setPage] = useState<Page>(() => { const hash = location.hash.slice(1); return NAV.some(item => item.id === hash) ? hash as Page : 'home'; });
+  const [page, setPage] = useState<Page>(() => { const hash = location.hash.slice(1); return PAGES.includes(hash as Page) ? hash as Page : 'home'; });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
@@ -73,7 +74,7 @@ export default function AppShell() {
   const [raiseTerm, setRaiseTerm] = useState('30');
   const [accepted, setAccepted] = useState(false);
   const [notice, setNotice] = useState('');
-  const [sheet, setSheet] = useState<'none' | 'settings' | 'notifications'>('none');
+  const [notifOpen, setNotifOpen] = useState(false);
   const [seen, setSeen] = useState<string>(() => { try { return localStorage.getItem('proofly-seen-event') || ''; } catch { return ''; } });
   const [acctMsg, setAcctMsg] = useState('');
   const [acctErr, setAcctErr] = useState('');
@@ -122,7 +123,7 @@ export default function AppShell() {
   }
   async function refresh() { setData(await request('/api/app')); }
   useEffect(() => { let alive = true; request('/api/app').then(v => { if (alive) setData(v); }).catch(r => { if (alive) setError(r.message); }); return () => { alive = false; }; }, []);
-  useEffect(() => { const h = () => { const hash = location.hash.slice(1); if (NAV.some(i => i.id === hash)) setPage(hash as Page); }; addEventListener('hashchange', h); return () => removeEventListener('hashchange', h); }, []);
+  useEffect(() => { const h = () => { const hash = location.hash.slice(1); if (PAGES.includes(hash as Page)) setPage(hash as Page); }; addEventListener('hashchange', h); return () => removeEventListener('hashchange', h); }, []);
   useEffect(() => { if (!notice) return; const t = setTimeout(() => setNotice(''), 4000); return () => clearTimeout(t); }, [notice]);
   function go(next: Page) { setPage(next); location.hash = next; scrollTo({ top: 0, behavior: 'auto' }); }
   function open(op: Operation) { setSelected(op.id); setAmount('250000'); setAccepted(false); setError(''); }
@@ -160,7 +161,11 @@ export default function AppShell() {
   const tier = TIER[data.me.tier] || 'Semilla';
   const ownActive = active ? active.freelancerId === data.me.id : false;
   const unread = (() => { let n = 0; for (const ev of data.events) { if (ev.id === seen) break; n++; } return n; })();
-  function openNotifications() { setSheet('notifications'); const latest = data?.events[0]?.id || ''; setSeen(latest); try { localStorage.setItem('proofly-seen-event', latest); } catch { /* ignore */ } }
+  function toggleNotifications() {
+    const next = !notifOpen;
+    setNotifOpen(next);
+    if (next) { const latest = data?.events[0]?.id || ''; setSeen(latest); try { localStorage.setItem('proofly-seen-event', latest); } catch { /* ignore */ } }
+  }
 
   const opRow = (op: Operation) => <button key={op.id} className="app-row" onClick={() => open(op)}>
     <span className="app-row-icon"><Icon name={op.assetType === 'MILESTONE' ? 'growth' : 'file'} size={20}/></span>
@@ -177,8 +182,19 @@ export default function AppShell() {
   return <div className="proofly-app">
     <div className="app-shell">
       <header className="app-top">
-        <button className="app-id" onClick={() => setSheet('settings')} aria-label="Abrir tu cuenta"><span className="app-avatar">{initials(data.me.name)}</span><div><span>¡Hola, {firstName(data.me.name)}!</span><strong>Nivel {tier}</strong></div></button>
-        <button className="app-icon-btn app-bell" onClick={openNotifications} aria-label={unread ? `Notificaciones, ${unread} sin leer` : 'Notificaciones'}><Icon name="bell" size={20}/>{unread > 0 && <span className="app-badge" aria-hidden="true">{unread > 9 ? '9+' : unread}</span>}</button>
+        <button className="app-id" onClick={() => go('settings')} aria-label="Abrir tu cuenta" aria-current={page === 'settings' ? 'page' : undefined}><span className="app-avatar">{initials(data.me.name)}</span><div><span>¡Hola, {firstName(data.me.name)}!</span><strong>Nivel {tier}</strong></div><span className="app-id-chevron" aria-hidden="true"><Icon name="chevron" size={16}/></span></button>
+        <div className="app-notif-anchor">
+          <button className="app-icon-btn app-bell" onClick={toggleNotifications} aria-haspopup="true" aria-expanded={notifOpen} aria-label={unread ? `Notificaciones, ${unread} sin leer` : 'Notificaciones'}><Icon name="bell" size={20}/>{unread > 0 && <span className="app-badge" aria-hidden="true">{unread > 9 ? '9+' : unread}</span>}</button>
+          {notifOpen && <>
+            <div className="app-notif-scrim" onClick={() => setNotifOpen(false)} aria-hidden="true"/>
+            <div className="app-notif-menu" role="menu">
+              <div className="app-notif-head">Notificaciones</div>
+              {data.events.length
+                ? <div className="app-notif-list">{data.events.map(ev => <button key={ev.id} role="menuitem" className="app-notif-item" onClick={() => { const op = data.operations.find(o => o.id === ev.operationId); setNotifOpen(false); if (op) open(op); }}><span className="app-row-icon"><Icon name={ev.kind === 'settle' ? 'check' : ev.kind === 'participate' ? 'growth' : 'bell'} size={16}/></span><div><strong>{ev.title}</strong><span>{new Date(ev.date).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}</span></div></button>)}</div>
+                : <p className="app-notif-empty">No tienes notificaciones todavía.</p>}
+            </div>
+          </>}
+        </div>
       </header>
 
       <main className="app-main">
@@ -231,53 +247,48 @@ export default function AppShell() {
             ? <div className="app-list">{data.events.map(ev => <button key={ev.id} className="app-act" onClick={() => { const op = data.operations.find(o => o.id === ev.operationId); if (op) open(op); }}><span className="app-row-icon"><Icon name={ev.kind === 'settle' ? 'check' : 'clock'} size={18}/></span><div><strong>{ev.title}</strong><span>{new Date(ev.date).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}</span></div><Icon name="arrow" size={16}/></button>)}</div>
             : <p className="app-muted">Aquí verás cada movimiento de tu cuenta.</p>}
         </>}
+
+        {page === 'settings' && <>
+          <div className="app-sec-head"><button className="app-back" onClick={() => go('home')} aria-label="Volver"><Icon name="arrow" size={18}/></button><h1 className="app-title">Ajustes</h1></div>
+          <div className="app-settings">
+            <div className="app-settings-id"><span className="app-avatar app-avatar-lg">{initials(data.me.name)}</span><div><strong>{data.me.name}</strong><span>Nivel {tier} · cupo {money(data.me.availableLimitCents)}</span></div></div>
+
+            {acctMsg && <p className="app-ok" role="status">{acctMsg}</p>}
+            {acctErr && <p className="app-error" role="alert">{acctErr}</p>}
+
+            <form className="app-settings-group" onSubmit={saveProfile}>
+              <h3>Perfil</h3>
+              <label className="app-form-label">Nombre completo<input name="legalName" defaultValue={data.me.name} required minLength={3} maxLength={80}/></label>
+              <button className="app-secondary" type="submit">Guardar nombre</button>
+            </form>
+
+            <form className="app-settings-group" onSubmit={savePassword}>
+              <h3>Contraseña</h3>
+              <label className="app-form-label">Contraseña actual<input name="current" type="password" autoComplete="current-password" required minLength={8}/></label>
+              <label className="app-form-label">Nueva contraseña<input name="next" type="password" autoComplete="new-password" required minLength={8} placeholder="Mínimo 8 caracteres"/></label>
+              <button className="app-secondary" type="submit">Cambiar contraseña</button>
+            </form>
+
+            <div className="app-settings-group">
+              <h3>Tu nivel</h3>
+              <dl className="app-settings-facts">
+                <div><dt>Nivel actual</dt><dd>{tier}</dd></div>
+                <div><dt>Cupo máximo</dt><dd>{money(data.me.maxQuotaCents)}</dd></div>
+                <div><dt>Puntaje de entrega</dt><dd>{data.me.executionScore}/100</dd></div>
+                <div><dt>Capital invertido</dt><dd>{money(invested)}</dd></div>
+              </dl>
+              <p className="app-muted">Tu nivel sube al liquidar operaciones: Semilla → Crecimiento → Pro.</p>
+            </div>
+
+            <button className="app-signout" onClick={logout}><Icon name="exit" size={18}/>Salir de la cuenta</button>
+          </div>
+        </>}
       </main>
 
       <nav className="app-dock" aria-label="Navegación">{NAV.map(item => <button key={item.id} onClick={() => go(item.id)} aria-current={page === item.id ? 'page' : undefined}><Icon name={item.icon} size={22}/><span>{item.label}</span></button>)}</nav>
     </div>
 
     {notice && <div className="app-toast" role="status">{notice}</div>}
-
-    {sheet === 'settings' && <Modal title="Ajustes" onClose={() => { setSheet('none'); setAcctMsg(''); setAcctErr(''); }}>
-      <div className="app-settings">
-        <div className="app-settings-id"><span className="app-avatar app-avatar-lg">{initials(data.me.name)}</span><div><strong>{data.me.name}</strong><span>Nivel {tier} · cupo {money(data.me.availableLimitCents)}</span></div></div>
-
-        {acctMsg && <p className="app-ok" role="status">{acctMsg}</p>}
-        {acctErr && <p className="app-error" role="alert">{acctErr}</p>}
-
-        <form className="app-settings-group" onSubmit={saveProfile}>
-          <h3>Perfil</h3>
-          <label className="app-form-label">Nombre completo<input name="legalName" defaultValue={data.me.name} required minLength={3} maxLength={80}/></label>
-          <button className="app-secondary" type="submit">Guardar nombre</button>
-        </form>
-
-        <form className="app-settings-group" onSubmit={savePassword}>
-          <h3>Contraseña</h3>
-          <label className="app-form-label">Contraseña actual<input name="current" type="password" autoComplete="current-password" required minLength={8}/></label>
-          <label className="app-form-label">Nueva contraseña<input name="next" type="password" autoComplete="new-password" required minLength={8} placeholder="Mínimo 8 caracteres"/></label>
-          <button className="app-secondary" type="submit">Cambiar contraseña</button>
-        </form>
-
-        <div className="app-settings-group">
-          <h3>Tu nivel</h3>
-          <dl className="app-settings-facts">
-            <div><dt>Nivel actual</dt><dd>{tier}</dd></div>
-            <div><dt>Cupo máximo</dt><dd>{money(data.me.maxQuotaCents)}</dd></div>
-            <div><dt>Puntaje de entrega</dt><dd>{data.me.executionScore}/100</dd></div>
-            <div><dt>Capital invertido</dt><dd>{money(invested)}</dd></div>
-          </dl>
-          <p className="app-muted">Tu nivel sube al liquidar operaciones: Semilla → Crecimiento → Pro.</p>
-        </div>
-
-        <button className="app-signout" onClick={logout}><Icon name="exit" size={18}/>Salir de la cuenta</button>
-      </div>
-    </Modal>}
-
-    {sheet === 'notifications' && <Modal title="Notificaciones" onClose={() => setSheet('none')}>
-      {data.events.length
-        ? <div className="app-list">{data.events.map(ev => <button key={ev.id} className="app-act" onClick={() => { const op = data.operations.find(o => o.id === ev.operationId); setSheet('none'); if (op) open(op); }}><span className="app-row-icon"><Icon name={ev.kind === 'settle' ? 'check' : ev.kind === 'participate' ? 'growth' : 'bell'} size={18}/></span><div><strong>{ev.title}</strong><span>{new Date(ev.date).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}</span></div><Icon name="chevron" size={16}/></button>)}</div>
-        : <p className="app-muted">No tienes notificaciones. Aquí verás cuando tus operaciones avancen.</p>}
-    </Modal>}
 
     {creating && (() => {
       // Live advance estimate, mirroring the canonical quote (2% monthly discount, 1% fee).

@@ -40,3 +40,12 @@ La skill es para landing pages (stack propio), no apps React, pero sus principio
 - Formulario "Anticipa tu cobro" con cotización EN VIVO: al escribir valor/plazo muestra el adelanto neto, el descuento y la comisión antes de crear. Estimación verificada idéntica a la cotización canónica del backend (30/45/90 días coinciden al centavo).
 - Lista de anticipar: cada operación propia muestra el paso del ciclo (por confirmar / disponible / fondeada / liquidada) con color, y el adelanto "por anticipar". Lee como un tracker, no una lista plana.
 - Verificado: suite Node 48/48; tsc + build OK; igualdad de la estimación con el motor financiero por script.
+
+## Pulido de navegación y header (HECHO)
+
+- Settings dejó de ser un modal condicional: ahora es su propia pantalla/ruta (`#settings`, página `settings`), accesible desde el perfil, con back al inicio. Mismo contenido funcional (perfil, contraseña, nivel, salir).
+- Perfil del header ahora es una píldora con borde (y chevron) para que se note pulsable; marca aria-current cuando estás en settings.
+- Notificaciones pasaron de sheet inferior a dropdown estándar anclado bajo la campana, que abre hacia abajo, con scrim para cerrar.
+- Centrado del modal arreglado: en móvil es sheet inferior full-width; en >=480px es un dialog realmente centrado (inset:0; margin:auto; ancho acotado). Eliminada la regla duplicada del bloque desktop.
+- Browser test actualizado: notificaciones dropdown (verifica que abre hacia abajo), settings como pantalla (hash #settings), logout en la pantalla, settings en el loop responsive.
+- Verificado: suite Node 48/48; tsc + build OK.

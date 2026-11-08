@@ -90,25 +90,33 @@ try {
   await page.reload();
   await page.locator('.app-row').filter({ hasText: 'QA-HITO' }).waitFor();
 
-  // Header: notifications bell lists account events; profile opens settings with logout.
+  // Notifications: a dropdown anchored to the bell, opening downward.
   await page.goto(`${base}/app/#home`);
   await page.getByRole('button', { name: /Notificaciones/ }).click();
-  await page.getByRole('heading', { name: 'Notificaciones', exact: true }).waitFor();
-  assert.ok(await page.locator('.app-sheet .app-act').count() >= 1, 'notifications list account events');
-  await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await page.locator('.app-notif-menu').waitFor();
+  assert.ok(await page.locator('.app-notif-item').count() >= 1, 'notifications list account events');
+  // The menu opens below the bell (standard dropdown).
+  const belowBell = await page.evaluate(() => {
+    const bell = document.querySelector('.app-bell').getBoundingClientRect();
+    const menu = document.querySelector('.app-notif-menu').getBoundingClientRect();
+    return menu.top >= bell.bottom - 2;
+  });
+  assert.ok(belowBell, 'notifications dropdown opens downward from the bell');
+  await page.locator('.app-notif-scrim').click();
+
+  // Settings: its own screen (not a modal), reached from the profile.
   await page.getByRole('button', { name: 'Abrir tu cuenta', exact: true }).click();
+  await page.waitForFunction(() => location.hash === '#settings');
   await page.getByRole('heading', { name: 'Ajustes', exact: true }).waitFor();
-  // Real settings: change the name and see it persist in the header greeting.
   await page.getByLabel('Nombre completo').fill('Carlos Editado');
   await page.getByRole('button', { name: 'Guardar nombre', exact: true }).click();
   await page.getByText('Nombre actualizado.', { exact: true }).waitFor();
-  await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
   await page.getByText('¡Hola, Carlos!', { exact: true }).waitFor();
 
   // Responsive: four routes, no overflow or clipping at key widths.
   for (const width of [320, 390, 430, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const route of ['home', 'invest', 'raise', 'activity']) {
+    for (const route of ['home', 'invest', 'raise', 'activity', 'settings']) {
       await page.goto(`${base}/app/#${route}`);
       await page.locator('.proofly-app').waitFor();
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `${route} overflows at ${width}`);
@@ -117,10 +125,9 @@ try {
     }
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${base}/app/#home`);
-  await page.screenshot({ path: '/private/tmp/proofly-app-home.png', fullPage: true });
-  // Logout now lives inside the settings sheet.
-  await page.getByRole('button', { name: 'Abrir tu cuenta', exact: true }).click();
+  await page.goto(`${base}/app/#settings`);
+  await page.screenshot({ path: '/private/tmp/proofly-app-settings.png', fullPage: true });
+  // Logout lives on the settings screen.
   await page.getByRole('button', { name: /Salir de la cuenta/ }).click();
   await page.waitForURL('**/login');
   await page.goto(`${base}/app/`);

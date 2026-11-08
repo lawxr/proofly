@@ -20,12 +20,32 @@
 .app-id div { display: grid; gap: 2px; }
 .app-id span { font-size: 13px; color: #6C577E; }
 .app-id strong { font-size: 13px; font-weight: 700; }
-.app-id { border: 0; background: transparent; padding: 4px; margin: -4px; border-radius: 16px; transition: background .15s; }
-.app-id:hover { background: #F2EAFB; }
+.app-id { display: flex; align-items: center; gap: 12px; border: 1px solid #E6D8F6; background: #fff; padding: 6px 12px 6px 6px; border-radius: 999px; transition: background .15s, border-color .15s, box-shadow .15s; }
+.app-id:hover { background: #F7F1FE; border-color: #D6BEF2; box-shadow: 0 4px 14px -8px #7300ff55; }
+.app-id[aria-current] { border-color: #7300FF; }
+.app-id-chevron { color: #B79AD6; display: inline-flex; }
 .app-icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 0; background: #F2EAFB; color: #3A1670; display: grid; place-items: center; }
 .app-icon-btn:hover { background: #E7D6F8; }
 .app-bell { position: relative; }
 .app-badge { position: absolute; top: 2px; right: 2px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: #E11D48; color: #fff; font-size: 10px; font-weight: 800; display: grid; place-items: center; border: 2px solid #FBF8FE; }
+
+/* Notifications dropdown — standard, opens downward from the bell */
+.app-notif-anchor { position: relative; }
+.app-notif-scrim { position: fixed; inset: 0; z-index: 48; }
+.app-notif-menu { position: absolute; top: calc(100% + 10px); right: 0; z-index: 50; width: min(320px, calc(100vw - 32px)); max-height: min(70svh, 440px); overflow-y: auto; background: #fff; border: 1px solid #ECE0F8; border-radius: 18px; box-shadow: 0 18px 50px -16px #38165540; padding: 8px; }
+.app-notif-head { font-size: 13px; font-weight: 800; color: #3A1670; padding: 8px 10px 10px; }
+.app-notif-list { display: grid; gap: 4px; }
+.app-notif-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: transparent; border: 0; border-radius: 12px; padding: 10px; color: #1E0B3B; }
+.app-notif-item:hover { background: #F7F1FE; }
+.app-notif-item > div { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.app-notif-item strong { font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-notif-item span { font-size: 11px; color: #8B769D; }
+.app-notif-empty { font-size: 13px; color: #8B769D; padding: 6px 10px 12px; margin: 0; }
+
+/* Back button in settings header */
+.app-back { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #E6D8F6; background: #fff; color: #7300FF; display: grid; place-items: center; transform: rotate(180deg); flex-shrink: 0; }
+.app-back:hover { background: #F2E8FD; }
+.app-sec-head .app-back { margin-right: 4px; }
 
 /* Settings sheet */
 .app-settings { display: grid; gap: 16px; }
@@ -133,10 +153,15 @@
 .app-error { border: 1px solid #F5CAD8; background: #FFF2F6; border-radius: 12px; color: #A72353; padding: 12px 14px; font-size: 13px; line-height: 1.5; margin: 0; }
 .app-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 96px; z-index: 70; background: #3A1670; color: #fff; padding: 12px 18px; border-radius: 14px; font-size: 13px; max-width: calc(100% - 44px); box-shadow: 0 12px 40px #38165533; }
 
-/* Bottom sheet (modal) */
-.app-sheet { width: min(440px, 100%); max-height: 92svh; border: 0; border-radius: 28px 28px 0 0; padding: 22px; margin: auto auto 0; background: #fff; color: #1E0B3B; box-shadow: 0 -20px 60px #210b3b26; overflow-y: auto; }
+/* Modal: bottom sheet on mobile, centered dialog on desktop */
+.app-sheet { position: fixed; border: 0; padding: 22px; background: #fff; color: #1E0B3B; overflow-y: auto; }
+/* Mobile: full-width sheet pinned to the bottom. */
+.app-sheet { inset: auto 0 0 0; width: 100%; max-height: 90svh; border-radius: 26px 26px 0 0; box-shadow: 0 -20px 60px #210b3b26; }
 .app-sheet::backdrop { background: #2b0f4955; backdrop-filter: blur(3px); }
-@media (min-width: 480px) { .app-sheet { border-radius: 28px; margin: auto; } }
+/* Desktop: a true centered dialog. */
+@media (min-width: 480px) {
+  .app-sheet { inset: 0; margin: auto; width: min(460px, calc(100vw - 48px)); max-height: 88svh; height: fit-content; border-radius: 26px; box-shadow: 0 30px 90px -30px #210b3b40; }
+}
 .app-sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .app-sheet-head h2 { font-size: 22px; font-weight: 800; letter-spacing: -.035em; margin: 0; }
 
@@ -237,8 +262,6 @@
   .app-twin-card img { width: 100px; height: 100px; }
   .app-toast { left: auto; right: 24px; transform: none; }
 
-  /* Sheets open centered, not bottom-anchored. */
-  .app-sheet { margin: auto; border-radius: 28px; }
 }
 
 /* Large desktop: a touch more room. */
