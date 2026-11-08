@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500" role="img" aria-label="Proofly logo"><defs>
+  <linearGradient id="lilac" x1="0.18" y1="0" x2="0.84" y2="1" objectBoundingBox="true">
+    <stop offset="0%" stop-color="#FAF4FF"/>
+    <stop offset="45%" stop-color="#E9DAFA"/>
+    <stop offset="100%" stop-color="#CDAAF8"/>
+  </linearGradient>
+  <radialGradient id="light" cx="0.25" cy="0.06" r="0.94">
+    <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.40"/>
+    <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="ink" x1="0" y1="0" x2="0.62" y2="1">
+    <stop offset="0%" stop-color="#27065B"/>
+    <stop offset="100%" stop-color="#301164"/>
+  </linearGradient>
+</defs><g fill="url(#ink)"><path d="M 141 242 H 315 C 340 242 364 225 377 203 C 383 193 396 163 401 152 C 407 136 400 124 384 124 H 222 C 201 124 184 136 175 153 L 134 231 C 130 238 134 242 141 242 Z"/><path d="M 96 358 H 149 C 183 358 213 338 228 308 L 248 274 C 253 267 250 264 244 264 H 153 C 131 264 113 277 103 297 L 83 339 C 77 351 84 358 96 358 Z"/></g></svg>
