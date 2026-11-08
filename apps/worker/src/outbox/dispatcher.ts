@@ -10,14 +10,19 @@ import type { OutboxRepositoryPort, BlockchainPort, PaymentRailPort } from '@pro
 export interface DispatcherConfig {
   maxRetries?: number;
   baseDelayMs?: number;
+  maxDelayMs?: number;
   batchSize?: number;
+  now?: () => number;
 }
 
 export class OutboxDispatcher {
   outboxRepo: OutboxRepositoryPort;
   blockchain: BlockchainPort;
   paymentRail: PaymentRailPort;
-  config: Required<DispatcherConfig>;
+  config: Required<Omit<DispatcherConfig, 'now'>>;
+  now: () => number;
+  // When an event may next be retried, by event id (exponential backoff).
+  private nextRetryAt: Map<string, number>;
 
   constructor(
     outboxRepo: OutboxRepositoryPort,
@@ -28,31 +33,52 @@ export class OutboxDispatcher {
     this.outboxRepo = outboxRepo;
     this.blockchain = blockchain;
     this.paymentRail = paymentRail;
+    this.now = config?.now ?? Date.now;
+    this.nextRetryAt = new Map();
     this.config = {
       maxRetries: config?.maxRetries ?? 5,
       baseDelayMs: config?.baseDelayMs ?? 1000,
+      maxDelayMs: config?.maxDelayMs ?? 60000,
       batchSize: config?.batchSize ?? 10
     };
   }
 
-  async processBatch(): Promise<{ processedCount: number; failedCount: number }> {
+  /** Exponential backoff: baseDelay * 2^retryCount, capped at maxDelayMs. */
+  private delayForRetry(retryCount: number): number {
+    const delay = this.config.baseDelayMs * 2 ** Math.max(0, retryCount);
+    return Math.min(delay, this.config.maxDelayMs);
+  }
+
+  async processBatch(): Promise<{ processedCount: number; failedCount: number; skippedCount: number }> {
     const events = await this.outboxRepo.fetchPendingEvents(this.config.batchSize);
+    const now = this.now();
     let processedCount = 0;
     let failedCount = 0;
+    let skippedCount = 0;
 
     for (const event of events) {
+      // Respect backoff: a failed event waits before it is retried.
+      const waitUntil = this.nextRetryAt.get(event.id);
+      if (waitUntil !== undefined && waitUntil > now) { skippedCount++; continue; }
+
+      // Stop retrying once the event has exhausted its retry budget.
+      if (event.retryCount >= this.config.maxRetries) { skippedCount++; continue; }
+
       try {
         await this.dispatchEvent(event);
         await this.outboxRepo.markCompleted(event.id);
+        this.nextRetryAt.delete(event.id);
         processedCount++;
       } catch (err: unknown) {
         failedCount++;
         const errorMessage = err instanceof Error ? err.message : String(err);
         await this.outboxRepo.markFailed(event.id, errorMessage);
+        // Schedule the next attempt after an exponential delay.
+        this.nextRetryAt.set(event.id, this.now() + this.delayForRetry(event.retryCount));
       }
     }
 
-    return { processedCount, failedCount };
+    return { processedCount, failedCount, skippedCount };
   }
 
   private async dispatchEvent(event: OutboxEvent): Promise<void> {
