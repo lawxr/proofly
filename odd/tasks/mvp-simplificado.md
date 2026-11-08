@@ -33,5 +33,10 @@ La skill es para landing pages (stack propio), no apps React, pero sus principio
 ## Pendiente
 
 - Correr el browser test cuando Chromium vuelva a lanzar en el entorno.
-- Backoff real en el OutboxDispatcher (de antes).
 - KYC/pagos/DIAN reales (de antes).
+
+## Flujo de anticipar al nivel de invertir (HECHO)
+
+- Formulario "Anticipa tu cobro" con cotización EN VIVO: al escribir valor/plazo muestra el adelanto neto, el descuento y la comisión antes de crear. Estimación verificada idéntica a la cotización canónica del backend (30/45/90 días coinciden al centavo).
+- Lista de anticipar: cada operación propia muestra el paso del ciclo (por confirmar / disponible / fondeada / liquidada) con color, y el adelanto "por anticipar". Lee como un tracker, no una lista plana.
+- Verificado: suite Node 48/48; tsc + build OK; igualdad de la estimación con el motor financiero por script.

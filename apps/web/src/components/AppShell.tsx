@@ -69,6 +69,8 @@ export default function AppShell() {
   const [creating, setCreating] = useState(false);
   const [kind, setKind] = useState('INVOICE');
   const [amount, setAmount] = useState('250000');
+  const [raiseAmount, setRaiseAmount] = useState('1000000');
+  const [raiseTerm, setRaiseTerm] = useState('30');
   const [accepted, setAccepted] = useState(false);
   const [notice, setNotice] = useState('');
   const [sheet, setSheet] = useState<'none' | 'settings' | 'notifications'>('none');
@@ -165,6 +167,12 @@ export default function AppShell() {
     <span className="app-row-body"><strong>{op.title}</strong><span>{op.payerLegalName} · {op.termDays} días</span></span>
     <span className="app-row-end"><strong>{money(op.nominalAmountCents)}</strong><span className="app-row-rate">{percent(op.effectiveAnnualRate)}</span></span>
   </button>;
+  // Own operations show the lifecycle step, so the raise flow reads as a tracker.
+  const mineRow = (op: Operation) => <button key={op.id} className="app-row" onClick={() => open(op)}>
+    <span className="app-row-icon"><Icon name={op.assetType === 'MILESTONE' ? 'growth' : 'file'} size={20}/></span>
+    <span className="app-row-body"><strong>{op.title}</strong><span className={`app-step app-step-${op.status.startsWith('SETTLED') ? 'done' : op.status === 'APPROVED_PENDING_FUNDING' || op.status === 'ACTIVE_FUNDED' || op.status === 'DISBURSED' ? 'go' : 'wait'}`}>{STATUS[op.status] || op.status}</span></span>
+    <span className="app-row-end"><strong>{money(op.advanceAmountCents)}</strong><span className="app-row-sub">por anticipar</span></span>
+  </button>;
 
   return <div className="proofly-app">
     <div className="app-shell">
@@ -213,7 +221,7 @@ export default function AppShell() {
           <div className="app-sec-head"><h1 className="app-title">Anticipar</h1><button className="app-primary app-primary-sm" onClick={() => { setKind('INVOICE'); setCreating(true); }}><Icon name="plus" size={16}/>Nueva</button></div>
           <p className="app-lead">Adelanta el cobro de tus facturas e hitos. Cupo disponible {money(data.me.availableLimitCents)}.</p>
           {mine.length
-            ? <div className="app-list">{mine.map(opRow)}</div>
+            ? <div className="app-list">{mine.map(mineRow)}</div>
             : <p className="app-muted">Crea tu primera factura o hito para ver una cotización.</p>}
         </>}
 
@@ -271,15 +279,30 @@ export default function AppShell() {
         : <p className="app-muted">No tienes notificaciones. Aquí verás cuando tus operaciones avancen.</p>}
     </Modal>}
 
-    {creating && <Modal title="Nueva operación" onClose={() => { setCreating(false); setError(''); }}><form onSubmit={create} className="app-form">
-      <label>Tipo<select value={kind} onChange={e => setKind(e.target.value)}><option value="INVOICE">Factura</option><option value="MILESTONE">Hito</option></select></label>
-      <label>Título<input name="title" required minLength={3} maxLength={80} placeholder="Diseño de identidad"/></label>
-      <label>Empresa pagadora<input name="company" required maxLength={80} placeholder="Estudio Nube"/></label>
-      <div className="app-form-pair"><label>Valor (COP)<input name="amount" type="number" required min="1000" step="1000" defaultValue="1000000"/></label><label>Plazo<select name="term" defaultValue="30"><option value="15">15 días</option><option value="30">30 días</option><option value="45">45 días</option><option value="60">60 días</option><option value="90">90 días</option></select></label></div>
-      <fieldset className="app-checks"><legend>{kind === 'INVOICE' ? 'Confirma los eventos de la factura' : 'Confirma el entregable'}</legend>{(kind === 'INVOICE' ? [['validated','Validación DIAN'],['received','Acuse de recibo'],['delivered','Entrega realizada'],['accepted','Aceptación del pagador']] : [['ready','El entregable está listo']]).map(([n,l]) => <label key={n}><input name={n} type="checkbox" required/>{l}</label>)}</fieldset>
-      {error && <p className="app-error" role="alert">{error}</p>}
-      <button className="app-primary" disabled={busy}>{busy ? 'Creando…' : 'Crear y cotizar'}</button>
-    </form></Modal>}
+    {creating && (() => {
+      // Live advance estimate, mirroring the canonical quote (2% monthly discount, 1% fee).
+      const nominal = /^\d+$/.test(raiseAmount) ? BigInt(raiseAmount) * 100n : 0n;
+      const days = Number(raiseTerm);
+      const discount = nominal > 0n ? BigInt(Math.floor(Number(nominal) * (0.02 * days / 30))) : 0n;
+      const fee = nominal > 0n ? BigInt(Math.floor(Number(nominal) * 0.01)) : 0n;
+      const advance = nominal - discount - fee;
+      return <Modal title="Anticipa tu cobro" onClose={() => { setCreating(false); setError(''); }}><form onSubmit={create} className="app-form">
+        <label>Tipo<select value={kind} onChange={e => setKind(e.target.value)}><option value="INVOICE">Factura</option><option value="MILESTONE">Hito</option></select></label>
+        <label>Título<input name="title" required minLength={3} maxLength={80} placeholder="Diseño de identidad"/></label>
+        <label>Empresa pagadora<input name="company" required maxLength={80} placeholder="Estudio Nube"/></label>
+        <div className="app-form-pair"><label>Valor (COP)<input name="amount" type="number" required min="1000" step="1000" value={raiseAmount} onChange={e => setRaiseAmount(e.target.value)}/></label><label>Plazo<select name="term" value={raiseTerm} onChange={e => setRaiseTerm(e.target.value)}><option value="15">15 días</option><option value="30">30 días</option><option value="45">45 días</option><option value="60">60 días</option><option value="90">90 días</option></select></label></div>
+        {advance > 0n && <div className="app-quote">
+          <div className="app-quote-advance"><span>Recibes por anticipado</span><strong>{money(advance.toString())}</strong></div>
+          <div className="app-quote-break"><span>Valor nominal</span><span>{money(nominal.toString())}</span></div>
+          <div className="app-quote-break"><span>Descuento ({days} días)</span><span>−{money(discount.toString())}</span></div>
+          <div className="app-quote-break"><span>Comisión Proofly</span><span>−{money(fee.toString())}</span></div>
+        </div>}
+        <fieldset className="app-checks"><legend>{kind === 'INVOICE' ? 'Confirma los eventos de la factura' : 'Confirma el entregable'}</legend>{(kind === 'INVOICE' ? [['validated','Validación DIAN'],['received','Acuse de recibo'],['delivered','Entrega realizada'],['accepted','Aceptación del pagador']] : [['ready','El entregable está listo']]).map(([n,l]) => <label key={n}><input name={n} type="checkbox" required/>{l}</label>)}</fieldset>
+        <p className="app-muted app-invest-note">Estimación con la tarifa estándar; el sistema confirma la cotización al crear.</p>
+        {error && <p className="app-error" role="alert">{error}</p>}
+        <button className="app-primary" disabled={busy}>{busy ? 'Creando…' : 'Crear y cotizar'}</button>
+      </form></Modal>;
+    })()}
 
     {active && !creating && <Modal title={active.title} onClose={() => { setSelected(null); setError(''); }}>
       <div className="app-detail-top"><span className="app-tag">{active.assetType === 'INVOICE' ? 'Factura' : 'Hito'}</span><span className="app-tag app-tag-plain">{STATUS[active.status]}</span></div>

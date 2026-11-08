@@ -76,6 +76,8 @@ try {
   await page.getByLabel('Empresa pagadora').fill('Empresa de pruebas');
   await page.getByLabel('Valor (COP)', { exact: true }).fill('1000000');
   await page.getByLabel('Plazo', { exact: true }).selectOption('45');
+  // Live quote preview shows the net advance before creating.
+  await page.locator('.app-quote-advance').getByText('Recibes por anticipado').waitFor();
   await page.getByLabel('El entregable está listo').check();
   await page.getByRole('button', { name: 'Crear y cotizar', exact: true }).click();
   await page.getByRole('dialog').getByRole('heading', { name: 'QA-HITO', exact: true }).waitFor();

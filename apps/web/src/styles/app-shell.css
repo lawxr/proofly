@@ -58,6 +58,20 @@
 .app-positive { color: #188344 !important; }
 .app-invest-note { font-size: 11px; }
 
+/* Live quote in the raise form */
+.app-quote { background: #F2E8FD; border-radius: 18px; padding: 16px; display: grid; gap: 8px; }
+.app-quote-advance { display: grid; gap: 2px; padding-bottom: 10px; border-bottom: 1px solid #E2CEF6; margin-bottom: 4px; }
+.app-quote-advance span { font-size: 12px; color: #7A5087; }
+.app-quote-advance strong { font-size: 26px; font-weight: 800; letter-spacing: -.04em; color: #7300FF; }
+.app-quote-break { display: flex; justify-content: space-between; font-size: 12px; color: #6C577E; }
+
+/* Lifecycle step pill on own operations */
+.app-row-sub { font-size: 11px; color: #8B769D; }
+.app-step { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 0; }
+.app-step-wait { color: #B7791F; }
+.app-step-go { color: #7300FF; }
+.app-step-done { color: #188344; }
+
 /* Main scroll area */
 .app-main { flex: 1; padding: 10px 22px 120px; display: flex; flex-direction: column; gap: 22px; }
 .app-title { font-size: 34px; font-weight: 800; letter-spacing: -.045em; line-height: 1.05; margin: 6px 0 0; }
