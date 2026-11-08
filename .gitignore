@@ -20,3 +20,4 @@ contracts/broadcast/
 
 # Design taste skill (local tooling, not app source).
 .taste-skill/
+.codegraph/
