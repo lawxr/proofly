@@ -6,25 +6,15 @@ import { OutboxDispatcher } from './outbox/dispatcher.ts';
 import { EVMEventIndexer, ChainLogProvider, RawLogEvent } from './indexer/evm-indexer.ts';
 import { DailyReconciliationJob, ChainDataProvider, BankDataProvider } from './reconciliation/daily-job.ts';
 import { OutboxEvent, OutboxStatus } from '@proofly/domain';
-import type { OutboxRepositoryPort, BlockchainPort, PaymentRailPort } from '@proofly/domain';
+import type { OutboxRepositoryPort, PaymentRailPort } from '@proofly/domain';
+import { createBlockchainAdapter } from '../../api/src/adapters/blockchain/blockchain-factory.ts';
 
-console.log('[Proofly Worker] Inicializando Outbox Dispatcher, EVM Indexer y Conciliador Diario...');
+const blockchainAdapter = createBlockchainAdapter(process.env);
+console.log(`[Proofly Worker] Inicializando Outbox Dispatcher (blockchain: ${process.env.BLOCKCHAIN_ADAPTER === 'viem' ? 'viem/on-chain' : 'mock'})...`);
 
 let isRunning = true;
 process.on('SIGINT', () => { isRunning = false; });
 process.on('SIGTERM', () => { isRunning = false; });
-
-// Mocks locales para ejecución en segundo plano
-class StandaloneBlockchainAdapter implements BlockchainPort {
-  async mintOperationTokens(params: { operationId: string; toAddress: string; amountTokens: bigint }) {
-    console.log(`[Worker EVM] Minteando ${params.amountTokens} tokens en Base L2 para op ${params.operationId}`);
-    return { txHash: `0xworker${Date.now()}`, success: true };
-  }
-  async burnOperationTokens(params: { operationId: string; receiptHash: string }) {
-    console.log(`[Worker EVM] Quemando tokens en Base L2 con recibo ${params.receiptHash}`);
-    return { txHash: `0xburn${Date.now()}`, success: true };
-  }
-}
 
 class StandalonePaymentRailAdapter implements PaymentRailPort {
   async disburseAdvance(params: { recipientAccount: string; amountCents: bigint; reference: string }) {
@@ -74,9 +64,8 @@ class InMemoryOutboxWorkerRepo implements OutboxRepositoryPort {
 }
 
 const outboxRepo = new InMemoryOutboxWorkerRepo();
-const blockchain = new StandaloneBlockchainAdapter();
 const paymentRail = new StandalonePaymentRailAdapter();
-const dispatcher = new OutboxDispatcher(outboxRepo, blockchain, paymentRail);
+const dispatcher = new OutboxDispatcher(outboxRepo, blockchainAdapter, paymentRail);
 
 async function loop() {
   console.log('[Proofly Worker] Bucle de procesamiento activo (intervalo 3s).');

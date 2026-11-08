@@ -7,3 +7,16 @@ contracts/cache/
 dist/
 */dist/
 
+
+# Local private-demo credentials (never publish).
+.env.demo
+
+# Local chain env (Anvil). Uses the public Anvil dev key; kept out of git as
+# hygiene so this pattern is never copied with a real operator key.
+.env.anvil
+
+# Foundry broadcast artifacts (contain deploy tx data and sensitive cache).
+contracts/broadcast/
+
+# Design taste skill (local tooling, not app source).
+.taste-skill/

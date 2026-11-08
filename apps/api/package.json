@@ -11,12 +11,12 @@
     "start": "node dist/main.js"
   },
   "dependencies": {
-    "@proofly/domain": "*",
     "@proofly/contracts-sdk": "*",
+    "@proofly/domain": "*",
+    "viem": "^2.57.16",
     "zod": "^3.23.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
   }
 }
-

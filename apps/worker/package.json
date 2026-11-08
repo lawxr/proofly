@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@proofly/domain": "*",
-    "@proofly/contracts-sdk": "*"
+    "@proofly/contracts-sdk": "*",
+    "@proofly/api": "*",
+    "viem": "^2.0.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
