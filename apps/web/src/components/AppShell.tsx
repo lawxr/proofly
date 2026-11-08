@@ -73,6 +73,33 @@ export default function AppShell() {
   const [notice, setNotice] = useState('');
   const [sheet, setSheet] = useState<'none' | 'settings' | 'notifications'>('none');
   const [seen, setSeen] = useState<string>(() => { try { return localStorage.getItem('proofly-seen-event') || ''; } catch { return ''; } });
+  const [acctMsg, setAcctMsg] = useState('');
+  const [acctErr, setAcctErr] = useState('');
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const legalName = new FormData(event.currentTarget).get('legalName');
+    setAcctMsg(''); setAcctErr('');
+    try {
+      const r = await fetch('/api/account/profile', { method: 'PATCH', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ legalName }) });
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error((body as { message?: string }).message || 'No pudimos guardar tu nombre.');
+      await refresh(); setAcctMsg('Nombre actualizado.');
+    } catch (e) { setAcctErr(e instanceof Error ? e.message : 'No pudimos guardar.'); }
+  }
+  async function savePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    setAcctMsg(''); setAcctErr('');
+    try {
+      const r = await fetch('/api/account/password', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentPassword: data.get('current'), newPassword: data.get('next') }) });
+      const body = await r.json().catch(() => ({}));
+      if (r.status === 403) throw new Error('Tu contraseña actual no es correcta.');
+      if (!r.ok) throw new Error((body as { message?: string }).message || 'No pudimos cambiar la contraseña.');
+      form.reset(); setAcctMsg('Contraseña actualizada.');
+    } catch (e) { setAcctErr(e instanceof Error ? e.message : 'No pudimos cambiar la contraseña.'); }
+  }
 
   async function request(path: string, init?: RequestInit) {
     const response = await fetch(path, { credentials: 'same-origin', ...init });
@@ -203,17 +230,38 @@ export default function AppShell() {
 
     {notice && <div className="app-toast" role="status">{notice}</div>}
 
-    {sheet === 'settings' && <Modal title="Tu cuenta" onClose={() => setSheet('none')}>
+    {sheet === 'settings' && <Modal title="Ajustes" onClose={() => { setSheet('none'); setAcctMsg(''); setAcctErr(''); }}>
       <div className="app-settings">
-        <div className="app-settings-id"><span className="app-avatar app-avatar-lg">{initials(data.me.name)}</span><div><strong>{data.me.name}</strong><span>Nivel {tier}</span></div></div>
-        <dl className="app-settings-facts">
-          <div><dt>Cupo para anticipar</dt><dd>{money(data.me.availableLimitCents)}</dd></div>
-          <div><dt>Cupo máximo del nivel</dt><dd>{money(data.me.maxQuotaCents)}</dd></div>
-          <div><dt>Puntaje de entrega</dt><dd>{data.me.executionScore}/100</dd></div>
-          <div><dt>Capital invertido</dt><dd>{money(invested)}</dd></div>
-        </dl>
-        <p className="app-muted">Tu nivel sube a medida que liquidas operaciones. Semilla → Crecimiento → Pro.</p>
-        <button className="app-secondary" onClick={logout}><Icon name="exit" size={18}/>Salir de la cuenta</button>
+        <div className="app-settings-id"><span className="app-avatar app-avatar-lg">{initials(data.me.name)}</span><div><strong>{data.me.name}</strong><span>Nivel {tier} · cupo {money(data.me.availableLimitCents)}</span></div></div>
+
+        {acctMsg && <p className="app-ok" role="status">{acctMsg}</p>}
+        {acctErr && <p className="app-error" role="alert">{acctErr}</p>}
+
+        <form className="app-settings-group" onSubmit={saveProfile}>
+          <h3>Perfil</h3>
+          <label className="app-form-label">Nombre completo<input name="legalName" defaultValue={data.me.name} required minLength={3} maxLength={80}/></label>
+          <button className="app-secondary" type="submit">Guardar nombre</button>
+        </form>
+
+        <form className="app-settings-group" onSubmit={savePassword}>
+          <h3>Contraseña</h3>
+          <label className="app-form-label">Contraseña actual<input name="current" type="password" autoComplete="current-password" required minLength={8}/></label>
+          <label className="app-form-label">Nueva contraseña<input name="next" type="password" autoComplete="new-password" required minLength={8} placeholder="Mínimo 8 caracteres"/></label>
+          <button className="app-secondary" type="submit">Cambiar contraseña</button>
+        </form>
+
+        <div className="app-settings-group">
+          <h3>Tu nivel</h3>
+          <dl className="app-settings-facts">
+            <div><dt>Nivel actual</dt><dd>{tier}</dd></div>
+            <div><dt>Cupo máximo</dt><dd>{money(data.me.maxQuotaCents)}</dd></div>
+            <div><dt>Puntaje de entrega</dt><dd>{data.me.executionScore}/100</dd></div>
+            <div><dt>Capital invertido</dt><dd>{money(invested)}</dd></div>
+          </dl>
+          <p className="app-muted">Tu nivel sube al liquidar operaciones: Semilla → Crecimiento → Pro.</p>
+        </div>
+
+        <button className="app-signout" onClick={logout}><Icon name="exit" size={18}/>Salir de la cuenta</button>
       </div>
     </Modal>}
 

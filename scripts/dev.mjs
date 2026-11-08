@@ -11,18 +11,21 @@ const build = spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run'
 if (build.status !== 0) process.exit(build.status || 1);
 
 const { createDependenciesFromEnv } = await import('../apps/api/src/app.ts');
-const { RegisterUserUseCase, LoginUseCase } = await import('../packages/domain/src/index.ts');
+const { RegisterUserUseCase, LoginUseCase, UpdateProfileUseCase, ChangePasswordUseCase } = await import('../packages/domain/src/index.ts');
 const { createAppService } = await import('./app-service.mjs');
 const { createProoflyServer } = await import('../server.mjs');
 
 const deps = createDependenciesFromEnv(process.env);
 const register = new RegisterUserUseCase(deps.userRepo, deps.kycVerifier);
 const login = new LoginUseCase(deps.userRepo);
+const updateProfile = new UpdateProfileUseCase(deps.userRepo);
+const changePassword = new ChangePasswordUseCase(deps.userRepo);
 const app = await createAppService(deps);
 
 const server = createProoflyServer({
   appHandler: app.handle.bind(app),
-  auth: { register: dto => register.execute(dto), login: dto => login.execute(dto) }
+  auth: { register: dto => register.execute(dto), login: dto => login.execute(dto) },
+  account: { updateProfile: dto => updateProfile.execute(dto), changePassword: dto => changePassword.execute(dto) }
 });
 server.listen(Number(process.env.PORT || 3000), '127.0.0.1', () => {
   console.log(`Proofly: http://127.0.0.1:${server.address().port}`);

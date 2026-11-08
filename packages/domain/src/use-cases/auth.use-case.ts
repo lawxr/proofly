@@ -98,3 +98,51 @@ export class LoginUseCase {
     return user;
   }
 }
+
+export interface UpdateProfileDto {
+  userId: string;
+  legalName: string;
+}
+
+export class UpdateProfileUseCase {
+  userRepo: UserRepositoryPort;
+
+  constructor(userRepo: UserRepositoryPort) {
+    this.userRepo = userRepo;
+  }
+
+  async execute(dto: UpdateProfileDto): Promise<UserEntity> {
+    const legalName = dto.legalName?.trim();
+    if (!legalName || legalName.length < 3 || legalName.length > 80) throw new Error('Enter your full name (3-80 characters).');
+    const user = await this.userRepo.findById(dto.userId);
+    if (!user) throw new Error('User not found.');
+    user.legalName = legalName;
+    user.updatedAt = new Date();
+    await this.userRepo.save(user);
+    return user;
+  }
+}
+
+export interface ChangePasswordDto {
+  userId: string;
+  currentPassword: string;
+  newPassword: string;
+}
+
+export class ChangePasswordUseCase {
+  userRepo: UserRepositoryPort;
+
+  constructor(userRepo: UserRepositoryPort) {
+    this.userRepo = userRepo;
+  }
+
+  async execute(dto: ChangePasswordDto): Promise<void> {
+    const user = await this.userRepo.findById(dto.userId);
+    if (!user || !user.passwordHash) throw new Error('User not found.');
+    const ok = await verifyPassword(dto.currentPassword, user.passwordHash);
+    if (!ok) throw new Error('Current password is incorrect.');
+    user.passwordHash = await hashPassword(dto.newPassword);
+    user.updatedAt = new Date();
+    await this.userRepo.save(user);
+  }
+}

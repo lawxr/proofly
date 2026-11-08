@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { hashPassword, verifyPassword } from '../security/password.ts';
-import { RegisterUserUseCase, LoginUseCase } from './auth.use-case.ts';
+import { RegisterUserUseCase, LoginUseCase, UpdateProfileUseCase, ChangePasswordUseCase } from './auth.use-case.ts';
 import { UserEntity, UserRole, KycStatus } from '../models/user.ts';
 import type { UserRepositoryPort } from '../ports/user-repository.port.ts';
 import type { FreelancerTier } from '../reputation/tiers-policy.ts';
@@ -51,5 +51,28 @@ describe('Auth', () => {
     const register = new RegisterUserUseCase(repo);
     await register.execute({ email: 'dup@proofly.co', legalName: 'Dup Uno', taxId: '1098765432', password: 'una-clave-segura' });
     await assert.rejects(register.execute({ email: 'dup@proofly.co', legalName: 'Dup Dos', taxId: '1098765433', password: 'otra-clave-segura' }), /already exists/);
+  });
+
+  it('update profile persists a new legal name and validates it', async () => {
+    const repo = new MemUserRepo();
+    const u = await new RegisterUserUseCase(repo, undefined, () => 'u1').execute({ email: 'p@proofly.co', legalName: 'Nombre Viejo', taxId: '1098765432', password: 'una-clave-segura' });
+    const update = new UpdateProfileUseCase(repo);
+    const updated = await update.execute({ userId: u.id, legalName: 'Nombre Nuevo' });
+    assert.equal(updated.legalName, 'Nombre Nuevo');
+    assert.equal((await repo.findById('u1'))?.legalName, 'Nombre Nuevo');
+    await assert.rejects(update.execute({ userId: u.id, legalName: 'ab' }), /3-80/);
+  });
+
+  it('change password requires the current one and updates the hash', async () => {
+    const repo = new MemUserRepo();
+    const u = await new RegisterUserUseCase(repo, undefined, () => 'u2').execute({ email: 'c@proofly.co', legalName: 'Persona Real', taxId: '1098765432', password: 'clave-actual-xx' });
+    const change = new ChangePasswordUseCase(repo);
+    await assert.rejects(change.execute({ userId: u.id, currentPassword: 'clave-equivocada', newPassword: 'clave-nueva-xxx' }), /incorrect/);
+    await change.execute({ userId: u.id, currentPassword: 'clave-actual-xx', newPassword: 'clave-nueva-xxx' });
+    // Old password no longer works; new one does.
+    const login = new LoginUseCase(repo);
+    await assert.rejects(login.execute({ email: 'c@proofly.co', password: 'clave-actual-xx' }), /Invalid credentials/);
+    const ok = await login.execute({ email: 'c@proofly.co', password: 'clave-nueva-xxx' });
+    assert.equal(ok.id, 'u2');
   });
 });

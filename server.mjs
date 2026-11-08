@@ -17,7 +17,7 @@ const COOKIE = 'proofly_session';
  * `auth` is { register, login } (domain use cases). `appHandler(req, res, ctx)`
  * receives the authenticated { userId } so the app service can scope data.
  */
-export function createProoflyServer({ root = process.cwd(), secureCookies = process.env.NODE_ENV === 'production' || process.env.PROOFLY_SECURE_COOKIE === 'true', now = Date.now, appHandler, auth } = {}) {
+export function createProoflyServer({ root = process.cwd(), secureCookies = process.env.NODE_ENV === 'production' || process.env.PROOFLY_SECURE_COOKIE === 'true', now = Date.now, appHandler, auth, account } = {}) {
   const sessions = new Map(); // id -> { userId, until }
   const attempts = new Map();
   const dist = resolve(root, 'apps/web/dist');
@@ -99,6 +99,30 @@ export function createProoflyServer({ root = process.cwd(), secureCookies = proc
         if (!sameOrigin(req)) return json(res, 403, 'invalid_origin');
         sessions.delete(sessionId(req));
         res.setHeader('Set-Cookie', cookieValue('', 0)); res.writeHead(204); return res.end();
+      }
+
+      // --- Authenticated account settings ---
+      if (pathname === '/api/account/profile' || pathname === '/api/account/password') {
+        const s = session(req);
+        if (!s) return json(res, 401, 'unauthenticated');
+        if (!sameOrigin(req)) return json(res, 403, 'invalid_origin');
+        if (!account) return json(res, 503, 'account_unavailable');
+        const data = await readJsonBody(req, res);
+        if (data === undefined) return;
+        try {
+          if (pathname.endsWith('profile')) {
+            if (req.method !== 'PATCH') return json(res, 405, 'method_not_allowed');
+            const user = await account.updateProfile({ userId: s.userId, legalName: data.legalName });
+            return json(res, 200, { code: 'updated', name: user.legalName });
+          }
+          if (req.method !== 'POST') return json(res, 405, 'method_not_allowed');
+          await account.changePassword({ userId: s.userId, currentPassword: data.currentPassword, newPassword: data.newPassword });
+          return json(res, 200, { code: 'updated' });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'account_failed';
+          if (/current password is incorrect/i.test(message)) return json(res, 403, 'wrong_password');
+          return json(res, 400, { code: 'invalid_request', message });
+        }
       }
 
       // --- Authenticated application API ---

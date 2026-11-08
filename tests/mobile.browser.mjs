@@ -9,11 +9,14 @@ if (base) {
   // external target
 } else {
   const { createDependencies: make } = await import('../apps/api/src/app.ts');
+  const { UpdateProfileUseCase, ChangePasswordUseCase } = await import('../packages/domain/src/index.ts');
   const deps = make();
   const register = new RegisterUserUseCase(deps.userRepo, deps.kycVerifier);
   const login = new LoginUseCase(deps.userRepo);
   const app = await createAppService(deps);
-  server = createProoflyServer({ appHandler: app.handle.bind(app), auth: { register: dto => register.execute(dto), login: dto => login.execute(dto) } });
+  server = createProoflyServer({ appHandler: app.handle.bind(app),
+    auth: { register: dto => register.execute(dto), login: dto => login.execute(dto) },
+    account: { updateProfile: dto => new UpdateProfileUseCase(deps.userRepo).execute(dto), changePassword: dto => new ChangePasswordUseCase(deps.userRepo).execute(dto) } });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${server.address().port}`;
 }
@@ -92,7 +95,13 @@ try {
   assert.ok(await page.locator('.app-sheet .app-act').count() >= 1, 'notifications list account events');
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
   await page.getByRole('button', { name: 'Abrir tu cuenta', exact: true }).click();
-  await page.getByRole('heading', { name: 'Tu cuenta', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Ajustes', exact: true }).waitFor();
+  // Real settings: change the name and see it persist in the header greeting.
+  await page.getByLabel('Nombre completo').fill('Carlos Editado');
+  await page.getByRole('button', { name: 'Guardar nombre', exact: true }).click();
+  await page.getByText('Nombre actualizado.', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await page.getByText('¡Hola, Carlos!', { exact: true }).waitFor();
 
   // Responsive: four routes, no overflow or clipping at key widths.
   for (const width of [320, 390, 430, 768, 1440]) {

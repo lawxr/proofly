@@ -28,16 +28,22 @@
 .app-badge { position: absolute; top: 2px; right: 2px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: #E11D48; color: #fff; font-size: 10px; font-weight: 800; display: grid; place-items: center; border: 2px solid #FBF8FE; }
 
 /* Settings sheet */
-.app-settings { display: grid; gap: 18px; }
+.app-settings { display: grid; gap: 16px; }
 .app-settings-id { display: flex; align-items: center; gap: 14px; }
 .app-avatar-lg { width: 56px; height: 56px; font-size: 18px; }
 .app-settings-id strong { display: block; font-size: 17px; font-weight: 800; }
 .app-settings-id span { font-size: 13px; color: #8B769D; }
+.app-settings-group { display: grid; gap: 12px; padding: 16px; background: #F8F4FD; border-radius: 18px; }
+.app-settings-group h3 { font-size: 13px; font-weight: 800; letter-spacing: -.02em; margin: 0; color: #3A1670; }
+.app-settings-group .app-secondary { width: 100%; }
+.app-settings-group .app-form-label input { background: #fff; }
 .app-settings-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; }
-.app-settings-facts > div { background: #F8F4FD; border-radius: 14px; padding: 14px; }
+.app-settings-facts > div { background: #fff; border-radius: 14px; padding: 14px; }
 .app-settings-facts dt { font-size: 11px; color: #8B769D; }
 .app-settings-facts dd { font-size: 16px; font-weight: 800; margin: 6px 0 0; }
-.app-settings .app-secondary { width: 100%; }
+.app-ok { border: 1px solid #BBE8CC; background: #EDF8F1; border-radius: 12px; color: #187140; padding: 12px 14px; font-size: 13px; margin: 0; }
+.app-signout { width: 100%; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #F2D4DD; background: #fff; color: #C02751; border-radius: 999px; font-weight: 700; font-size: 14px; }
+.app-signout:hover { background: #FFF2F6; }
 
 /* Dedicated invest flow */
 .app-invest { display: grid; gap: 14px; }

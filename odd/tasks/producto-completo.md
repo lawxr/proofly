@@ -38,3 +38,8 @@
   - HTTP: signup→Semilla $2.000.000; invertir en operación de mercado registra participación y evento `participate`; eventos traen `kind` para notificaciones; tasa real 27.75% E.A.
   - Browser test reescrito para el nuevo flujo (header, notificaciones, ajustes, invertir en vivo, logout en ajustes); NO ejecutable aquí (Chromium crashea por sandbox).
 - Bloqueos de entorno persistentes: push GitHub (sin credenciales accesibles) y Playwright (crash al lanzar). Commits quedan locales; el usuario pushea.
+- L4: Pulido pedido — "settings de verdad". El sheet anterior era solo lectura. Ahora son ajustes funcionales con persistencia:
+  - Dominio: `UpdateProfileUseCase` (edita legalName con validación) y `ChangePasswordUseCase` (verifica la actual con scrypt, re-hashea la nueva). Tests 6/6 en auth.
+  - Servidor: `/api/account/profile` (PATCH) y `/api/account/password` (POST), autenticados, same-origin, inyectados vía `account`.
+  - Frontend: sheet "Ajustes" con secciones reales — Perfil (editar nombre; correo/documento quedan como identidad/KYC, no editables por diseño fintech), Contraseña (actual + nueva), resumen de nivel, y Salir diferenciado.
+  - Verificación HTTP: editar nombre persiste (snapshot refleja); cambiar contraseña rechaza la actual equivocada (403), acepta la correcta (200), y el login con la vieja falla / con la nueva funciona. Suite Node 48/48.
