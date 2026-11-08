@@ -1,22 +1,22 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
-import { randomInt } from 'node:crypto';
-import { createDemoServer } from '../server.mjs';
-import { createPrivateApp } from '../scripts/private-app.mjs';
+import { createProoflyServer } from '../server.mjs';
+import { RegisterUserUseCase, LoginUseCase } from '../packages/domain/src/index.ts';
+import { createAppService } from '../scripts/app-service.mjs';
 let server;
 let base = process.env.BASE_URL;
-let pin;
 if (base) {
-  try { process.loadEnvFile('.env.demo'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
-  pin = process.env.DEMO_ACCESS_PIN;
+  // external target
 } else {
-  pin = String(randomInt(0, 10000)).padStart(4, '0');
-  const app = await createPrivateApp();
-  server = createDemoServer({ pin, appHandler: app.handle.bind(app) });
+  const { createDependencies: make } = await import('../apps/api/src/app.ts');
+  const deps = make();
+  const register = new RegisterUserUseCase(deps.userRepo, deps.kycVerifier);
+  const login = new LoginUseCase(deps.userRepo);
+  const app = await createAppService(deps);
+  server = createProoflyServer({ appHandler: app.handle.bind(app), auth: { register: dto => register.execute(dto), login: dto => login.execute(dto) } });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${server.address().port}`;
 }
-assert.ok(/^\d{4}$/.test(pin || ''), 'Configure a four-digit local access PIN.');
 const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -25,23 +25,13 @@ try {
   await page.goto(base);
   await page.getByRole('button', { name: 'Empezar', exact: true }).click();
   await page.waitForURL('**/login');
-  // Welcome screen → go to the sign-in form.
-  await page.getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
-  await page.getByLabel('Correo electrónico').fill('andres@proofly.co');
-  const boxes = page.locator('[data-pin-digit]');
-  assert.equal(await boxes.count(), 4);
-  await boxes.nth(0).fill('1');
-  assert.equal(await boxes.nth(1).evaluate(element => element === document.activeElement), true);
-  await boxes.nth(1).press('Backspace');
-  assert.equal(await boxes.nth(0).inputValue(), '');
-  await boxes.nth(0).evaluate((element, pin) => {
-    const transfer = new DataTransfer(); transfer.setData('text/plain', pin);
-    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }));
-  }, pin);
-  assert.ok(await boxes.evaluateAll(elements => elements.map(element => element.value).join('')) === pin, 'Four-box paste failed.');
-  await page.screenshot({ path: '/private/tmp/proofly-four-digit-pin.png' });
-  // The form submit button carries the same label; target the one inside the form.
-  await page.locator('form.auth-form').getByRole('button', { name: 'Iniciar sesión', exact: true }).click();
+  // Welcome screen → create a real account (signup) with email + password.
+  await page.getByRole('button', { name: 'Crear cuenta en Proofly', exact: true }).click();
+  await page.getByLabel('Nombre completo').fill('Andrés Prueba');
+  await page.getByLabel('Correo electrónico').fill(`andres-${Date.now()}@proofly.co`);
+  await page.getByLabel('Documento (NIT o cédula)').fill('1098765432');
+  await page.getByLabel('Contraseña').fill('una-clave-segura');
+  await page.locator('form.auth-form').getByRole('button', { name: 'Crear cuenta', exact: true }).click();
   await page.waitForURL('**/app/');
   // A single identity: the same person invests and raises.
   await page.getByRole('heading', { name: 'Tu capital, más flexible', exact: true }).waitFor();
@@ -127,5 +117,5 @@ try {
   await page.goto(`${base}/app/`);
   await page.waitForURL('**/login');
   assert.deepEqual(errors, []);
-  console.log('PASS: four-box PIN paste/backspace; unified identity (one person invests and raises); no demo wording; two distinct balance cards; market participation + settlement; intent toggle; owner cannot invest in own operation; invoice + milestone creation/confirmation/acceptance; reload; five responsive routes at 320/390/430/768px; desktop; logout; no JS errors.');
+  console.log('PASS: real signup (email + password) → session; unified identity (one person invests and raises); no demo wording; two distinct balance cards; market participation + settlement; owner cannot invest in own operation; invoice + milestone creation/confirmation/acceptance; reload; five responsive routes at 320/390/430/768px; desktop; logout; no JS errors.');
 } finally { await browser.close(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }

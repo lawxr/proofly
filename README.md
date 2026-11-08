@@ -98,26 +98,39 @@ BLOCKCHAIN_ADAPTER=viem node --experimental-strip-types scripts/verify-worker-ch
 
 ---
 
-## 6. Acceso Privado: landing → PIN → app
+## 6. Autenticación y Persistencia
 
-Producto privado en desarrollo. `npm run dev` compila la landing React y sirve un único recorrido local:
+`npm run dev` compila la landing React y sirve el recorrido completo:
 
 - `/`: landing pública; sus botones de entrada llevan a `/login`.
-- `/login`: acceso por PIN, validado en el servidor.
+- `/login`: registro (`/api/auth/signup`) e inicio de sesión (`/api/auth/login`) reales.
 - `/app/`: app violeta mobile-first con Inicio, Operaciones, Mercado, Portafolio y Actividad.
 
-En el primer inicio local se genera un PIN de 4 dígitos en `.env.demo`, ignorado por Git y con permisos de archivo restringidos. No lo publiques ni lo añadas al frontend. Puedes sustituirlo por un PIN de exactamente 4 dígitos y reiniciar el servidor, o definir `DEMO_ACCESS_PIN` en el entorno.
+### Cuentas reales
 
-La sesión dura ocho horas y se guarda en una cookie HttpOnly, no en localStorage. Cinco intentos incorrectos bloquean nuevos intentos desde esa conexión durante quince minutos. `Salir` revoca la sesión; reiniciar el servidor revoca todas.
+El registro crea un usuario con correo, documento y contraseña. Las contraseñas se almacenan con **scrypt** (sal aleatoria, nunca en texto plano). El inicio de sesión verifica la contraseña contra el hash almacenado. La sesión dura ocho horas en una cookie HttpOnly `proofly_session` (SameSite=Strict), nunca en localStorage; `Salir` la revoca. El registro y el login exigen mismo origen y aplican un límite de intentos por conexión.
 
-Para una instancia HTTPS, configura `NODE_ENV=production` y un PIN explícito; las cookies serán Secure. Si hay un proxy TLS con otro modo de ejecución, configura `DEMO_SECURE_COOKIE=true`. El servidor no confía en cabeceras de IP reenviadas: visitantes detrás del mismo proxy comparten el límite de intentos. Este gate es para una instancia privada única: no sustituye identidad individual, autorización financiera, KYC ni autenticación de producción.
+La verificación de identidad (KYC) pasa hoy por un adaptador determinista; sustituirlo por un proveedor real (p. ej. Truora) es un cambio de adaptador, no de la lógica.
 
-Pruebas del acceso y del dominio: `node --experimental-strip-types --test tests/demo-server.test.mjs tests/private-app.test.mjs`. `npm run test:browser` levanta una instancia aislada con PIN temporal y recorre el flujo completo de usuario unificado (financiarse e invertir) en cinco vistas responsive.
+### Persistencia conmutable
 
-### Lógica reutilizada
+Por defecto el estado vive en memoria (desarrollo). Con `PERSISTENCE=postgres` y `DATABASE_URL`, los repositorios usan PostgreSQL vía el driver `pg`, y los usuarios registrados sobreviven a reinicios.
 
-El adaptador `scripts/private-app.mjs` llama a los casos de uso canónicos de `packages/domain`: cotización con comisión, creación de facturas e hitos, confirmación del pagador, aceptación explícita, participaciones, liquidación y cupos por nivel. La verificación DIAN, el KYC, las firmas y los pagos se resuelven hoy con adaptadores deterministas mientras se integran los proveedores reales. El estado de operaciones vive en el proceso del servidor y se restablece al reiniciarlo.
+```sh
+docker compose up -d postgres          # levanta Postgres con db/schema.sql
+PERSISTENCE=postgres npm run dev        # arranca con persistencia real
+
+# Verificaciones end-to-end contra la base:
+node --experimental-strip-types scripts/verify-postgres.mjs       # round-trip de repos
+node --experimental-strip-types scripts/verify-auth-postgres.mjs  # signup real persistido
+```
+
+El esquema (`db/schema.sql`) está reconciliado con el dominio y los repositorios; el init de Docker solo corre sobre un volumen limpio, así que tras cambiarlo hay que recrear la base con `docker compose down -v`.
+
+Para HTTPS, configura `NODE_ENV=production` (cookies `Secure`) o `PROOFLY_SECURE_COOKIE=true` tras un proxy TLS.
+
+Pruebas: `node --experimental-strip-types --test tests/demo-server.test.mjs tests/private-app.test.mjs`. `npm run test:browser` levanta una instancia aislada, registra una cuenta real y recorre el flujo de usuario unificado (invertir y anticipar) en cinco vistas responsive.
 
 ## 7. Estado de Avance
 
-Consulta el seguimiento vivo del trabajo en `odd/tasks/` (usuario unificado y conexión blockchain), y el control de arquitectura en `docs/STATUS.md` y `docs/OPEN_QUESTIONS.md`.
+Seguimiento vivo del trabajo en `odd/tasks/` (usuario unificado, conexión blockchain, persistencia y auth). Control de arquitectura en `docs/STATUS.md` y `docs/OPEN_QUESTIONS.md`.

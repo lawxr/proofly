@@ -34,8 +34,22 @@
   - Suite completa: 37/37. Browser test: PASS.
 - Riesgo: item 1 (schema/datos) — mitigado: sin datos productivos, DB se recrea desde schema.sql; round-trip real confirma coherencia. Nota: recrear la DB exige borrar el volumen (docker compose down -v) porque el init solo corre en volumen limpio.
 
-## Siguiente rebanada (no hecha)
+## Rebanada 2 — Auth real + fábrica por entorno (HECHA)
 
-1. Fábrica `createDependencies(config)` que lea el entorno y elija repos Postgres (con PgSqlClient) vs in-memory.
-2. Auth real: casos de uso signup (hash scrypt) / login (verify) usando UserEntity.passwordHash, reemplazando el PIN.
-3. Outbox compartido api↔worker vía PostgresOutboxRepository en ambos procesos.
+- L4: "sigamos y hagamos lo de quitar demo para la app real". Implementado:
+  - `createDependenciesFromEnv` elige Postgres (PERSISTENCE=postgres + DATABASE_URL) vs memoria. `AppDependencies` tipado a puertos; añadido `kycVerifier`.
+  - Dominio: `security/password.ts` (scrypt), `use-cases/auth.use-case.ts` (RegisterUserUseCase con KYC inyectable, LoginUseCase con verificación de tiempo uniforme). Tests 4/4.
+  - Servidor reescrito: `server.mjs` → `createProoflyServer` con `/api/auth/signup`, `/api/auth/login`, `/api/auth/session` (DELETE), cookie `proofly_session`, same-origin + rate limit. Reemplaza el PIN.
+  - App service: `private-app.mjs` → `app-service.mjs`, recibe `deps` compartido y `ctx.userId` (scope por usuario autenticado). Seed de mercado idempotente. Contraparte de mercado interna.
+  - Frontend: `DemoLogin` ahora hace signup/login reales (email+contraseña); `DemoApp` apunta a `/api/app` y logout a `/api/auth/session`.
+  - Schema: ampliados canonical_hmac (80), confirmation_token (80), electronic_signature_hash (128) — el hmac del dominio es 66 chars; antes varchar(64) era un bug latente.
+- L5: Verificación — todo verde:
+  - Dominio auth 4/4; servidor auth + app service 10/10 (incluye aislamiento entre dos usuarios); suite completa 41/41; browser test con signup real PASS.
+  - `verify-postgres.mjs` y `verify-auth-postgres.mjs` PASS contra DB recreada: signup real → usuario persistido con password scrypt → snapshot autenticado → login contra la DB.
+- Riesgo: item 2 (seguridad/auth) + item 1 (datos). Mitigado: contraseñas scrypt con sal, cookie HttpOnly/SameSite, same-origin, rate limit, timing uniforme en login; schema verificado con round-trip real. KYC sigue por adaptador determinista (no es verificación real todavía).
+
+## Pendiente
+
+1. Outbox compartido api↔worker vía PostgresOutboxRepository en ambos procesos (hoy el worker usa su propio outbox en memoria).
+2. Renombrado cosmético restante: componentes `DemoApp`/`DemoLogin` y clases CSS `.demo-*` → nombres de producto (refactor amplio, sin impacto funcional).
+3. KYC/pagos/DIAN reales (proveedores externos, requieren credenciales).

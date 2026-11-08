@@ -129,10 +129,11 @@ CREATE TABLE operations (
     due_date DATE NOT NULL,
     status operation_status NOT NULL DEFAULT 'DRAFT',
 
-    -- Anti-duplicado e integridad
-    canonical_hmac VARCHAR(64) NOT NULL UNIQUE,
-    confirmation_token VARCHAR(64) UNIQUE,
-    electronic_signature_hash VARCHAR(80),
+    -- Anti-duplicado e integridad. El HMAC del dominio es '0x' + sha256 hex (66);
+    -- la firma electrónica puede ser un hash hex (64) o más largo. Holgura deliberada.
+    canonical_hmac VARCHAR(80) NOT NULL UNIQUE,
+    confirmation_token VARCHAR(80) UNIQUE,
+    electronic_signature_hash VARCHAR(128),
 
     -- Puntuaciones de riesgo separadas
     payer_solvency_score INT,

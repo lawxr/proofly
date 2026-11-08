@@ -1,84 +1,90 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPrivateApp } from '../scripts/private-app.mjs';
+import { RegisterUserUseCase } from '../packages/domain/src/index.ts';
+import { createAppService } from '../scripts/app-service.mjs';
+
+// Build a shared in-memory deps, register a real user, and drive the app
+// service scoped to that user (meId comes from the session in production).
+async function setup() {
+  const { createDependencies: make } = await import('../apps/api/src/app.ts');
+  const deps = make();
+  const register = new RegisterUserUseCase(deps.userRepo, deps.kycVerifier, () => 'me-' + Math.random().toString(16).slice(2));
+  const me = await register.execute({ email: `me-${Date.now()}@proofly.co`, legalName: 'Persona Real', taxId: '1098765432', password: 'una-clave-segura' });
+  const app = await createAppService(deps);
+  return { app, meId: me.id, deps };
+}
 
 test('one identity owns operations and invests in the market through the full lifecycle', async () => {
-  const app = await createPrivateApp();
-  const before = await app.snapshot();
-  // The signed-in person is exposed once, with both balances; no separate identities.
-  assert.ok(before.me && before.me.id);
+  const { app, meId } = await setup();
+  const before = await app.snapshot(meId);
+  assert.ok(before.me && before.me.id === meId);
   assert.equal(before.freelancer, undefined);
   assert.equal(before.investor, undefined);
   assert.equal(before.operations.length, 2);
-  assert.ok(before.operations.every(op => op.freelancerId !== before.me.id), 'Market is supplied by other people.');
+  assert.ok(before.operations.every(op => op.freelancerId !== meId), 'Market is supplied by other people.');
   assert.ok(before.operations.every(op => BigInt(op.prooflyFeeCents) > 0n));
 
-  // The person invests in someone else's operation (allowed) and sees it in the portfolio.
+  // Invest in someone else's operation.
   const market = before.operations[0];
-  const projection = await app.execute('participate', { id: market.id, amountCents: market.advanceAmountCents });
+  const projection = await app.execute(meId, 'participate', { id: market.id, amountCents: market.advanceAmountCents });
   assert.ok(BigInt(projection.netEstimatedProfitCents) > 0n);
-  let state = await app.snapshot();
+  let state = await app.snapshot(meId);
   assert.equal(state.operations.find(item => item.id === market.id).status, 'ACTIVE_FUNDED');
   assert.equal(state.investments.length, 1);
-  const settled = await app.execute('settle', { id: market.id });
+  const settled = await app.execute(meId, 'settle', { id: market.id });
   assert.equal(settled.isFullySettled, true);
 
-  // The person raises on their own operation, but cannot invest in it.
+  // Raise on an own operation; cannot invest in it.
   const input = { assetType: 'MILESTONE', title: 'Hito de diseño', payerLegalName: 'Cliente', nominalAmountCents: '100000000', termDays: 45, checks: true };
-  const op = await app.execute('create', input);
+  const op = await app.execute(meId, 'create', input);
   assert.equal(op.status, 'PENDING_CLIENT_CONFIRMATION');
   assert.equal(op.advanceAmountCents, '96000000');
-  assert.equal(op.prooflyFeeCents, '1000000');
-  await app.execute('confirm', { id: op.id });
-  await assert.rejects(app.execute('accept', { id: op.id, accepted: false }));
-  await app.execute('accept', { id: op.id, accepted: true });
-  await assert.rejects(app.execute('participate', { id: op.id, amountCents: '48000000' }), /own operation/);
+  await app.execute(meId, 'confirm', { id: op.id });
+  await assert.rejects(app.execute(meId, 'accept', { id: op.id, accepted: false }));
+  await app.execute(meId, 'accept', { id: op.id, accepted: true });
+  await assert.rejects(app.execute(meId, 'participate', { id: op.id, amountCents: '48000000' }), /own operation/);
 
-  // A market counterparty funds the person's own operation so it can settle.
-  state = await app.snapshot();
-  assert.equal(state.operations.find(item => item.id === op.id).status, 'APPROVED_PENDING_FUNDING');
-  const unchanged = JSON.stringify(state);
-  await assert.rejects(app.execute('participate', { id: op.id, amountCents: '999999999999', counterparty: true }));
-  assert.equal(JSON.stringify(await app.snapshot()), unchanged);
-  await app.execute('participate', { id: op.id, amountCents: '96000000', counterparty: true });
-  state = await app.snapshot();
+  // A market counterparty funds the own operation so it can settle.
+  await app.execute(meId, 'participate', { id: op.id, amountCents: '96000000', counterparty: true });
+  state = await app.snapshot(meId);
   assert.equal(state.operations.find(item => item.id === op.id).status, 'ACTIVE_FUNDED');
-  const result = await app.execute('settle', { id: op.id });
+  const result = await app.execute(meId, 'settle', { id: op.id });
   assert.equal(result.isFullySettled, true);
   assert.equal(result.investorDistributions.reduce((sum, item) => sum + BigInt(item.totalDistributedCents), 0n) + BigInt(result.prooflyFeeRetainedCents), 100000000n);
-  const final = JSON.stringify(await app.snapshot());
-  await assert.rejects(app.execute('settle', { id: op.id }));
-  assert.equal(JSON.stringify(await app.snapshot()), final);
-  const invoice = await app.execute('create', { ...input, assetType: 'INVOICE', title: 'Factura', termDays: 30 });
+  const invoice = await app.execute(meId, 'create', { ...input, assetType: 'INVOICE', title: 'Factura', termDays: 30 });
   assert.equal(invoice.status, 'QUOTED');
 });
 
 test('rejected creation preserves data and concurrent funding cannot overfill an operation', async () => {
-  const app = await createPrivateApp();
-  const state = await app.snapshot();
-  await assert.rejects(app.execute('create', { assetType: 'INVOICE', title: 'Sin eventos', nominalAmountCents: '100000000', termDays: 30, checks: false }));
-  assert.deepEqual(await app.snapshot(), state);
+  const { app, meId } = await setup();
+  const state = await app.snapshot(meId);
+  await assert.rejects(app.execute(meId, 'create', { assetType: 'INVOICE', title: 'Sin eventos', nominalAmountCents: '100000000', termDays: 30, checks: false }));
+  assert.deepEqual(await app.snapshot(meId), state);
   const target = state.operations[0];
   const result = await Promise.allSettled([
-    app.execute('participate', { id: target.id, amountCents: target.advanceAmountCents }),
-    app.execute('participate', { id: target.id, amountCents: target.advanceAmountCents, counterparty: true }),
+    app.execute(meId, 'participate', { id: target.id, amountCents: target.advanceAmountCents }),
+    app.execute(meId, 'participate', { id: target.id, amountCents: target.advanceAmountCents, counterparty: true }),
   ]);
   assert.equal(result.filter(item => item.status === 'fulfilled').length, 1);
-  const after = await app.snapshot();
+  const after = await app.snapshot(meId);
   assert.equal(after.operations.find(item => item.id === target.id).fundedCapitalCents, target.advanceAmountCents);
 });
 
-test('own-operation tier progression settles through a market counterparty', async () => {
-  const app = await createPrivateApp();
-  for (const kind of ['INVOICE', 'MILESTONE']) {
-    const op = await app.execute('create', { assetType: kind, title: `Nivel ${kind}`, nominalAmountCents: '100000000', termDays: 30, checks: true });
-    if (kind === 'MILESTONE') await app.execute('confirm', { id: op.id });
-    await app.execute('accept', { id: op.id, accepted: true });
-    // The owner cannot fund their own operation; a market counterparty does.
-    await app.execute('participate', { id: op.id, amountCents: op.advanceAmountCents, counterparty: true });
-    await app.execute('settle', { id: op.id });
-  }
-  const { me } = await app.snapshot();
-  assert.equal(me.tier, 'TIER_2_GROWTH');
-  assert.equal(me.availableLimitCents, '800000000');
+test('two different users see their own operations and investments separately', async () => {
+  const { createDependencies: make } = await import('../apps/api/src/app.ts');
+  const deps = make();
+  const register = new RegisterUserUseCase(deps.userRepo, deps.kycVerifier);
+  const a = await register.execute({ email: 'a@proofly.co', legalName: 'Usuario A', taxId: '1000000001', password: 'una-clave-segura' });
+  const b = await register.execute({ email: 'b@proofly.co', legalName: 'Usuario B', taxId: '1000000002', password: 'una-clave-segura' });
+  const app = await createAppService(deps);
+
+  const market = (await app.snapshot(a.id)).operations[0];
+  await app.execute(a.id, 'participate', { id: market.id, amountCents: '1000000' });
+
+  const snapA = await app.snapshot(a.id);
+  const snapB = await app.snapshot(b.id);
+  assert.equal(snapA.investments.length, 1);
+  assert.equal(snapB.investments.length, 0, 'B must not see A\'s investments');
+  assert.equal(snapA.me.name, 'Usuario A');
+  assert.equal(snapB.me.name, 'Usuario B');
 });

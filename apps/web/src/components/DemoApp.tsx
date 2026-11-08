@@ -90,8 +90,8 @@ export default function DemoApp() {
     }
     return body;
   }
-  async function refresh() { setData(await request('/api/demo/app')); }
-  useEffect(() => { let alive = true; request('/api/demo/app').then(value => { if (alive) setData(value); }).catch(reason => { if (alive) setError(reason.message); }); return () => { alive = false; }; }, []);
+  async function refresh() { setData(await request('/api/app')); }
+  useEffect(() => { let alive = true; request('/api/app').then(value => { if (alive) setData(value); }).catch(reason => { if (alive) setError(reason.message); }); return () => { alive = false; }; }, []);
   useEffect(() => { const handler = () => { const hash = location.hash.slice(1); if (NAV.some(item => item.id === hash)) setPage(hash as Page); }; window.addEventListener('hashchange', handler); return () => window.removeEventListener('hashchange', handler); }, []);
   useEffect(() => { if (!notice) return; const timer = window.setTimeout(() => setNotice(''), 4500); return () => clearTimeout(timer); }, [notice]);
   function go(next: Page) { setPage(next); location.hash = next; setFilter('ALL'); setSearch(''); window.scrollTo({ top: 0, behavior: 'auto' }); }
@@ -100,7 +100,7 @@ export default function DemoApp() {
     if (busy) return;
     setBusy(true); setError('');
     try {
-      const result = await request('/api/demo/app/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...input }) });
+      const result = await request('/api/app/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...input }) });
       if (action === 'simulate') setPreview(result);
       else { await refresh(); setPreview(null); setNotice('Operación actualizada.'); }
       return result;
@@ -108,7 +108,7 @@ export default function DemoApp() {
     finally { setBusy(false); }
   }
   async function logout() {
-    try { const response = await fetch('/api/demo/session', { method: 'DELETE', credentials: 'same-origin' }); if (!response.ok) throw new Error(); location.assign('/login'); }
+    try { const response = await fetch('/api/auth/session', { method: 'DELETE', credentials: 'same-origin' }); if (!response.ok) throw new Error(); location.assign('/login'); }
     catch { setError('No pudimos cerrar la sesión. Inténtalo de nuevo.'); }
   }
   async function create(event: FormEvent<HTMLFormElement>) {

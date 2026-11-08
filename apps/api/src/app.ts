@@ -18,6 +18,16 @@ import {
   ReconcileBankReceiptUseCase
 } from '@proofly/domain';
 
+import type {
+  OperationRepositoryPort,
+  InvestmentRepositoryPort,
+  UserRepositoryPort,
+  OutboxRepositoryPort,
+  InvoiceVerificationPort,
+  MilestoneConfirmationPort,
+  KycPort
+} from '@proofly/domain';
+
 import {
   InMemoryOperationRepository,
   InMemoryInvestmentRepository,
@@ -26,37 +36,70 @@ import {
 } from './adapters/in-memory/in-memory-repositories.ts';
 
 import {
+  PostgresOperationRepository,
+  PostgresInvestmentRepository,
+  PostgresUserRepository,
+  PostgresOutboxRepository
+} from './adapters/postgres/postgres-repositories.ts';
+import { PgSqlClient } from './adapters/postgres/pg-client.ts';
+
+import {
   SandboxInvoiceVerificationAdapter,
-  SandboxMilestoneConfirmationAdapter
+  SandboxMilestoneConfirmationAdapter,
+  SandboxKycAdapter
 } from './adapters/sandbox-mocks/sandbox-adapters.ts';
 
 export interface AppDependencies {
-  operationRepo: InMemoryOperationRepository;
-  investmentRepo: InMemoryInvestmentRepository;
-  userRepo: InMemoryUserRepository;
-  outboxRepo: InMemoryOutboxRepository;
-  invoiceVerifier: SandboxInvoiceVerificationAdapter;
-  milestoneNotifier: SandboxMilestoneConfirmationAdapter;
+  operationRepo: OperationRepositoryPort;
+  investmentRepo: InvestmentRepositoryPort;
+  userRepo: UserRepositoryPort;
+  outboxRepo: OutboxRepositoryPort;
+  invoiceVerifier: InvoiceVerificationPort;
+  milestoneNotifier: MilestoneConfirmationPort;
+  kycVerifier: KycPort;
   serverSecret: string;
 }
 
 export function createDependencies(serverSecret = 'proofly-dev-secret-salt-2026-super-secure-32-chars'): AppDependencies {
-  const operationRepo = new InMemoryOperationRepository();
-  const investmentRepo = new InMemoryInvestmentRepository();
-  const userRepo = new InMemoryUserRepository();
-  const outboxRepo = new InMemoryOutboxRepository();
-  const invoiceVerifier = new SandboxInvoiceVerificationAdapter();
-  const milestoneNotifier = new SandboxMilestoneConfirmationAdapter();
-
   return {
-    operationRepo,
-    investmentRepo,
-    userRepo,
-    outboxRepo,
-    invoiceVerifier,
-    milestoneNotifier,
+    operationRepo: new InMemoryOperationRepository(),
+    investmentRepo: new InMemoryInvestmentRepository(),
+    userRepo: new InMemoryUserRepository(),
+    outboxRepo: new InMemoryOutboxRepository(),
+    invoiceVerifier: new SandboxInvoiceVerificationAdapter(),
+    milestoneNotifier: new SandboxMilestoneConfirmationAdapter(),
+    kycVerifier: new SandboxKycAdapter(),
     serverSecret
   };
+}
+
+export function createPostgresDependencies(connectionString: string, serverSecret = 'proofly-dev-secret-salt-2026-super-secure-32-chars'): AppDependencies {
+  const client = new PgSqlClient({ connectionString });
+  return {
+    operationRepo: new PostgresOperationRepository(client),
+    investmentRepo: new PostgresInvestmentRepository(client),
+    userRepo: new PostgresUserRepository(client),
+    outboxRepo: new PostgresOutboxRepository(client),
+    invoiceVerifier: new SandboxInvoiceVerificationAdapter(),
+    milestoneNotifier: new SandboxMilestoneConfirmationAdapter(),
+    kycVerifier: new SandboxKycAdapter(),
+    serverSecret
+  };
+}
+
+/**
+ * Selecciona la capa de persistencia según el entorno. Por defecto memoria,
+ * de modo que nada cambia hasta pedir Postgres explícitamente con
+ * PERSISTENCE=postgres y DATABASE_URL.
+ */
+export function createDependenciesFromEnv(env: Record<string, string | undefined> = process.env): AppDependencies {
+  const serverSecret = env.SERVER_HMAC_SECRET || undefined;
+  if (env.PERSISTENCE === 'postgres') {
+    const url = env.DATABASE_URL;
+    if (!url) throw new Error('PERSISTENCE=postgres requires DATABASE_URL.');
+    return createPostgresDependencies(url, serverSecret);
+  }
+  return createDependencies(serverSecret);
 }
 
 export async function seedDemoData(deps: AppDependencies): Promise<{

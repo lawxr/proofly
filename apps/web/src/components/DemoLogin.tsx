@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent, type KeyboardEvent, type ClipboardEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import '../styles/auth.css';
 
 type View = 'welcome' | 'login' | 'signup';
@@ -31,63 +31,47 @@ function Welcome({ onSignup, onLogin }: { onSignup: () => void; onLogin: () => v
   );
 }
 
-function PinField({ digits, setDigits, disabled, invalid }: {
-  digits: string[]; setDigits: (next: string[]) => void; disabled: boolean; invalid: boolean;
-}) {
-  const inputs = useRef<Array<HTMLInputElement | null>>([]);
-  function enter(value: string, index: number) {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length > 1) {
-      const next = ['', '', '', ''];
-      numbers.slice(0, 4).split('').forEach((digit, i) => { next[i] = digit; });
-      setDigits(next); inputs.current[Math.min(numbers.length, 3)]?.focus();
-    } else {
-      setDigits(digits.map((digit, i) => i === index ? numbers : digit));
-      if (numbers && index < 3) inputs.current[index + 1]?.focus();
-    }
-  }
-  function paste(event: ClipboardEvent<HTMLInputElement>, index: number) { event.preventDefault(); enter(event.clipboardData.getData('text'), index); }
-  function key(event: KeyboardEvent<HTMLInputElement>, index: number) {
-    if (event.key === 'ArrowLeft' && index > 0) { event.preventDefault(); inputs.current[index - 1]?.focus(); }
-    if (event.key === 'ArrowRight' && index < 3) { event.preventDefault(); inputs.current[index + 1]?.focus(); }
-    if (event.key === 'Backspace' && !digits[index] && index > 0) {
-      event.preventDefault(); setDigits(digits.map((digit, i) => i === index - 1 ? '' : digit)); inputs.current[index - 1]?.focus();
-    }
-  }
-  return (
-    <fieldset className="auth-pin" disabled={disabled}>
-      <legend>PIN de acceso</legend>
-      <div className="proofly-pin-grid">
-        {digits.map((digit, i) => <input key={i} ref={element => { inputs.current[i] = element; }} data-pin-digit
-          type="password" inputMode="numeric" autoComplete={i === 0 ? 'one-time-code' : 'off'} maxLength={i === 0 ? 4 : 1}
-          required pattern="[0-9]" value={digit} aria-label={`Dígito ${i + 1} del PIN`} aria-invalid={invalid}
-          onChange={event => enter(event.target.value, i)} onPaste={event => paste(event, i)} onKeyDown={event => key(event, i)} />)}
-      </div>
-    </fieldset>
-  );
+async function post(path: string, body: Record<string, unknown>) {
+  const response = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await response.json().catch(() => ({}));
+  return { ok: response.ok, status: response.status, data } as const;
 }
 
 export function DemoLogin() {
   const [view, setView] = useState<View>('welcome');
-  const [digits, setDigits] = useState(['', '', '', '']);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
 
-  function reset(next: View) { setView(next); setError(''); setDigits(['', '', '', '']); }
+  function reset(next: View) { setView(next); setError(''); }
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending || !/^\d{4}$/.test(digits.join(''))) { setError('Ingresa tu PIN de cuatro dígitos.'); return; }
+    if (pending) return;
+    const form = new FormData(event.currentTarget);
     setPending(true); setError('');
     try {
-      const response = await fetch('/api/demo/session', {
-        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: digits.join('') }),
+      const { ok, status } = await post('/api/auth/login', { email: form.get('email'), password: form.get('password') });
+      if (ok) { window.location.assign('/app/'); return; }
+      setError(status === 429 ? 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.'
+        : status === 401 ? 'Correo o contraseña incorrectos.'
+        : 'No pudimos iniciar sesión. Inténtalo de nuevo.');
+    } catch { setError('No pudimos conectar. Revisa tu conexión e inténtalo de nuevo.'); }
+    finally { setPending(false); }
+  }
+
+  async function signUp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pending) return;
+    const form = new FormData(event.currentTarget);
+    setPending(true); setError('');
+    try {
+      const { ok, status, data } = await post('/api/auth/signup', {
+        legalName: form.get('name'), email: form.get('email'), taxId: form.get('taxId'), password: form.get('password'),
       });
-      if (response.ok) { window.location.assign('/app/'); return; }
-      setDigits(['', '', '', '']);
-      setError(response.status === 429 ? 'Demasiados intentos. Espera 15 minutos y vuelve a intentarlo.'
-        : response.status === 503 || response.status === 404 ? 'El acceso aún no está disponible. Inténtalo más tarde.'
-        : 'El PIN no es correcto. Vuelve a intentarlo.');
+      if (ok) { window.location.assign('/app/'); return; }
+      setError(status === 409 ? 'Ya existe una cuenta con este correo.'
+        : status === 429 ? 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.'
+        : (data as { message?: string }).message || 'Revisa los datos e inténtalo de nuevo.');
     } catch { setError('No pudimos conectar. Revisa tu conexión e inténtalo de nuevo.'); }
     finally { setPending(false); }
   }
@@ -103,12 +87,14 @@ export function DemoLogin() {
             <div className="auth-form-wrap">
               <button className="auth-back" onClick={() => reset('welcome')} aria-label="Volver">←</button>
               <h1>Bienvenido de vuelta</h1>
-              <p className="auth-form-lead">Entra con el correo de tu cuenta y tu PIN de acceso.</p>
+              <p className="auth-form-lead">Entra con el correo y la contraseña de tu cuenta.</p>
               <form onSubmit={signIn} className="auth-form">
                 <label className="auth-label">Correo electrónico
                   <input type="email" name="email" autoComplete="email" placeholder="tu@correo.com" required/>
                 </label>
-                <PinField digits={digits} setDigits={setDigits} disabled={pending} invalid={Boolean(error)} />
+                <label className="auth-label">Contraseña
+                  <input type="password" name="password" autoComplete="current-password" placeholder="Tu contraseña" required minLength={8}/>
+                </label>
                 {error && <p role="alert" className="auth-error">{error}</p>}
                 <button type="submit" disabled={pending} className="auth-primary">{pending ? 'Verificando…' : 'Iniciar sesión'}</button>
               </form>
@@ -120,8 +106,8 @@ export function DemoLogin() {
             <div className="auth-form-wrap">
               <button className="auth-back" onClick={() => reset('welcome')} aria-label="Volver">←</button>
               <h1>Crea tu cuenta</h1>
-              <p className="auth-form-lead">Déjanos tus datos y te damos acceso a Proofly.</p>
-              <form onSubmit={event => { event.preventDefault(); reset('login'); }} className="auth-form">
+              <p className="auth-form-lead">Con una sola cuenta puedes invertir y anticipar tu capital.</p>
+              <form onSubmit={signUp} className="auth-form">
                 <label className="auth-label">Nombre completo
                   <input type="text" name="name" autoComplete="name" placeholder="Tu nombre" required minLength={3} maxLength={80}/>
                 </label>
@@ -129,10 +115,13 @@ export function DemoLogin() {
                   <input type="email" name="email" autoComplete="email" placeholder="tu@correo.com" required/>
                 </label>
                 <label className="auth-label">Documento (NIT o cédula)
-                  <input type="text" name="taxId" inputMode="numeric" placeholder="1098765432" required/>
+                  <input type="text" name="taxId" inputMode="numeric" pattern="\d{5,20}" placeholder="1098765432" required/>
                 </label>
-                <p className="auth-note">El registro abierto está en preparación. Por ahora el acceso se habilita con un PIN que te compartimos; al continuar te llevamos al inicio de sesión.</p>
-                <button type="submit" className="auth-primary">Continuar</button>
+                <label className="auth-label">Contraseña
+                  <input type="password" name="password" autoComplete="new-password" placeholder="Mínimo 8 caracteres" required minLength={8}/>
+                </label>
+                {error && <p role="alert" className="auth-error">{error}</p>}
+                <button type="submit" disabled={pending} className="auth-primary">{pending ? 'Creando cuenta…' : 'Crear cuenta'}</button>
               </form>
               <p className="auth-switch">¿Ya tienes cuenta? <button onClick={() => reset('login')}>Inicia sesión</button></p>
             </div>

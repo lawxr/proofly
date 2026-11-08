@@ -5,6 +5,7 @@
 // Lógica financiera y seguridad
 export * from './financial/financial-engine.ts';
 export * from './security/anti-duplicate.ts';
+export * from './security/password.ts';
 export * from './state/operation-state.ts';
 export * from './reputation/tiers-policy.ts';
 
@@ -30,3 +31,4 @@ export * from './use-cases/accept-quote.use-case.ts';
 export * from './use-cases/simulate-participation.use-case.ts';
 export * from './use-cases/purchase-participation.use-case.ts';
 export * from './use-cases/reconcile-bank-receipt.use-case.ts';
+export * from './use-cases/auth.use-case.ts';
