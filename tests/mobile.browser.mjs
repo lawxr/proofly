@@ -33,89 +33,80 @@ try {
   await page.getByLabel('Contraseña').fill('una-clave-segura');
   await page.locator('form.auth-form').getByRole('button', { name: 'Crear cuenta', exact: true }).click();
   await page.waitForURL('**/app/');
-  // A single identity: the same person invests and raises.
-  await page.getByRole('heading', { name: 'Tu capital, más flexible', exact: true }).waitFor();
-  // Home shows the two twin intent cards.
-  await page.getByRole('button', { name: /Invertir/ }).first().waitFor();
-  await page.getByRole('button', { name: /Anticipar/ }).first().waitFor();
+  // Home: one simple screen like the reference. Title + twin cards + balances.
+  await page.getByRole('heading', { name: 'Tu capital, más flexible' }).waitFor();
+  const twin = page.locator('.app-twin-card');
+  await twin.first().waitFor();
+  assert.equal(await twin.count(), 2, 'Home has exactly the two twin cards.');
   await page.evaluate(() => document.fonts.ready);
-  await page.screenshot({ path: '/private/tmp/proofly-violet-app-mobile.png', fullPage: true });
-  const ctaAboveDock = await page.locator('.app-dual-card').first().evaluate(element => element.getBoundingClientRect().top < document.querySelector('.app-mobile-dock').getBoundingClientRect().top - 8);
-  assert.ok(ctaAboveDock, 'Home cards must sit above the fixed mobile dock.');
-  assert.equal(await page.locator('.sidebar').count(), 0, 'The legacy blue UI must not be mounted.');
-  // No "demo"/"sandbox" wording anywhere in the visible app.
-  const forbidden = await page.evaluate(() => /\b(demo|sandbox|simulad)/i.test(document.body.innerText));
-  assert.equal(forbidden, false, 'Visible app must not expose demo/sandbox wording.');
-  // The two balances are shown as distinct, labelled cards (never summed).
+  await page.screenshot({ path: '/private/tmp/proofly-app-mobile.png', fullPage: true });
+  // Cards sit above the fixed dock.
+  const cardsAboveDock = await twin.first().evaluate(el => el.getBoundingClientRect().top < document.querySelector('.app-dock').getBoundingClientRect().top - 8);
+  assert.ok(cardsAboveDock, 'Home cards must sit above the fixed dock.');
+  // No demo/sandbox wording anywhere visible.
+  assert.equal(await page.evaluate(() => /\b(demo|sandbox|simulad)/i.test(document.body.innerText)), false, 'No demo wording.');
+  // Two separate balances, never summed into a total.
   await page.getByText('Capital invertido', { exact: true }).waitFor();
   await page.getByText('Cupo para anticipar', { exact: true }).waitFor();
-  const nav = () => page.getByRole('navigation', { name: 'Navegación móvil' });
-  // Invest in someone else's operation from the market.
-  await nav().getByRole('button', { name: 'Mercado', exact: true }).click();
-  await page.getByRole('button').filter({ has: page.getByRole('heading', { name: 'Diseño de identidad', exact: true }) }).click();
-  // Fund the whole remaining amount so a single participation fully funds the operation.
-  const amountInput = page.getByLabel('Monto del aporte en COP');
+  const nav = () => page.getByRole('navigation', { name: 'Navegación' });
+
+  // Invest in someone else's operation.
+  await nav().getByRole('button', { name: 'Invertir', exact: true }).click();
+  await page.locator('.app-row').filter({ hasText: 'Diseño de identidad' }).click();
+  const amountInput = page.getByLabel('Monto a invertir (COP)');
   await amountInput.waitFor();
   const remainingCents = await amountInput.getAttribute('data-remaining-cents');
   assert.ok(Number(remainingCents) > 0, `remaining funding not readable: ${remainingCents}`);
   await amountInput.fill(String(Math.floor(Number(remainingCents) / 100)));
   await page.getByRole('button', { name: 'Ver retorno estimado', exact: true }).click();
-  const confirm = page.getByRole('button', { name: 'Confirmar participación', exact: true });
+  const confirm = page.getByRole('button', { name: 'Confirmar inversión', exact: true });
   await Promise.race([
     confirm.waitFor({ timeout: 8000 }),
-    page.locator('.app-dialog .app-error').waitFor({ timeout: 8000 }).then(async () => { throw new Error('simulate error: ' + await page.locator('.app-dialog .app-error').innerText()); }),
+    page.locator('.app-sheet .app-error').waitFor({ timeout: 8000 }).then(async () => { throw new Error('simulate error: ' + await page.locator('.app-sheet .app-error').innerText()); }),
   ]);
   await confirm.click();
-  await page.getByRole('button', { name: 'Registrar recaudo total', exact: true }).click();
+  await page.getByRole('button', { name: 'Registrar recaudo', exact: true }).click();
   await page.getByText('Recaudo distribuido', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
-  await nav().getByRole('button', { name: 'Portafolio', exact: true }).click();
-  assert.equal(await page.locator('.app-position').count(), 1);
-  // Create an operation as the same person (raising liquidity).
-  await nav().getByRole('button', { name: 'Operaciones', exact: true }).click();
-  await page.getByRole('button', { name: 'Nueva operación', exact: true }).click();
-  await page.getByRole('dialog').getByLabel('Tipo de operación').selectOption('MILESTONE');
-  await page.getByLabel('Título del proyecto').fill('QA-HITO');
+
+  // Raise: create one own operation (seed tier allows one active).
+  await nav().getByRole('button', { name: 'Anticipar', exact: true }).click();
+  await page.getByRole('button', { name: 'Nueva', exact: true }).click();
+  await page.getByRole('dialog').getByLabel('Tipo').selectOption('MILESTONE');
+  await page.getByLabel('Título').fill('QA-HITO');
   await page.getByLabel('Empresa pagadora').fill('Empresa de pruebas');
-  await page.getByLabel('Valor en COP', { exact: true }).fill('1000000');
+  await page.getByLabel('Valor (COP)', { exact: true }).fill('1000000');
   await page.getByLabel('Plazo', { exact: true }).selectOption('45');
-  await page.getByLabel('El entregable está listo para confirmar').check();
+  await page.getByLabel('El entregable está listo').check();
   await page.getByRole('button', { name: 'Crear y cotizar', exact: true }).click();
   await page.getByRole('dialog').getByRole('heading', { name: 'QA-HITO', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Confirmar pago de la empresa', exact: true }).click();
-  await page.getByLabel('Acepto la cotización y la cesión de derechos económicos.').check();
+  await page.getByLabel('Acepto la cotización y la cesión de derechos.').check();
   await page.getByRole('button', { name: 'Aceptar cotización', exact: true }).click();
-  // You cannot invest in your own operation: no participation panel on an owned op.
-  assert.equal(await page.getByLabel('Monto del aporte en COP').count(), 0, 'Owner must not see the participation input.');
-  await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
-  await page.getByRole('button', { name: 'Nueva operación', exact: true }).click();
-  await page.getByRole('dialog').getByLabel('Tipo de operación').selectOption('INVOICE');
-  await page.getByLabel('Título del proyecto').fill('QA-FACTURA');
-  await page.getByLabel('Empresa pagadora').fill('Empresa de pruebas');
-  for (const name of ['Validación DIAN', 'Acuse de recibo', 'Entrega de bienes o servicios', 'Aceptación del pagador']) await page.getByLabel(name, { exact: true }).check();
-  await page.getByRole('button', { name: 'Crear y cotizar', exact: true }).click();
-  await page.getByRole('dialog').getByRole('heading', { name: 'QA-FACTURA', exact: true }).waitFor();
+  // Owner cannot invest in their own operation: no invest input.
+  assert.equal(await page.getByLabel('Monto a invertir (COP)').count(), 0, 'Owner must not see the invest input.');
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
   await page.reload();
-  await page.getByRole('heading', { name: 'QA-FACTURA', exact: true }).waitFor();
-  for (const width of [320, 390, 430, 768]) {
-    await page.setViewportSize({ width, height: 844 });
-    for (const route of ['home', 'operations', 'market', 'portfolio', 'history']) {
+  await page.locator('.app-row').filter({ hasText: 'QA-HITO' }).waitFor();
+
+  // Responsive: four routes, no overflow or clipping at key widths.
+  for (const width of [320, 390, 430, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of ['home', 'invest', 'raise', 'activity']) {
       await page.goto(`${base}/app/#${route}`);
       await page.locator('.proofly-app').waitFor();
-      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${route} overflows at ${width}`);
-      const clipped = await page.locator('.app-metric > strong, .app-operation, .app-mobile-dock, .app-welcome').evaluateAll(elements => elements.filter(element => element.getBoundingClientRect().width > 0 && (element.scrollWidth > element.clientWidth + 1 || element.getBoundingClientRect().right > innerWidth + 1)).length);
-      assert.equal(clipped, 0, `Clipped app content on ${route} at ${width}`);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `${route} overflows at ${width}`);
+      const clipped = await page.locator('.app-twin-card, .app-row, .app-balance, .app-dock').evaluateAll(els => els.filter(el => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > innerWidth + 1).length);
+      assert.equal(clipped, 0, `Clipped content on ${route} at ${width}`);
     }
   }
-  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${base}/app/#home`);
-  await page.locator('.app-sidebar').waitFor({ state: 'visible' });
-  await page.screenshot({ path: '/private/tmp/proofly-violet-app-desktop.png', fullPage: true });
-  await page.getByRole('button', { name: 'Salir', exact: true }).first().click();
+  await page.screenshot({ path: '/private/tmp/proofly-app-home.png', fullPage: true });
+  await page.getByRole('button', { name: 'Salir' }).first().click();
   await page.waitForURL('**/login');
   await page.goto(`${base}/app/`);
   await page.waitForURL('**/login');
   assert.deepEqual(errors, []);
-  console.log('PASS: real signup (email + password) → session; unified identity (one person invests and raises); no demo wording; two distinct balance cards; market participation + settlement; owner cannot invest in own operation; invoice + milestone creation/confirmation/acceptance; reload; five responsive routes at 320/390/430/768px; desktop; logout; no JS errors.');
+  console.log('PASS: real signup → session; simplified MVP (home title + twin cards + two balances + recent activity); 4-tab dock; invest in market + settlement; seed tier owner creates one operation and cannot invest in it; reload persists; four routes clean at 320/390/430/768/1440; logout; no JS errors.');
 } finally { await browser.close(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }

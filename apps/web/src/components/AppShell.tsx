@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import '../styles/app-shell.css';
 
-type Page = 'home' | 'operations' | 'market' | 'portfolio' | 'history';
-type Intent = 'raise' | 'invest';
+type Page = 'home' | 'invest' | 'raise' | 'activity';
 type Operation = {
   id: string; freelancerId: string; title: string; assetType: 'INVOICE' | 'MILESTONE'; payerLegalName: string;
   nominalAmountCents: string; advanceAmountCents: string; prooflyFeeCents: string; commercialDiscountCents: string;
@@ -17,19 +16,23 @@ type Snapshot = {
   events: { id: string; operationId: string; kind: string; title: string; date: string }[];
 };
 const NAV: { id: Page; label: string; icon: string }[] = [
-  { id: 'home', label: 'Inicio', icon: 'home' }, { id: 'operations', label: 'Operaciones', icon: 'file' },
-  { id: 'market', label: 'Mercado', icon: 'growth' }, { id: 'portfolio', label: 'Portafolio', icon: 'wallet' }, { id: 'history', label: 'Actividad', icon: 'clock' },
+  { id: 'home', label: 'Inicio', icon: 'home' },
+  { id: 'invest', label: 'Invertir', icon: 'growth' },
+  { id: 'raise', label: 'Anticipar', icon: 'bolt' },
+  { id: 'activity', label: 'Actividad', icon: 'clock' },
 ];
 const STATUS: Record<string, string> = {
   PENDING_CLIENT_CONFIRMATION: 'Por confirmar', QUOTED: 'Cotización lista', APPROVED_PENDING_FUNDING: 'Disponible',
   ACTIVE_FUNDED: 'Fondeada', DISBURSED: 'Desembolsada', SETTLED: 'Liquidada', PARTIALLY_SETTLED_OVERDUE: 'Recaudo parcial',
 };
-const money = (value: string | bigint) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 2, minimumFractionDigits: 0 }).format(Number(value) / 100);
-const percent = (rate: number) => (rate * 100).toLocaleString('es-CO', { maximumFractionDigits: 2 }) + '% E.A.';
+const TIER: Record<string, string> = { TIER_1_SEED: 'Semilla', TIER_2_GROWTH: 'Crecimiento', TIER_3_PRO: 'Pro' };
+const money = (value: string | bigint) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Number(value) / 100);
+const percent = (rate: number) => (rate * 100).toLocaleString('es-CO', { maximumFractionDigits: 1 }) + '% E.A.';
 const sum = (values: string[]) => values.reduce((total, value) => total + BigInt(value || '0'), 0n);
 const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase() ?? '').join('') || 'P';
+const firstName = (name: string) => name.split(/\s+/)[0] || name;
 function cents(value: string) {
-  if (!/^\d+(\.\d{1,2})?$/.test(value)) throw new Error('Ingresa un valor positivo con máximo dos decimales.');
+  if (!/^\d+(\.\d{1,2})?$/.test(value)) throw new Error('Ingresa un valor positivo.');
   const [whole, decimals = ''] = value.split('.');
   const result = BigInt(whole) * 100n + BigInt(decimals.padEnd(2, '0'));
   if (result <= 0n) throw new Error('El valor debe ser mayor que cero.');
@@ -38,31 +41,28 @@ function cents(value: string) {
 function Icon({ name, size = 22 }: { name: string; size?: number }) {
   const paths: Record<string, ReactNode> = {
     home: <><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="M9 21v-8h6v8"/></>,
-    file: <><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></>,
     growth: <><path d="M4 20V10M10 20V6M16 20V13M22 20H2M4 5l5-3 5 4 7-4M17 2h4v4"/></>,
-    wallet: <><rect x="3" y="5" width="18" height="16" rx="4"/><path d="M3 9h18M16 13h5v5h-5a2.5 2.5 0 0 1 0-5ZM6 5V3h11"/></>,
+    bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>,
     clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
+    file: <><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/></>,
     arrow: <path d="M5 12h14m-6-6 6 6-6 6"/>, plus: <path d="M12 5v14M5 12h14"/>, close: <path d="m6 6 12 12M18 6 6 18"/>,
     check: <path d="m5 12 4 4L19 6"/>, exit: <><path d="M10 4H5v16h5M14 7l5 5-5 5M9 12h10"/></>,
   };
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.file}</svg>;
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.file}</svg>;
 }
 function Modal({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => { ref.current?.showModal(); return () => { ref.current?.close(); }; }, []);
-  return <dialog ref={ref} className="app-dialog" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) onClose(); } }} aria-labelledby="app-dialog-title">
-    <div className="app-dialog-heading"><h2 id="app-dialog-title">{title}</h2><button className="app-icon-button" aria-label="Cerrar" onClick={onClose}><Icon name="close"/></button></div>{children}
+  return <dialog ref={ref} className="app-sheet" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose(); }} aria-labelledby="app-sheet-title">
+    <div className="app-sheet-head"><h2 id="app-sheet-title">{title}</h2><button className="app-icon-btn" aria-label="Cerrar" onClick={onClose}><Icon name="close"/></button></div>{children}
   </dialog>;
 }
 
 export default function AppShell() {
   const [data, setData] = useState<Snapshot | null>(null);
   const [page, setPage] = useState<Page>(() => { const hash = location.hash.slice(1); return NAV.some(item => item.id === hash) ? hash as Page : 'home'; });
-  const [intent, setIntent] = useState<Intent>('invest');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [filter, setFilter] = useState('ALL');
-  const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [kind, setKind] = useState('INVOICE');
@@ -73,29 +73,27 @@ export default function AppShell() {
 
   async function request(path: string, init?: RequestInit) {
     const response = await fetch(path, { credentials: 'same-origin', ...init });
-    if (response.status === 401) { location.assign('/login'); throw new Error('Tu sesión terminó. Ingresa de nuevo.'); }
+    if (response.status === 401) { location.assign('/login'); throw new Error('Tu sesión terminó.'); }
     const body = await response.json();
     if (!response.ok) {
       const message = String(body.message || '');
-      const translations: [RegExp, string][] = [
-        [/active operation limit/i, 'Tu nivel ya tiene el máximo de operaciones activas. Liquida la actual para crear otra.'],
+      const map: [RegExp, string][] = [
+        [/active operation limit/i, 'Tu nivel permite una operación activa. Liquida la actual para crear otra.'],
         [/exceeds available limit/i, 'El monto supera tu cupo disponible.'],
         [/remaining|exceeds.*funding/i, 'El aporte supera el fondeo que falta.'],
         [/own operation/i, 'No puedes invertir en una operación tuya.'],
         [/already have a participation/i, 'Ya tienes un aporte en esta operación.'],
-        [/duplicate/i, 'Ya existe una operación con estos datos.'],
-        [/acceptance checks/i, 'Completa las validaciones antes de continuar.'],
       ];
-      throw new Error(translations.find(([pattern]) => pattern.test(message))?.[1] || 'Esta acción no está disponible. Revisa los datos y el estado de la operación.');
+      throw new Error(map.find(([re]) => re.test(message))?.[1] || 'Acción no disponible. Revisa los datos.');
     }
     return body;
   }
   async function refresh() { setData(await request('/api/app')); }
-  useEffect(() => { let alive = true; request('/api/app').then(value => { if (alive) setData(value); }).catch(reason => { if (alive) setError(reason.message); }); return () => { alive = false; }; }, []);
-  useEffect(() => { const handler = () => { const hash = location.hash.slice(1); if (NAV.some(item => item.id === hash)) setPage(hash as Page); }; window.addEventListener('hashchange', handler); return () => window.removeEventListener('hashchange', handler); }, []);
-  useEffect(() => { if (!notice) return; const timer = window.setTimeout(() => setNotice(''), 4500); return () => clearTimeout(timer); }, [notice]);
-  function go(next: Page) { setPage(next); location.hash = next; setFilter('ALL'); setSearch(''); window.scrollTo({ top: 0, behavior: 'auto' }); }
-  function open(operation: Operation) { setSelected(operation.id); setAmount('250000'); setPreview(null); setAccepted(false); setError(''); }
+  useEffect(() => { let alive = true; request('/api/app').then(v => { if (alive) setData(v); }).catch(r => { if (alive) setError(r.message); }); return () => { alive = false; }; }, []);
+  useEffect(() => { const h = () => { const hash = location.hash.slice(1); if (NAV.some(i => i.id === hash)) setPage(hash as Page); }; addEventListener('hashchange', h); return () => removeEventListener('hashchange', h); }, []);
+  useEffect(() => { if (!notice) return; const t = setTimeout(() => setNotice(''), 4000); return () => clearTimeout(t); }, [notice]);
+  function go(next: Page) { setPage(next); location.hash = next; scrollTo({ top: 0, behavior: 'auto' }); }
+  function open(op: Operation) { setSelected(op.id); setAmount('250000'); setPreview(null); setAccepted(false); setError(''); }
   async function mutate(action: string, input: Record<string, unknown> = {}) {
     if (busy) return;
     setBusy(true); setError('');
@@ -104,107 +102,127 @@ export default function AppShell() {
       if (action === 'simulate') setPreview(result);
       else { await refresh(); setPreview(null); setNotice('Operación actualizada.'); }
       return result;
-    } catch (reason) { setError(reason instanceof Error ? reason.message : 'No pudimos completar esta acción.'); }
+    } catch (r) { setError(r instanceof Error ? r.message : 'No pudimos completar la acción.'); }
     finally { setBusy(false); }
   }
   async function logout() {
-    try { const response = await fetch('/api/auth/session', { method: 'DELETE', credentials: 'same-origin' }); if (!response.ok) throw new Error(); location.assign('/login'); }
-    catch { setError('No pudimos cerrar la sesión. Inténtalo de nuevo.'); }
+    try { const r = await fetch('/api/auth/session', { method: 'DELETE', credentials: 'same-origin' }); if (!r.ok) throw new Error(); location.assign('/login'); }
+    catch { setError('No pudimos cerrar la sesión.'); }
   }
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     try {
-      const checks = kind === 'MILESTONE' ? form.has('ready') : ['validated', 'received', 'delivered', 'accepted'].every(key => form.has(key));
+      const checks = kind === 'MILESTONE' ? form.has('ready') : ['validated', 'received', 'delivered', 'accepted'].every(k => form.has(k));
       const result = await mutate('create', { assetType: kind, title: form.get('title'), payerLegalName: form.get('company'), nominalAmountCents: cents(String(form.get('amount'))), termDays: Number(form.get('term')), checks });
-      if (result) { setCreating(false); setSelected(result.id); go('operations'); }
-    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Revisa los datos.'); }
+      if (result) { setCreating(false); setSelected(result.id); go('raise'); }
+    } catch (r) { setError(r instanceof Error ? r.message : 'Revisa los datos.'); }
   }
-  if (!data) return <main className="proofly-login"><div className="proofly-login-card"><div className="font-script text-3xl text-electric">Proofly</div><p role="status" className="mt-5">{error || 'Preparando tu espacio…'}</p>{error && <button className="app-primary" onClick={() => location.reload()}>Reintentar</button>}</div></main>;
-  const investing = intent === 'invest';
+
+  if (!data) return <main className="app-boot"><div className="font-script text-3xl text-electric">Proofly</div><p role="status">{error || 'Preparando tu espacio…'}</p>{error && <button className="app-primary" onClick={() => location.reload()}>Reintentar</button>}</main>;
+
   const mine = data.operations.filter(op => op.freelancerId === data.me.id);
   const market = data.operations.filter(op => op.status === 'APPROVED_PENDING_FUNDING' && op.freelancerId !== data.me.id);
   const active = data.operations.find(op => op.id === selected);
-  const invested = sum(data.investments.map(item => item.fundedCapitalCents));
-  const profit = sum(data.investments.map(item => item.projection?.netEstimatedProfitCents || '0'));
-  const paid = sum(data.investments.map(item => item.settlement?.profitEarnedCents || '0'));
-  const cards = (page === 'operations' ? mine : market).filter(op => (filter === 'ALL' || op.assetType === filter) && `${op.title} ${op.payerLegalName}`.toLowerCase().includes(search.toLowerCase()));
-  const tier = data.me.tier.endsWith('PRO') ? 'Pro' : data.me.tier.includes('GROWTH') ? 'Crecimiento' : 'Semilla';
-  const heading = NAV.find(item => item.id === page)!.label;
-  const ownInvestment = active ? active.freelancerId === data.me.id : false;
-  const operationCard = (op: Operation) => <button key={op.id} className="app-operation" onClick={() => open(op)}>
-    <div className="app-operation-top"><span className="app-asset-icon"><Icon name={op.assetType === 'MILESTONE' ? 'growth' : 'file'}/></span><span className="app-tag">{op.assetType === 'MILESTONE' ? 'Hito' : 'Factura'}</span><span className="app-operation-arrow"><Icon name="arrow" size={18}/></span></div>
-    <h3>{op.title}</h3><p>{op.payerLegalName}</p><div className="app-operation-amount">{money(op.nominalAmountCents)}</div>
-    <div className="app-operation-meta"><span>{op.termDays} días</span><strong>{percent(op.effectiveAnnualRate)}</strong></div>
-    <div className="app-progress"><span style={{ width: `${Math.min(100, Number(op.fundedCapitalCents) / Number(op.advanceAmountCents) * 100)}%` }}/></div>
-    <div className="app-operation-meta"><span>{STATUS[op.status] || op.status}</span><span>{Math.round(Number(op.fundedCapitalCents) / Number(op.advanceAmountCents) * 100)}% fondeado</span></div>
+  const invested = sum(data.investments.map(i => i.fundedCapitalCents));
+  const profit = sum(data.investments.map(i => i.projection?.netEstimatedProfitCents || '0'));
+  const tier = TIER[data.me.tier] || 'Semilla';
+  const ownActive = active ? active.freelancerId === data.me.id : false;
+
+  const opRow = (op: Operation) => <button key={op.id} className="app-row" onClick={() => open(op)}>
+    <span className="app-row-icon"><Icon name={op.assetType === 'MILESTONE' ? 'growth' : 'file'} size={20}/></span>
+    <span className="app-row-body"><strong>{op.title}</strong><span>{op.payerLegalName} · {op.termDays} días</span></span>
+    <span className="app-row-end"><strong>{money(op.nominalAmountCents)}</strong><span className="app-row-rate">{percent(op.effectiveAnnualRate)}</span></span>
   </button>;
 
   return <div className="proofly-app">
-    <aside className="app-sidebar"><a href="/" className="app-brand">Proofly</a><div className="app-sidebar-label">TU ESPACIO</div><nav aria-label="Navegación de la app">{NAV.map(item => <button key={item.id} onClick={() => go(item.id)} aria-current={page === item.id ? 'page' : undefined}><Icon name={item.icon}/>{item.label}</button>)}</nav><div className="app-sidebar-note">Tu capital, a tiempo<br/><span>Adelanta tu trabajo o haz crecer tu dinero desde un mismo lugar.</span></div><button className="app-signout" onClick={logout}><Icon name="exit"/>Salir</button></aside>
-    <div className="app-workspace">
-      <header className="app-app-header"><div className="app-greeting"><span className="app-avatar">{initials(data.me.name)}</span><div><span>Tu espacio en Proofly</span><strong>{data.me.name}</strong></div></div><div className="app-header-actions"><span className="app-private-tag">Nivel {tier}</span><button className="app-icon-button" onClick={logout} aria-label="Salir"><Icon name="exit"/></button></div></header>
-      <main className="app-content">
-        <div className={`app-page-heading ${page === 'home' ? 'app-page-heading-home' : ''}`}><div><p className="app-overline">UN SOLO LUGAR PARA TU CAPITAL</p><h1>{page === 'home' ? 'Tu capital, más flexible' : heading}</h1></div>{page !== 'home' && <div className="app-intent-toggle" role="group" aria-label="Qué quieres hacer"><button type="button" aria-pressed={investing} onClick={() => setIntent('invest')}>Invertir</button><button type="button" aria-pressed={!investing} onClick={() => setIntent('raise')}>Anticipar</button></div>}</div>
+    <div className="app-shell">
+      <header className="app-top">
+        <div className="app-id"><span className="app-avatar">{initials(data.me.name)}</span><div><span>¡Hola, {firstName(data.me.name)}!</span><strong>Nivel {tier}</strong></div></div>
+        <button className="app-icon-btn" onClick={logout} aria-label="Salir"><Icon name="exit" size={20}/></button>
+      </header>
+
+      <main className="app-main">
         {error && !active && !creating && <p className="app-error" role="alert">{error}</p>}
+
         {page === 'home' && <>
-          <p className="app-home-lead">Haz crecer tu dinero con participaciones en operaciones, o anticipa el cobro de tus facturas e hitos. Todo desde una sola cuenta.</p>
-          <section className="app-dual" aria-label="Qué quieres hacer">
-            <button className="app-dual-card" onClick={() => { setIntent('invest'); go('market'); }}>
-              <img className="app-dual-art" src="/assets/proofly/ilustracion-crecer.png" alt="" width={120} height={120}/>
-              <h3>Invertir</h3><p>Haz crecer tu capital con participaciones en operaciones.</p><span className="app-dual-go"><Icon name="arrow" size={18}/></span>
+          <h1 className="app-title">Tu capital,<br/>más flexible</h1>
+          <div className="app-twin">
+            <button className="app-twin-card" onClick={() => go('invest')}>
+              <img src="/assets/proofly/ilustracion-crecer.png" alt="" width={96} height={96}/>
+              <h3>Invertir</h3><p>Haz crecer tu capital en operaciones.</p><span className="app-twin-go"><Icon name="arrow" size={18}/></span>
             </button>
-            <button className="app-dual-card" onClick={() => { setIntent('raise'); setCreating(true); }}>
-              <img className="app-dual-art" src="/assets/proofly/ilustracion-tiempo.png" alt="" width={120} height={120}/>
-              <h3>Anticipar</h3><p>Obtén liquidez inmediata de tus facturas o hitos.</p><span className="app-dual-go"><Icon name="arrow" size={18}/></span>
+            <button className="app-twin-card" onClick={() => { setKind('INVOICE'); setCreating(true); }}>
+              <img src="/assets/proofly/ilustracion-tiempo.png" alt="" width={96} height={96}/>
+              <h3>Anticipar</h3><p>Adelanta el cobro de tus facturas.</p><span className="app-twin-go"><Icon name="arrow" size={18}/></span>
             </button>
+          </div>
+          <section className="app-balance">
+            <div className="app-balance-row">
+              <div><span>Capital invertido</span><strong>{money(invested)}</strong></div>
+              <div><span>Cupo para anticipar</span><strong>{money(data.me.availableLimitCents)}</strong></div>
+            </div>
+            <p className="app-balance-note">Ganancia estimada {money(profit)} · retorno no garantizado</p>
           </section>
-          <section className="app-metrics" aria-label="Tus saldos">
-            <div className="app-metric app-metric-lilac"><span>Capital invertido</span><strong>{money(invested)}</strong><p>Ganancia estimada {money(profit)} · {data.investments.length} participaciones</p><span className="app-tag">Retorno no garantizado</span></div>
-            <div className="app-metric app-metric-chart"><span>Cupo para anticipar</span><strong>{money(data.me.availableLimitCents)}</strong><div className="app-mini-bars" aria-hidden="true">{[24,40,32,65,50,78,60].map((height, i) => <i key={i} style={{ height: `${height}%`, background: i === 5 ? '#7300FF' : '#EADCF9' }}/>)}</div><small>Nivel {tier} · cupo máximo {money(data.me.maxQuotaCents)}</small></div>
-          </section>
-          <div className="app-section-heading"><h2>{investing ? 'Operaciones para explorar' : 'Tus operaciones'}</h2><button className="app-text-button" onClick={() => go(investing ? 'market' : 'operations')}>Ver todas <Icon name="arrow" size={16}/></button></div>
-          {(investing ? market : mine).length ? <div className="app-operation-grid">{(investing ? market : mine).slice(0, 2).map(operationCard)}</div> : <div className="app-empty"><Icon name="file" size={32}/><h3>{investing ? 'Pronto habrá operaciones para ti' : 'Tu primer anticipo empieza aquí'}</h3><p>{investing ? 'Las nuevas operaciones disponibles aparecen en el mercado.' : 'Agrega una factura o un entregable para ver una cotización.'}</p><button className="app-secondary" onClick={() => investing ? go('market') : setCreating(true)}>{investing ? 'Ir al mercado' : 'Crear operación'}</button></div>}
+          <div className="app-sec-head"><h2>Actividad reciente</h2>{data.events.length > 0 && <button className="app-link" onClick={() => go('activity')}>Ver todo</button>}</div>
+          {data.events.length
+            ? <div className="app-list">{data.events.slice(0, 3).map(ev => <div key={ev.id} className="app-act"><span className="app-row-icon"><Icon name={ev.kind === 'settle' ? 'check' : 'clock'} size={18}/></span><div><strong>{ev.title}</strong><span>{new Date(ev.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</span></div></div>)}</div>
+            : <p className="app-muted">Aún no tienes movimientos. Empieza invirtiendo o anticipando.</p>}
         </>}
-        {(page === 'operations' || page === 'market') && <>
-          <div className="app-list-tools"><label className="app-search"><span>Buscar operaciones</span><input type="search" placeholder="Proyecto o empresa" value={search} onChange={event => setSearch(event.target.value)}/></label>{page === 'operations' && <button className="app-primary" onClick={() => { setCreating(true); setError(''); }}><Icon name="plus" size={18}/>Nueva operación</button>}</div>
-          <div className="app-segments" aria-label="Tipo de operación">{[['ALL','Todas'],['INVOICE','Facturas'],['MILESTONE','Hitos']].map(([value,label]) => <button key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
-          <div className="app-operation-grid">{cards.map(operationCard)}</div>{!cards.length && <div className="app-empty"><Icon name="file" size={32}/><h2>No hay operaciones con estos filtros</h2><p>{page === 'market' ? 'Las nuevas operaciones aparecen después de su aceptación.' : 'Crea una factura o un hito para empezar.'}</p></div>}
+
+        {page === 'invest' && <>
+          <h1 className="app-title">Invertir</h1>
+          <p className="app-lead">Aporta capital a operaciones de otros y recibe un retorno al vencimiento.</p>
+          {market.length
+            ? <div className="app-list">{market.map(opRow)}</div>
+            : <p className="app-muted">Pronto habrá operaciones disponibles para invertir.</p>}
         </>}
-        {page === 'portfolio' && <>
-          <section className="app-metrics"><div className="app-metric app-metric-lilac"><span>Capital invertido</span><strong>{money(invested)}</strong><p>{data.investments.length} participaciones</p></div><div className="app-metric"><span>Ganancia distribuida</span><strong>{money(paid)}</strong><p>Estimado pendiente: {money(profit)}</p></div></section>
-          <div className="app-section-heading"><h2>Tus participaciones</h2></div>
-          {data.investments.length ? <div className="app-position-list">{data.investments.map(item => { const op = data.operations.find(operation => operation.id === item.operationId)!; return <button className="app-position" key={item.id} onClick={() => open(op)}><span className="app-asset-icon"><Icon name="growth"/></span><div><strong>{op.title}</strong><span>{STATUS[op.status]}</span></div><div><strong>{money(item.fundedCapitalCents)}</strong><span className="app-positive">+{money(item.projection?.netEstimatedProfitCents || '0')} estimado</span></div></button>; })}</div> : <div className="app-empty"><Icon name="wallet" size={36}/><h2>Tu portafolio empieza con una participación</h2><p>Explora el mercado y revisa el retorno antes de aportar.</p><button className="app-primary" onClick={() => go('market')}>Explorar mercado</button></div>}
+
+        {page === 'raise' && <>
+          <div className="app-sec-head"><h1 className="app-title">Anticipar</h1><button className="app-primary app-primary-sm" onClick={() => { setKind('INVOICE'); setCreating(true); }}><Icon name="plus" size={16}/>Nueva</button></div>
+          <p className="app-lead">Adelanta el cobro de tus facturas e hitos. Cupo disponible {money(data.me.availableLimitCents)}.</p>
+          {mine.length
+            ? <div className="app-list">{mine.map(opRow)}</div>
+            : <p className="app-muted">Crea tu primera factura o hito para ver una cotización.</p>}
         </>}
-        {page === 'history' && <section className="app-history"><h2>Actividad</h2>{data.events.map(event => <button key={event.id} onClick={() => { const op = data.operations.find(item => item.id === event.operationId); if (op) open(op); }}><span className="app-asset-icon"><Icon name={event.kind === 'settle' ? 'check' : 'clock'}/></span><div><strong>{event.title}</strong><span>{new Date(event.date).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}</span></div><Icon name="arrow" size={18}/></button>)}</section>}
-        <footer className="app-app-footer"><span>Proofly · Liquidez para freelancers, retornos para financiadores</span><span>Montos en pesos colombianos (COP).</span></footer>
+
+        {page === 'activity' && <>
+          <h1 className="app-title">Actividad</h1>
+          {data.events.length
+            ? <div className="app-list">{data.events.map(ev => <button key={ev.id} className="app-act" onClick={() => { const op = data.operations.find(o => o.id === ev.operationId); if (op) open(op); }}><span className="app-row-icon"><Icon name={ev.kind === 'settle' ? 'check' : 'clock'} size={18}/></span><div><strong>{ev.title}</strong><span>{new Date(ev.date).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}</span></div><Icon name="arrow" size={16}/></button>)}</div>
+            : <p className="app-muted">Aquí verás cada movimiento de tu cuenta.</p>}
+        </>}
       </main>
+
+      <nav className="app-dock" aria-label="Navegación">{NAV.map(item => <button key={item.id} onClick={() => go(item.id)} aria-current={page === item.id ? 'page' : undefined}><Icon name={item.icon} size={22}/><span>{item.label}</span></button>)}</nav>
     </div>
-    <nav className="app-mobile-dock" aria-label="Navegación móvil">{NAV.map(item => <button key={item.id} onClick={() => go(item.id)} aria-current={page === item.id ? 'page' : undefined}><Icon name={item.icon} size={20}/><span>{item.label}</span></button>)}</nav>
+
     {notice && <div className="app-toast" role="status">{notice}</div>}
-    {creating && <Modal title="Crear una operación" onClose={() => { setCreating(false); setError(''); }}><form onSubmit={create} className="app-form">
-      <label>Tipo de operación<select value={kind} onChange={event => setKind(event.target.value)}><option value="INVOICE">Factura</option><option value="MILESTONE">Hito contractual</option></select></label>
-      <label>Título del proyecto<input name="title" required minLength={3} maxLength={80} placeholder="Diseño de identidad"/></label>
+
+    {creating && <Modal title="Nueva operación" onClose={() => { setCreating(false); setError(''); }}><form onSubmit={create} className="app-form">
+      <label>Tipo<select value={kind} onChange={e => setKind(e.target.value)}><option value="INVOICE">Factura</option><option value="MILESTONE">Hito</option></select></label>
+      <label>Título<input name="title" required minLength={3} maxLength={80} placeholder="Diseño de identidad"/></label>
       <label>Empresa pagadora<input name="company" required maxLength={80} placeholder="Estudio Nube"/></label>
-      <div className="app-form-pair"><label>Valor en COP<input name="amount" type="number" required min="1000" step="0.01" defaultValue="1000000"/></label><label>Plazo<select name="term" aria-label="Plazo" defaultValue="30"><option value="15">15 días</option><option value="30">30 días</option><option value="45">45 días</option><option value="60">60 días</option><option value="90">90 días</option></select></label></div>
-      <fieldset className="app-checks"><legend>{kind === 'INVOICE' ? 'Eventos de la factura' : 'Entregable del hito'}</legend>{(kind === 'INVOICE' ? [['validated','Validación DIAN'],['received','Acuse de recibo'],['delivered','Entrega de bienes o servicios'],['accepted','Aceptación del pagador']] : [['ready','El entregable está listo para confirmar']]).map(([name,label]) => <label key={name}><input name={name} type="checkbox" required/>{label}</label>)}</fieldset>
-      <p className="app-help">Tu cupo disponible es {money(data.me.availableLimitCents)}.</p>
-      {error && <p className="app-error" role="alert">{error}</p>}<button className="app-primary" disabled={busy}>{busy ? 'Creando…' : 'Crear y cotizar'}</button>
+      <div className="app-form-pair"><label>Valor (COP)<input name="amount" type="number" required min="1000" step="1000" defaultValue="1000000"/></label><label>Plazo<select name="term" defaultValue="30"><option value="15">15 días</option><option value="30">30 días</option><option value="45">45 días</option><option value="60">60 días</option><option value="90">90 días</option></select></label></div>
+      <fieldset className="app-checks"><legend>{kind === 'INVOICE' ? 'Confirma los eventos de la factura' : 'Confirma el entregable'}</legend>{(kind === 'INVOICE' ? [['validated','Validación DIAN'],['received','Acuse de recibo'],['delivered','Entrega realizada'],['accepted','Aceptación del pagador']] : [['ready','El entregable está listo']]).map(([n,l]) => <label key={n}><input name={n} type="checkbox" required/>{l}</label>)}</fieldset>
+      {error && <p className="app-error" role="alert">{error}</p>}
+      <button className="app-primary" disabled={busy}>{busy ? 'Creando…' : 'Crear y cotizar'}</button>
     </form></Modal>}
+
     {active && !creating && <Modal title={active.title} onClose={() => { setSelected(null); setError(''); }}>
-      <div className="app-detail-intro"><span className="app-tag">{active.assetType === 'INVOICE' ? 'Factura' : 'Hito contractual'}</span><span className="app-status">{STATUS[active.status]}</span><p>{active.payerLegalName}</p></div>
-      <div className="app-detail-hero"><span>Valor del entregable</span><strong>{money(active.nominalAmountCents)}</strong><div>{active.termDays} días · {percent(active.effectiveAnnualRate)}</div></div>
-      <dl className="app-quote-grid"><div><dt>Adelanto neto</dt><dd>{money(active.advanceAmountCents)}</dd></div><div><dt>Comisión Proofly</dt><dd>{money(active.prooflyFeeCents)}</dd></div><div><dt>Descuento comercial</dt><dd>{money(active.commercialDiscountCents)}</dd></div><div><dt>Fondeo pendiente</dt><dd>{money(active.remainingFundingCents)}</dd></div></dl>
-      <div className="app-risk-grid"><div><span>Entrega del freelancer</span><strong>{active.freelancerExecutionScore}/100</strong><meter min="0" max="100" value={active.freelancerExecutionScore}/></div><div><span>Solvencia de la empresa</span><strong>{active.payerSolvencyScore}/100</strong><meter min="0" max="100" value={active.payerSolvencyScore}/></div></div>
+      <div className="app-detail-top"><span className="app-tag">{active.assetType === 'INVOICE' ? 'Factura' : 'Hito'}</span><span className="app-tag app-tag-plain">{STATUS[active.status]}</span></div>
+      <div className="app-detail-hero"><span>Valor del entregable</span><strong>{money(active.nominalAmountCents)}</strong><p>{active.payerLegalName} · {active.termDays} días · {percent(active.effectiveAnnualRate)}</p></div>
+      <dl className="app-detail-facts"><div><dt>Adelanto neto</dt><dd>{money(active.advanceAmountCents)}</dd></div><div><dt>Comisión</dt><dd>{money(active.prooflyFeeCents)}</dd></div><div><dt>Fondeo pendiente</dt><dd>{money(active.remainingFundingCents)}</dd></div></dl>
+
       {active.status === 'PENDING_CLIENT_CONFIRMATION' && <button className="app-primary" disabled={busy} onClick={() => mutate('confirm', { id: active.id })}>Confirmar pago de la empresa</button>}
-      {active.status === 'QUOTED' && <div className="app-action-panel"><label className="app-checkbox"><input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)}/>Acepto la cotización y la cesión de derechos económicos.</label><button className="app-primary" disabled={!accepted || busy} onClick={() => mutate('accept', { id: active.id, accepted })}>Aceptar cotización</button></div>}
-      {active.status === 'APPROVED_PENDING_FUNDING' && (ownInvestment
-        ? <div className="app-action-panel"><p>Esta es una de tus operaciones. Está disponible para que otros financiadores aporten capital.</p></div>
-        : <div className="app-action-panel"><h3>Tu participación</h3><label className="app-form-label">Monto del aporte en COP<input type="number" min="0.01" step="0.01" data-remaining-cents={active.remainingFundingCents} value={amount} onChange={event => { setAmount(event.target.value); setPreview(null); }}/></label><button className="app-secondary" disabled={busy} onClick={() => { try { void mutate('simulate', { id: active.id, amountCents: cents(amount) }); } catch (reason) { setError((reason as Error).message); } }}>Ver retorno estimado</button>
-        {preview && <div className="app-participation-preview"><div><span>Ganancia estimada</span><strong>{money(preview.netEstimatedProfitCents)}</strong></div><div><span>Total estimado al vencimiento</span><strong>{money(preview.totalEstimatedPayoutCents)}</strong></div><p>{percent(preview.effectiveAnnualRate)} · no garantizada</p><button className="app-primary" disabled={busy} onClick={() => mutate('participate', { id: active.id, amountCents: preview.fundedCapitalCents })}>Confirmar participación</button></div>}
-      </div>)}
-      {['ACTIVE_FUNDED','DISBURSED'].includes(active.status) && <div className="app-action-panel"><p>La operación está completamente fondeada. Puedes registrar el pago total de la empresa y ver la distribución.</p><button className="app-primary" disabled={busy} onClick={() => mutate('settle', { id: active.id })}>Registrar recaudo total</button></div>}
-      {active.status === 'SETTLED' && <div className="app-settled"><Icon name="check"/><strong>Recaudo distribuido</strong><p>Comisión, capital y rendimiento calculados automáticamente.</p></div>}
+      {active.status === 'QUOTED' && <div className="app-panel"><label className="app-checkbox"><input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)}/>Acepto la cotización y la cesión de derechos.</label><button className="app-primary" disabled={!accepted || busy} onClick={() => mutate('accept', { id: active.id, accepted })}>Aceptar cotización</button></div>}
+      {active.status === 'APPROVED_PENDING_FUNDING' && (ownActive
+        ? <p className="app-muted">Esta operación está disponible para que otros financiadores aporten capital.</p>
+        : <div className="app-panel"><label className="app-form-label">Monto a invertir (COP)<input type="number" min="1000" step="1000" data-remaining-cents={active.remainingFundingCents} value={amount} onChange={e => { setAmount(e.target.value); setPreview(null); }}/></label><button className="app-secondary" disabled={busy} onClick={() => { try { void mutate('simulate', { id: active.id, amountCents: cents(amount) }); } catch (r) { setError((r as Error).message); } }}>Ver retorno estimado</button>
+          {preview && <div className="app-preview"><div><span>Ganancia estimada</span><strong>{money(preview.netEstimatedProfitCents)}</strong></div><div><span>Total al vencimiento</span><strong>{money(preview.totalEstimatedPayoutCents)}</strong></div><button className="app-primary" disabled={busy} onClick={() => mutate('participate', { id: active.id, amountCents: preview.fundedCapitalCents })}>Confirmar inversión</button></div>}
+        </div>)}
+      {['ACTIVE_FUNDED','DISBURSED'].includes(active.status) && <div className="app-panel"><p className="app-muted">Operación fondeada. Registra el pago de la empresa para distribuir.</p><button className="app-primary" disabled={busy} onClick={() => mutate('settle', { id: active.id })}>Registrar recaudo</button></div>}
+      {active.status === 'SETTLED' && <div className="app-done"><Icon name="check"/><strong>Recaudo distribuido</strong></div>}
       {error && <p className="app-error" role="alert">{error}</p>}
     </Modal>}
   </div>;
