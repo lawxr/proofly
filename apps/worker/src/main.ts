@@ -1,16 +1,24 @@
 /**
  * @proofly/worker - Proceso Principal del Worker Asíncrono
+ *
+ * Consume el outbox compartido con la API. Con PERSISTENCE=postgres ambos
+ * procesos usan el mismo outbox en Postgres (patrón transactional outbox con
+ * SKIP LOCKED), de modo que un evento registrado por la API se despacha aquí.
+ * En memoria el outbox no se comparte entre procesos; se advierte al arrancar.
  */
 
 import { OutboxDispatcher } from './outbox/dispatcher.ts';
-import { EVMEventIndexer, ChainLogProvider, RawLogEvent } from './indexer/evm-indexer.ts';
-import { DailyReconciliationJob, ChainDataProvider, BankDataProvider } from './reconciliation/daily-job.ts';
-import { OutboxEvent, OutboxStatus } from '@proofly/domain';
-import type { OutboxRepositoryPort, PaymentRailPort } from '@proofly/domain';
+import type { PaymentRailPort } from '@proofly/domain';
+import { createDependenciesFromEnv } from '../../api/src/app.ts';
 import { createBlockchainAdapter } from '../../api/src/adapters/blockchain/blockchain-factory.ts';
 
 const blockchainAdapter = createBlockchainAdapter(process.env);
-console.log(`[Proofly Worker] Inicializando Outbox Dispatcher (blockchain: ${process.env.BLOCKCHAIN_ADAPTER === 'viem' ? 'viem/on-chain' : 'mock'})...`);
+const persistence = process.env.PERSISTENCE === 'postgres' ? 'postgres' : 'memory';
+const chainMode = process.env.BLOCKCHAIN_ADAPTER === 'viem' ? 'viem/on-chain' : 'mock';
+console.log(`[Proofly Worker] Outbox Dispatcher — persistencia: ${persistence}, blockchain: ${chainMode}`);
+if (persistence !== 'postgres') {
+  console.warn('[Proofly Worker] En memoria el outbox NO se comparte con la API (procesos separados). Usa PERSISTENCE=postgres para el flujo real.');
+}
 
 let isRunning = true;
 process.on('SIGINT', () => { isRunning = false; });
@@ -23,62 +31,22 @@ class StandalonePaymentRailAdapter implements PaymentRailPort {
   }
 }
 
-class InMemoryOutboxWorkerRepo implements OutboxRepositoryPort {
-  private events: OutboxEvent[] = [];
-
-  async recordEvent(e: any): Promise<OutboxEvent> {
-    const event = new OutboxEvent({
-      id: crypto.randomUUID(),
-      aggregateType: e.aggregateType,
-      aggregateId: e.aggregateId,
-      eventType: e.eventType,
-      payload: e.payload,
-      status: OutboxStatus.PENDING,
-      retryCount: 0,
-      createdAt: new Date()
-    });
-    this.events.push(event);
-    return event;
-  }
-
-  async fetchPendingEvents(batchSize: number): Promise<OutboxEvent[]> {
-    return this.events.filter(e => e.status === OutboxStatus.PENDING).slice(0, batchSize);
-  }
-
-  async markCompleted(id: string): Promise<void> {
-    const e = this.events.find(ev => ev.id === id);
-    if (e) {
-      e.status = OutboxStatus.COMPLETED;
-      e.processedAt = new Date();
-    }
-  }
-
-  async markFailed(id: string, reason: string): Promise<void> {
-    const e = this.events.find(ev => ev.id === id);
-    if (e) {
-      e.status = OutboxStatus.FAILED;
-      e.lastError = reason;
-      e.retryCount++;
-    }
-  }
-}
-
-const outboxRepo = new InMemoryOutboxWorkerRepo();
+const deps = createDependenciesFromEnv(process.env);
 const paymentRail = new StandalonePaymentRailAdapter();
-const dispatcher = new OutboxDispatcher(outboxRepo, blockchainAdapter, paymentRail);
+const dispatcher = new OutboxDispatcher(deps.outboxRepo, blockchainAdapter, paymentRail);
 
 async function loop() {
-  console.log('[Proofly Worker] Bucle de procesamiento activo (intervalo 3s).');
+  const intervalMs = Number(process.env.WORKER_INTERVAL_MS || 3000);
+  console.log(`[Proofly Worker] Bucle de procesamiento activo (intervalo ${intervalMs}ms).`);
   while (isRunning) {
     try {
-      const { processedCount } = await dispatcher.processBatch();
-      if (processedCount > 0) {
-        console.log(`[Proofly Worker] Despachados ${processedCount} eventos exitosamente.`);
-      }
+      const { processedCount, failedCount } = await dispatcher.processBatch();
+      if (processedCount > 0) console.log(`[Proofly Worker] Despachados ${processedCount} eventos.`);
+      if (failedCount > 0) console.warn(`[Proofly Worker] ${failedCount} eventos fallaron (reintento pendiente).`);
     } catch (err) {
       console.error('[Proofly Worker] Error en ciclo:', err);
     }
-    await new Promise(r => setTimeout(r, 3000));
+    await new Promise(r => setTimeout(r, intervalMs));
   }
   console.log('[Proofly Worker] Worker detenido.');
 }

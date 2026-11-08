@@ -48,8 +48,17 @@
   - `verify-postgres.mjs` y `verify-auth-postgres.mjs` PASS contra DB recreada: signup real → usuario persistido con password scrypt → snapshot autenticado → login contra la DB.
 - Riesgo: item 2 (seguridad/auth) + item 1 (datos). Mitigado: contraseñas scrypt con sal, cookie HttpOnly/SameSite, same-origin, rate limit, timing uniforme en login; schema verificado con round-trip real. KYC sigue por adaptador determinista (no es verificación real todavía).
 
+## Rebanada 3 — Outbox compartido + renombrado (HECHA)
+
+- L6: outbox compartido api↔worker. El worker (`apps/worker/src/main.ts`) ahora usa `createDependenciesFromEnv`, tomando el mismo `outboxRepo`. Con PERSISTENCE=postgres api y worker comparten el outbox Postgres (SKIP LOCKED); en memoria se advierte que no se comparte. Ajustado `app-service.allOperations()` para unir operaciones trackeadas + `listMarketplace()` del repo, de modo que la oferta persistida sobreviva reinicios.
+- L7: renombrado cosmético. `DemoApp`→`AppShell`, `DemoLogin`→`AuthScreen`, `demo-app.css`→`app-shell.css`, clases `.demo-*`/`.proofly-demo`→`.app-*`/`.proofly-app`. Sin cambio funcional. Quitado el símbolo de logo de la interfaz (header landing, aside de auth, sidebar de la app); el wordmark de texto queda solo. El símbolo permanece solo como favicon/app icon.
+- L8: Verificación — todo verde:
+  - `verify-outbox-flow.mjs` PASS: API fondea una operación → evento OPERATION_FULLY_FUNDED en outbox Postgres → worker lo lee del mismo outbox → mint on-chain (Funded) en Anvil.
+  - Suite completa 41/41; browser test PASS; verify-postgres y verify-auth-postgres PASS.
+- Riesgo: item 1 (datos) + item 5 (entorno/cadena). Mitigado con round-trips reales.
+
 ## Pendiente
 
-1. Outbox compartido api↔worker vía PostgresOutboxRepository en ambos procesos (hoy el worker usa su propio outbox en memoria).
-2. Renombrado cosmético restante: componentes `DemoApp`/`DemoLogin` y clases CSS `.demo-*` → nombres de producto (refactor amplio, sin impacto funcional).
-3. KYC/pagos/DIAN reales (proveedores externos, requieren credenciales).
+1. El `OutboxDispatcher` no aplica backoff real (retry_count se incrementa pero sin demora). Mejora futura.
+2. KYC/pagos/DIAN reales (proveedores externos, requieren credenciales).
+3. Enriquecer el payload on-chain (financiadores/dossier reales) — pendiente desde la capa blockchain.

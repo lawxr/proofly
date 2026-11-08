@@ -31,7 +31,16 @@ export async function createAppService(deps) {
   const simulate = new SimulateParticipationUseCase(deps.operationRepo);
   const purchase = new PurchaseParticipationUseCase(deps.operationRepo, deps.investmentRepo, deps.userRepo, deps.outboxRepo);
   const reconcile = new ReconcileBankReceiptUseCase(deps.operationRepo, deps.investmentRepo, deps.outboxRepo);
-  const allOperations = async () => (await Promise.all([...tracked].map(id => deps.operationRepo.findById(id)))).filter(Boolean);
+  const allOperations = async () => {
+    // Operations created in this process, plus any funding-open operations the
+    // repository already holds (so persisted market supply survives restarts).
+    const byId = new Map();
+    for (const op of (await Promise.all([...tracked].map(id => deps.operationRepo.findById(id)))).filter(Boolean)) byId.set(op.id, op);
+    if (typeof deps.operationRepo.listMarketplace === 'function') {
+      try { for (const op of await deps.operationRepo.listMarketplace()) if (!byId.has(op.id)) byId.set(op.id, op); } catch { /* repo without marketplace listing */ }
+    }
+    return [...byId.values()];
+  };
   const eventsFor = userId => events.get(userId) || [];
   const serialize = operation => {
     const { hmacKey: _hmac, confirmationToken: _token, electronicSignatureHash: _signature, ...safe } = operation;
