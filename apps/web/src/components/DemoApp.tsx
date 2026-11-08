@@ -131,7 +131,6 @@ export default function DemoApp() {
   const cards = (page === 'operations' ? mine : market).filter(op => (filter === 'ALL' || op.assetType === filter) && `${op.title} ${op.payerLegalName}`.toLowerCase().includes(search.toLowerCase()));
   const tier = data.me.tier.endsWith('PRO') ? 'Pro' : data.me.tier.includes('GROWTH') ? 'Crecimiento' : 'Semilla';
   const heading = NAV.find(item => item.id === page)!.label;
-  const art = investing ? '/assets/proofly/ilustracion-crecer.png' : '/assets/proofly/ilustracion-tiempo.png';
   const ownInvestment = active ? active.freelancerId === data.me.id : false;
   const operationCard = (op: Operation) => <button key={op.id} className="demo-operation" onClick={() => open(op)}>
     <div className="demo-operation-top"><span className="demo-asset-icon"><Icon name={op.assetType === 'MILESTONE' ? 'growth' : 'file'}/></span><span className="demo-tag">{op.assetType === 'MILESTONE' ? 'Hito' : 'Factura'}</span><span className="demo-operation-arrow"><Icon name="arrow" size={18}/></span></div>
@@ -146,16 +145,26 @@ export default function DemoApp() {
     <div className="demo-workspace">
       <header className="demo-app-header"><div className="demo-greeting"><span className="demo-avatar">{initials(data.me.name)}</span><div><span>Tu espacio en Proofly</span><strong>{data.me.name}</strong></div></div><div className="demo-header-actions"><span className="demo-private-tag">Nivel {tier}</span><button className="demo-icon-button" onClick={logout} aria-label="Salir"><Icon name="exit"/></button></div></header>
       <main className="demo-content">
-        <div className={`demo-page-heading ${page === 'home' ? 'demo-page-heading-home' : ''}`}><div><p className="demo-overline">UN SOLO LUGAR PARA TU CAPITAL</p><h1>{page === 'home' ? (investing ? 'Haz crecer tu dinero' : 'Adelanta tu trabajo') : heading}</h1></div><div className="demo-intent-toggle" role="group" aria-label="Qué quieres hacer"><button type="button" aria-pressed={!investing} onClick={() => setIntent('raise')}>Financiarme</button><button type="button" aria-pressed={investing} onClick={() => setIntent('invest')}>Invertir</button></div></div>
+        <div className={`demo-page-heading ${page === 'home' ? 'demo-page-heading-home' : ''}`}><div><p className="demo-overline">UN SOLO LUGAR PARA TU CAPITAL</p><h1>{page === 'home' ? 'Tu capital, más flexible' : heading}</h1></div>{page !== 'home' && <div className="demo-intent-toggle" role="group" aria-label="Qué quieres hacer"><button type="button" aria-pressed={investing} onClick={() => setIntent('invest')}>Invertir</button><button type="button" aria-pressed={!investing} onClick={() => setIntent('raise')}>Anticipar</button></div>}</div>
         {error && !active && !creating && <p className="demo-error" role="alert">{error}</p>}
         {page === 'home' && <>
-          <section className="demo-welcome"><div className="demo-welcome-art"><img className="demo-art-image" src={art} alt="" width={380} height={380}/></div><div className="demo-welcome-copy"><span className="demo-tag">{investing ? 'Financia talento' : `Nivel ${tier}`}</span><h2>{investing ? 'Haz crecer tu capital hoy.' : 'Tu próximo proyecto no tiene que esperar.'}</h2><p>{investing ? 'Explora facturas e hitos con cotizaciones transparentes, en pesos.' : 'Crea una factura o un hito, revisa tu cotización y adelanta tu pago.'}</p><button className="demo-primary" onClick={() => investing ? go('market') : setCreating(true)}>{investing ? 'Explorar operaciones' : 'Crear mi operación'}<Icon name="arrow" size={18}/></button></div></section>
-          <section className="demo-metrics" aria-label="Resumen de tu cuenta">
-            <div className="demo-metric demo-metric-chart"><span>Cupo disponible para adelantos</span><strong>{money(data.me.availableLimitCents)}</strong><div className="demo-mini-bars" aria-hidden="true">{[24,40,32,65,50,78,60].map((height, i) => <i key={i} style={{ height: `${height}%`, background: i === 5 ? '#7300FF' : '#EADCF9' }}/>)}</div><small>Nivel {tier} · cupo máximo {money(data.me.maxQuotaCents)}</small></div>
+          <p className="demo-home-lead">Haz crecer tu dinero con participaciones en operaciones, o anticipa el cobro de tus facturas e hitos. Todo desde una sola cuenta.</p>
+          <section className="demo-dual" aria-label="Qué quieres hacer">
+            <button className="demo-dual-card" onClick={() => { setIntent('invest'); go('market'); }}>
+              <img className="demo-dual-art" src="/assets/proofly/ilustracion-crecer.png" alt="" width={120} height={120}/>
+              <h3>Invertir</h3><p>Haz crecer tu capital con participaciones en operaciones.</p><span className="demo-dual-go"><Icon name="arrow" size={18}/></span>
+            </button>
+            <button className="demo-dual-card" onClick={() => { setIntent('raise'); setCreating(true); }}>
+              <img className="demo-dual-art" src="/assets/proofly/ilustracion-tiempo.png" alt="" width={120} height={120}/>
+              <h3>Anticipar</h3><p>Obtén liquidez inmediata de tus facturas o hitos.</p><span className="demo-dual-go"><Icon name="arrow" size={18}/></span>
+            </button>
+          </section>
+          <section className="demo-metrics" aria-label="Tus saldos">
             <div className="demo-metric demo-metric-lilac"><span>Capital invertido</span><strong>{money(invested)}</strong><p>Ganancia estimada {money(profit)} · {data.investments.length} participaciones</p><span className="demo-tag">Retorno no garantizado</span></div>
+            <div className="demo-metric demo-metric-chart"><span>Cupo para anticipar</span><strong>{money(data.me.availableLimitCents)}</strong><div className="demo-mini-bars" aria-hidden="true">{[24,40,32,65,50,78,60].map((height, i) => <i key={i} style={{ height: `${height}%`, background: i === 5 ? '#7300FF' : '#EADCF9' }}/>)}</div><small>Nivel {tier} · cupo máximo {money(data.me.maxQuotaCents)}</small></div>
           </section>
           <div className="demo-section-heading"><h2>{investing ? 'Operaciones para explorar' : 'Tus operaciones'}</h2><button className="demo-text-button" onClick={() => go(investing ? 'market' : 'operations')}>Ver todas <Icon name="arrow" size={16}/></button></div>
-          {(investing ? market : mine).length ? <div className="demo-operation-grid">{(investing ? market : mine).slice(0, 2).map(operationCard)}</div> : <div className="demo-empty"><Icon name="file" size={32}/><h3>{investing ? 'Pronto habrá operaciones para ti' : 'Tu primer adelanto empieza aquí'}</h3><p>{investing ? 'Las nuevas operaciones disponibles aparecen en el mercado.' : 'Agrega una factura o un entregable para ver una cotización.'}</p><button className="demo-secondary" onClick={() => investing ? go('market') : setCreating(true)}>{investing ? 'Ir al mercado' : 'Crear operación'}</button></div>}
+          {(investing ? market : mine).length ? <div className="demo-operation-grid">{(investing ? market : mine).slice(0, 2).map(operationCard)}</div> : <div className="demo-empty"><Icon name="file" size={32}/><h3>{investing ? 'Pronto habrá operaciones para ti' : 'Tu primer anticipo empieza aquí'}</h3><p>{investing ? 'Las nuevas operaciones disponibles aparecen en el mercado.' : 'Agrega una factura o un entregable para ver una cotización.'}</p><button className="demo-secondary" onClick={() => investing ? go('market') : setCreating(true)}>{investing ? 'Ir al mercado' : 'Crear operación'}</button></div>}
         </>}
         {(page === 'operations' || page === 'market') && <>
           <div className="demo-list-tools"><label className="demo-search"><span>Buscar operaciones</span><input type="search" placeholder="Proyecto o empresa" value={search} onChange={event => setSearch(event.target.value)}/></label>{page === 'operations' && <button className="demo-primary" onClick={() => { setCreating(true); setError(''); }}><Icon name="plus" size={18}/>Nueva operación</button>}</div>
