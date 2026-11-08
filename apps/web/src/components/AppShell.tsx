@@ -44,6 +44,8 @@ function Icon({ name, size = 22 }: { name: string; size?: number }) {
     growth: <><path d="M4 20V10M10 20V6M16 20V13M22 20H2M4 5l5-3 5 4 7-4M17 2h4v4"/></>,
     bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>,
     clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
+    bell: <><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></>,
+    chevron: <path d="m9 18 6-6-6-6"/>,
     file: <><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/></>,
     arrow: <path d="M5 12h14m-6-6 6 6-6 6"/>, plus: <path d="M12 5v14M5 12h14"/>, close: <path d="m6 6 12 12M18 6 6 18"/>,
     check: <path d="m5 12 4 4L19 6"/>, exit: <><path d="M10 4H5v16h5M14 7l5 5-5 5M9 12h10"/></>,
@@ -67,9 +69,10 @@ export default function AppShell() {
   const [creating, setCreating] = useState(false);
   const [kind, setKind] = useState('INVOICE');
   const [amount, setAmount] = useState('250000');
-  const [preview, setPreview] = useState<Projection | null>(null);
   const [accepted, setAccepted] = useState(false);
   const [notice, setNotice] = useState('');
+  const [sheet, setSheet] = useState<'none' | 'settings' | 'notifications'>('none');
+  const [seen, setSeen] = useState<string>(() => { try { return localStorage.getItem('proofly-seen-event') || ''; } catch { return ''; } });
 
   async function request(path: string, init?: RequestInit) {
     const response = await fetch(path, { credentials: 'same-origin', ...init });
@@ -93,14 +96,13 @@ export default function AppShell() {
   useEffect(() => { const h = () => { const hash = location.hash.slice(1); if (NAV.some(i => i.id === hash)) setPage(hash as Page); }; addEventListener('hashchange', h); return () => removeEventListener('hashchange', h); }, []);
   useEffect(() => { if (!notice) return; const t = setTimeout(() => setNotice(''), 4000); return () => clearTimeout(t); }, [notice]);
   function go(next: Page) { setPage(next); location.hash = next; scrollTo({ top: 0, behavior: 'auto' }); }
-  function open(op: Operation) { setSelected(op.id); setAmount('250000'); setPreview(null); setAccepted(false); setError(''); }
+  function open(op: Operation) { setSelected(op.id); setAmount('250000'); setAccepted(false); setError(''); }
   async function mutate(action: string, input: Record<string, unknown> = {}) {
     if (busy) return;
     setBusy(true); setError('');
     try {
       const result = await request('/api/app/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...input }) });
-      if (action === 'simulate') setPreview(result);
-      else { await refresh(); setPreview(null); setNotice('Operación actualizada.'); }
+      await refresh(); setNotice('Operación actualizada.');
       return result;
     } catch (r) { setError(r instanceof Error ? r.message : 'No pudimos completar la acción.'); }
     finally { setBusy(false); }
@@ -128,6 +130,8 @@ export default function AppShell() {
   const profit = sum(data.investments.map(i => i.projection?.netEstimatedProfitCents || '0'));
   const tier = TIER[data.me.tier] || 'Semilla';
   const ownActive = active ? active.freelancerId === data.me.id : false;
+  const unread = (() => { let n = 0; for (const ev of data.events) { if (ev.id === seen) break; n++; } return n; })();
+  function openNotifications() { setSheet('notifications'); const latest = data?.events[0]?.id || ''; setSeen(latest); try { localStorage.setItem('proofly-seen-event', latest); } catch { /* ignore */ } }
 
   const opRow = (op: Operation) => <button key={op.id} className="app-row" onClick={() => open(op)}>
     <span className="app-row-icon"><Icon name={op.assetType === 'MILESTONE' ? 'growth' : 'file'} size={20}/></span>
@@ -138,8 +142,8 @@ export default function AppShell() {
   return <div className="proofly-app">
     <div className="app-shell">
       <header className="app-top">
-        <div className="app-id"><span className="app-avatar">{initials(data.me.name)}</span><div><span>¡Hola, {firstName(data.me.name)}!</span><strong>Nivel {tier}</strong></div></div>
-        <button className="app-icon-btn" onClick={logout} aria-label="Salir"><Icon name="exit" size={20}/></button>
+        <button className="app-id" onClick={() => setSheet('settings')} aria-label="Abrir tu cuenta"><span className="app-avatar">{initials(data.me.name)}</span><div><span>¡Hola, {firstName(data.me.name)}!</span><strong>Nivel {tier}</strong></div></button>
+        <button className="app-icon-btn app-bell" onClick={openNotifications} aria-label={unread ? `Notificaciones, ${unread} sin leer` : 'Notificaciones'}><Icon name="bell" size={20}/>{unread > 0 && <span className="app-badge" aria-hidden="true">{unread > 9 ? '9+' : unread}</span>}</button>
       </header>
 
       <main className="app-main">
@@ -199,6 +203,26 @@ export default function AppShell() {
 
     {notice && <div className="app-toast" role="status">{notice}</div>}
 
+    {sheet === 'settings' && <Modal title="Tu cuenta" onClose={() => setSheet('none')}>
+      <div className="app-settings">
+        <div className="app-settings-id"><span className="app-avatar app-avatar-lg">{initials(data.me.name)}</span><div><strong>{data.me.name}</strong><span>Nivel {tier}</span></div></div>
+        <dl className="app-settings-facts">
+          <div><dt>Cupo para anticipar</dt><dd>{money(data.me.availableLimitCents)}</dd></div>
+          <div><dt>Cupo máximo del nivel</dt><dd>{money(data.me.maxQuotaCents)}</dd></div>
+          <div><dt>Puntaje de entrega</dt><dd>{data.me.executionScore}/100</dd></div>
+          <div><dt>Capital invertido</dt><dd>{money(invested)}</dd></div>
+        </dl>
+        <p className="app-muted">Tu nivel sube a medida que liquidas operaciones. Semilla → Crecimiento → Pro.</p>
+        <button className="app-secondary" onClick={logout}><Icon name="exit" size={18}/>Salir de la cuenta</button>
+      </div>
+    </Modal>}
+
+    {sheet === 'notifications' && <Modal title="Notificaciones" onClose={() => setSheet('none')}>
+      {data.events.length
+        ? <div className="app-list">{data.events.map(ev => <button key={ev.id} className="app-act" onClick={() => { const op = data.operations.find(o => o.id === ev.operationId); setSheet('none'); if (op) open(op); }}><span className="app-row-icon"><Icon name={ev.kind === 'settle' ? 'check' : ev.kind === 'participate' ? 'growth' : 'bell'} size={18}/></span><div><strong>{ev.title}</strong><span>{new Date(ev.date).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}</span></div><Icon name="chevron" size={16}/></button>)}</div>
+        : <p className="app-muted">No tienes notificaciones. Aquí verás cuando tus operaciones avancen.</p>}
+    </Modal>}
+
     {creating && <Modal title="Nueva operación" onClose={() => { setCreating(false); setError(''); }}><form onSubmit={create} className="app-form">
       <label>Tipo<select value={kind} onChange={e => setKind(e.target.value)}><option value="INVOICE">Factura</option><option value="MILESTONE">Hito</option></select></label>
       <label>Título<input name="title" required minLength={3} maxLength={80} placeholder="Diseño de identidad"/></label>
@@ -218,9 +242,25 @@ export default function AppShell() {
       {active.status === 'QUOTED' && <div className="app-panel"><label className="app-checkbox"><input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)}/>Acepto la cotización y la cesión de derechos.</label><button className="app-primary" disabled={!accepted || busy} onClick={() => mutate('accept', { id: active.id, accepted })}>Aceptar cotización</button></div>}
       {active.status === 'APPROVED_PENDING_FUNDING' && (ownActive
         ? <p className="app-muted">Esta operación está disponible para que otros financiadores aporten capital.</p>
-        : <div className="app-panel"><label className="app-form-label">Monto a invertir (COP)<input type="number" min="1000" step="1000" data-remaining-cents={active.remainingFundingCents} value={amount} onChange={e => { setAmount(e.target.value); setPreview(null); }}/></label><button className="app-secondary" disabled={busy} onClick={() => { try { void mutate('simulate', { id: active.id, amountCents: cents(amount) }); } catch (r) { setError((r as Error).message); } }}>Ver retorno estimado</button>
-          {preview && <div className="app-preview"><div><span>Ganancia estimada</span><strong>{money(preview.netEstimatedProfitCents)}</strong></div><div><span>Total al vencimiento</span><strong>{money(preview.totalEstimatedPayoutCents)}</strong></div><button className="app-primary" disabled={busy} onClick={() => mutate('participate', { id: active.id, amountCents: preview.fundedCapitalCents })}>Confirmar inversión</button></div>}
-        </div>)}
+        : (() => {
+            let cents_ = 0n; try { cents_ = BigInt(cents(amount || '0')); } catch { /* invalid in-progress input */ }
+            const remaining = BigInt(active.remainingFundingCents);
+            const over = cents_ > remaining;
+            const estProfit = cents_ > 0n ? (cents_ * BigInt(Math.round(active.effectiveAnnualRate * active.termDays / 365 * 1e6))) / 1000000n : 0n;
+            const total = cents_ + estProfit;
+            return <div className="app-invest">
+              <div className="app-invest-rate"><span>Retorno</span><strong>{percent(active.effectiveAnnualRate)}</strong><span>a {active.termDays} días</span></div>
+              <label className="app-form-label">¿Cuánto quieres invertir? (COP)<input type="number" min="1000" step="1000" data-remaining-cents={active.remainingFundingCents} value={amount} onChange={e => setAmount(e.target.value)}/></label>
+              <p className="app-invest-hint">Disponible para invertir: {money(active.remainingFundingCents)}</p>
+              <div className="app-invest-preview">
+                <div><span>Ganancia estimada</span><strong className="app-positive">+{money(estProfit.toString())}</strong></div>
+                <div><span>Recibes al vencimiento</span><strong>{money(total.toString())}</strong></div>
+              </div>
+              {over && <p className="app-error" role="alert">El monto supera el fondeo disponible.</p>}
+              <button className="app-primary" disabled={busy || cents_ <= 0n || over} onClick={() => { try { void mutate('participate', { id: active.id, amountCents: cents(amount) }); } catch (r) { setError((r as Error).message); } }}>Invertir {cents_ > 0n ? money(cents_.toString()) : ''}</button>
+              <p className="app-muted app-invest-note">Estimación; el retorno no está garantizado. El cálculo final lo confirma el sistema al invertir.</p>
+            </div>;
+          })())}
       {['ACTIVE_FUNDED','DISBURSED'].includes(active.status) && <div className="app-panel"><p className="app-muted">Operación fondeada. Registra el pago de la empresa para distribuir.</p><button className="app-primary" disabled={busy} onClick={() => mutate('settle', { id: active.id })}>Registrar recaudo</button></div>}
       {active.status === 'SETTLED' && <div className="app-done"><Icon name="check"/><strong>Recaudo distribuido</strong></div>}
       {error && <p className="app-error" role="alert">{error}</p>}

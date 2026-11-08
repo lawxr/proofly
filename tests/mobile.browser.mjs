@@ -53,18 +53,14 @@ try {
   // Invest in someone else's operation.
   await nav().getByRole('button', { name: 'Invertir', exact: true }).click();
   await page.locator('.app-row').filter({ hasText: 'Diseño de identidad' }).click();
-  const amountInput = page.getByLabel('Monto a invertir (COP)');
+  const amountInput = page.getByLabel('¿Cuánto quieres invertir? (COP)');
   await amountInput.waitFor();
   const remainingCents = await amountInput.getAttribute('data-remaining-cents');
   assert.ok(Number(remainingCents) > 0, `remaining funding not readable: ${remainingCents}`);
   await amountInput.fill(String(Math.floor(Number(remainingCents) / 100)));
-  await page.getByRole('button', { name: 'Ver retorno estimado', exact: true }).click();
-  const confirm = page.getByRole('button', { name: 'Confirmar inversión', exact: true });
-  await Promise.race([
-    confirm.waitFor({ timeout: 8000 }),
-    page.locator('.app-sheet .app-error').waitFor({ timeout: 8000 }).then(async () => { throw new Error('simulate error: ' + await page.locator('.app-sheet .app-error').innerText()); }),
-  ]);
-  await confirm.click();
+  // Live estimate shows without an intermediate button; the invest button carries the amount.
+  await page.locator('.app-invest-preview').getByText('Ganancia estimada').waitFor();
+  await page.getByRole('button', { name: /^Invertir/ }).click();
   await page.getByRole('button', { name: 'Registrar recaudo', exact: true }).click();
   await page.getByText('Recaudo distribuido', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
@@ -84,10 +80,19 @@ try {
   await page.getByLabel('Acepto la cotización y la cesión de derechos.').check();
   await page.getByRole('button', { name: 'Aceptar cotización', exact: true }).click();
   // Owner cannot invest in their own operation: no invest input.
-  assert.equal(await page.getByLabel('Monto a invertir (COP)').count(), 0, 'Owner must not see the invest input.');
+  assert.equal(await page.getByLabel('¿Cuánto quieres invertir? (COP)').count(), 0, 'Owner must not see the invest input.');
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
   await page.reload();
   await page.locator('.app-row').filter({ hasText: 'QA-HITO' }).waitFor();
+
+  // Header: notifications bell lists account events; profile opens settings with logout.
+  await page.goto(`${base}/app/#home`);
+  await page.getByRole('button', { name: /Notificaciones/ }).click();
+  await page.getByRole('heading', { name: 'Notificaciones', exact: true }).waitFor();
+  assert.ok(await page.locator('.app-sheet .app-act').count() >= 1, 'notifications list account events');
+  await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await page.getByRole('button', { name: 'Abrir tu cuenta', exact: true }).click();
+  await page.getByRole('heading', { name: 'Tu cuenta', exact: true }).waitFor();
 
   // Responsive: four routes, no overflow or clipping at key widths.
   for (const width of [320, 390, 430, 768, 1440]) {
@@ -103,10 +108,12 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${base}/app/#home`);
   await page.screenshot({ path: '/private/tmp/proofly-app-home.png', fullPage: true });
-  await page.getByRole('button', { name: 'Salir' }).first().click();
+  // Logout now lives inside the settings sheet.
+  await page.getByRole('button', { name: 'Abrir tu cuenta', exact: true }).click();
+  await page.getByRole('button', { name: /Salir de la cuenta/ }).click();
   await page.waitForURL('**/login');
   await page.goto(`${base}/app/`);
   await page.waitForURL('**/login');
   assert.deepEqual(errors, []);
-  console.log('PASS: real signup → session; simplified MVP (home title + twin cards + two balances + recent activity); 4-tab dock; invest in market + settlement; seed tier owner creates one operation and cannot invest in it; reload persists; four routes clean at 320/390/430/768/1440; logout; no JS errors.');
+  console.log('PASS: real signup → session; simplified MVP + desktop two-zone layout; 4-tab nav; notifications bell + settings sheet with logout; dedicated invest flow with live estimate; invest in market + settlement; seed tier owner creates one operation and cannot invest in it; reload persists; four routes clean at 320/390/430/768/1440; no JS errors.');
 } finally { await browser.close(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }
