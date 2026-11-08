@@ -81,27 +81,33 @@ try {
   await page.getByText('Recaudo distribuido', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
 
-  // Raise: create one own operation (seed tier allows one active).
+  // Raise: create one own invoice operation (seed tier allows one active).
   await nav().getByRole('button', { name: 'Anticipar', exact: true }).click();
   await page.getByRole('button', { name: 'Nueva', exact: true }).click();
-  await page.getByRole('dialog').getByLabel('Tipo').selectOption('MILESTONE');
-  await page.getByLabel('Título').fill('QA-HITO');
+  // Asset type is a tab, not a select. Default is Factura (invoice).
+  await page.locator('.app-asset-tabs').getByRole('tab', { name: 'Factura' }).click();
+  await page.getByLabel('Título').fill('QA-FACTURA');
   await page.getByLabel('Empresa pagadora').fill('Empresa de pruebas');
   await page.locator('.app-sheet input[name="amount"]').fill('1000000');
   await page.locator('.app-sheet select[name="term"]').selectOption('45');
-  // Live quote preview shows the net advance before creating.
-  await page.locator('.app-quote-advance').getByText('Recibes por anticipado').waitFor();
-  await page.getByLabel('El entregable está listo').check();
-  await page.getByRole('button', { name: 'Crear y cotizar', exact: true }).click();
-  await page.getByRole('dialog').getByRole('heading', { name: 'QA-HITO', exact: true }).waitFor();
-  await page.getByRole('button', { name: 'Confirmar pago de la empresa', exact: true }).click();
-  await page.getByLabel('Acepto la cotización y la cesión de derechos.').check();
-  await page.getByRole('button', { name: 'Aceptar cotización', exact: true }).click();
-  // Owner cannot invest in their own operation: no invest input.
+  // Live quote: "Recibes hoy".
+  await page.locator('.app-quote-advance').getByText('Recibes hoy').waitFor();
+  // The submit is disabled until every event is confirmed.
+  assert.equal(await page.getByRole('button', { name: /Solicitar anticipo/ }).isDisabled(), true, 'submit disabled until all events confirmed');
+  // Confirm the first event; it reveals the conditional attachment UI.
+  await page.locator('.app-event').filter({ hasText: 'Validación DIAN' }).click();
+  await page.locator('.app-attach-drop').waitFor();
+  // Confirm the remaining events.
+  for (const label of ['Acuse de recibo', 'Entrega realizada', 'Aceptación del pagador']) {
+    await page.locator('.app-event').filter({ hasText: label }).click();
+  }
+  await page.getByRole('button', { name: /Solicitar anticipo/ }).click();
+  await page.getByRole('dialog').getByRole('heading', { name: 'QA-FACTURA', exact: true }).waitFor();
+  // An invoice goes straight to QUOTED; owner cannot invest in their own operation.
   assert.equal(await page.getByLabel('¿Cuánto quieres invertir? (COP)').count(), 0, 'Owner must not see the invest input.');
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
   await page.reload();
-  await page.locator('.app-row').filter({ hasText: 'QA-HITO' }).waitFor();
+  await page.locator('.app-row').filter({ hasText: 'QA-FACTURA' }).waitFor();
 
   // Notifications: a dropdown anchored to the bell, opening downward.
   await page.goto(`${base}/app/#home`);
@@ -150,5 +156,5 @@ try {
   await page.goto(`${base}/app/`);
   await page.waitForURL('**/login');
   assert.deepEqual(errors, []);
-  console.log('PASS: signup without a name (KYC provides it) → session; KYC verification in settings unlocks operating; MVP + desktop two-zone; 4-tab nav; notifications dropdown; settings full-screen (name not editable, password + logout); invest + raise live estimates; invest in market + settlement; seed tier one active op; reload persists; five routes clean 320-1440; no JS errors.');
+  console.log('PASS: signup without a name (KYC provides it); KYC in settings unlocks operating; redesigned raise form (asset tabs, live "recibes hoy", event checklist with states, conditional invoice attachment, submit gated on confirmations); invest live estimate + settlement; seed tier one active op; reload persists; five routes clean 320-1440; no JS errors.');
 } finally { await browser.close(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }
