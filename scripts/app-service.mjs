@@ -77,6 +77,12 @@ export async function createAppService(deps) {
     const dueDate = new Date(Date.now() + term * DAY).toISOString().slice(0, 10);
     const payerLegalName = String(input.payerLegalName || 'Cliente corporativo').slice(0, 80);
     let operation;
+    // Contract grouping (milestones only): reuse an existing contract the owner
+    // supplied, or start a new one. The milestone index is the next free slot in
+    // that contract, which also keeps the domain's anti-duplicate HMAC distinct
+    // between milestones of the same contract.
+    let contractId;
+    let milestoneIndex;
     if (input.assetType === 'INVOICE') {
       const verifier = { verifyInvoice: async () => ({ isValid: true,
         events: ['030_RECEPCION', '032_BIENES_SERVICIOS', '033_ACEPTACION_TACITA'],
@@ -84,17 +90,29 @@ export async function createAppService(deps) {
       operation = await new CreateInvoiceOperationUseCase(deps.operationRepo, deps.userRepo, deps.outboxRepo, verifier, deps.serverSecret)
         .execute({ freelancerId: owner, xmlContent: '<Invoice>Proofly</Invoice>' });
     } else {
+      const requested = typeof input.contractId === 'string' && input.contractId.trim() ? input.contractId.trim() : null;
+      const own = (await allOperations(owner)).filter(op => op.freelancerId === owner);
+      if (requested && own.some(op => op.contractId === requested)) {
+        contractId = requested;
+        milestoneIndex = own.filter(op => op.contractId === requested).reduce((max, op) => Math.max(max, op.milestoneIndex || 0), 0) + 1;
+      } else {
+        contractId = randomUUID();
+        milestoneIndex = 1;
+      }
       operation = await new CreateMilestoneOperationUseCase(deps.operationRepo, deps.userRepo, deps.outboxRepo, deps.milestoneNotifier, deps.serverSecret)
-        .execute({ freelancerId: owner, contractUuid: randomUUID(), milestoneIndex: 1, title: input.title,
+        .execute({ freelancerId: owner, contractUuid: contractId, milestoneIndex, title: input.title,
           deliverableUrl: 'https://deliverable.example/op', payerNit: '901234567-8', payerLegalName,
           payerEmail: 'payer@example.invalid', nominalAmountCents: amount, termDays: term, dueDate });
     }
     const quotedRate = (await simulate.execute({ operationId: operation.id, amountToFundCents: operation.advanceAmountCents })).effectiveAnnualRate;
-    await deps.operationRepo.setPresentation(operation.id, input.title.trim(), quotedRate);
+    const title = input.title.trim();
+    await deps.operationRepo.setPresentation(operation.id, { title, effectiveAnnualRate: quotedRate, contractId, milestoneIndex });
     // Reflect the persisted presentation metadata on the in-hand entity so the
-    // caller serializes the real title/rate without an extra read.
-    operation.title = input.title.trim();
+    // caller serializes the real values without an extra read.
+    operation.title = title;
     operation.effectiveAnnualRate = quotedRate;
+    operation.contractId = contractId;
+    operation.milestoneIndex = milestoneIndex;
     return operation;
   }
 

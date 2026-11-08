@@ -145,6 +145,11 @@ CREATE TABLE operations (
     title VARCHAR(80),
     effective_annual_rate NUMERIC,
 
+    -- Agrupación por contrato (solo presentación): los hitos de un mismo contrato
+    -- comparten contract_id y llevan su índice 1-based. Las facturas los dejan NULL.
+    contract_id VARCHAR(64),
+    milestone_index INT,
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -156,6 +161,7 @@ CREATE TABLE operations (
 CREATE INDEX idx_operations_status ON operations(status);
 CREATE INDEX idx_operations_freelancer ON operations(freelancer_id);
 CREATE INDEX idx_operations_due_date ON operations(due_date);
+CREATE INDEX idx_operations_contract ON operations(contract_id) WHERE contract_id IS NOT NULL;
 
 -- ----------------------------------------------------------------------------
 -- 4. PARTICIPACIONES DE FINANCIADORES (InvestmentEntity del dominio)

@@ -24,6 +24,7 @@ import type {
   ActivityRepositoryPort,
   ActivityEvent,
   OperationMarketplaceFilter,
+  PresentationMetadata,
   OutboxEventProps
 } from '@proofly/domain';
 
@@ -51,19 +52,21 @@ export class PostgresOperationRepository implements OperationRepositoryPort {
         platform_fee_cents, funded_capital_cents, term_days, due_date, status,
         canonical_hmac, confirmation_token, electronic_signature_hash,
         payer_solvency_score, freelancer_execution_score, title,
-        effective_annual_rate, created_at, updated_at
+        effective_annual_rate, contract_id, milestone_index, created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24
       )
       ON CONFLICT (id) DO UPDATE SET
         funded_capital_cents = EXCLUDED.funded_capital_cents,
         status = EXCLUDED.status,
         confirmation_token = EXCLUDED.confirmation_token,
         electronic_signature_hash = EXCLUDED.electronic_signature_hash,
-        -- Preservar la metadata de presentación: save() se llama sin title/rate
-        -- (los fija setPresentation), así que no la pisamos con NULL en updates.
+        -- Preservar la metadata de presentación: save() se llama sin ella
+        -- (la fija setPresentation), así que no la pisamos con NULL en updates.
         title = COALESCE(EXCLUDED.title, operations.title),
         effective_annual_rate = COALESCE(EXCLUDED.effective_annual_rate, operations.effective_annual_rate),
+        contract_id = COALESCE(EXCLUDED.contract_id, operations.contract_id),
+        milestone_index = COALESCE(EXCLUDED.milestone_index, operations.milestone_index),
         updated_at = EXCLUDED.updated_at
     `;
 
@@ -88,6 +91,8 @@ export class PostgresOperationRepository implements OperationRepositoryPort {
       op.freelancerExecutionScore ?? null,
       op.title ?? null,
       op.effectiveAnnualRate ?? null,
+      op.contractId ?? null,
+      op.milestoneIndex ?? null,
       op.createdAt,
       op.updatedAt
     ]);
@@ -144,10 +149,10 @@ export class PostgresOperationRepository implements OperationRepositoryPort {
     );
   }
 
-  async setPresentation(id: string, title: string, effectiveAnnualRate: number): Promise<void> {
+  async setPresentation(id: string, meta: PresentationMetadata): Promise<void> {
     await this.client.query(
-      `UPDATE operations SET title = $2, effective_annual_rate = $3, updated_at = NOW() WHERE id = $1`,
-      [id, title, effectiveAnnualRate]
+      `UPDATE operations SET title = $2, effective_annual_rate = $3, contract_id = $4, milestone_index = $5, updated_at = NOW() WHERE id = $1`,
+      [id, meta.title, meta.effectiveAnnualRate, meta.contractId ?? null, meta.milestoneIndex ?? null]
     );
   }
 
@@ -174,6 +179,8 @@ export class PostgresOperationRepository implements OperationRepositoryPort {
       title: row.title ?? undefined,
       // NUMERIC llega como string desde pg; lo normalizamos a número.
       effectiveAnnualRate: row.effective_annual_rate != null ? Number(row.effective_annual_rate) : undefined,
+      contractId: row.contract_id ?? undefined,
+      milestoneIndex: row.milestone_index ?? undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     });

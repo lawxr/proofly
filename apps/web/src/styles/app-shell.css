@@ -142,6 +142,33 @@
 .app-op-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 11px; color: #8B769D; }
 .app-op-scores { display: inline-flex; align-items: center; gap: 4px; color: #187140; font-weight: 600; white-space: nowrap; }
 
+/* Contracts tab: milestones grouped by contract with collection progress */
+.app-contract-grid { display: grid; gap: 14px; }
+.app-contract { background: #fff; border: 1px solid #EFE4FA; border-radius: 20px; padding: 16px; display: grid; gap: 14px; box-shadow: 0 8px 22px -18px #3816551f; }
+.app-contract.is-single { padding: 6px; box-shadow: none; border-color: #F0E7FA; }
+.app-contract-head { display: flex; align-items: center; gap: 12px; }
+.app-contract.is-single .app-contract-head { display: none; }
+.app-contract-icon { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: #F2E8FD; color: #7300FF; display: grid; place-items: center; }
+.app-contract-ident { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.app-contract-ident strong { font-size: 15px; font-weight: 800; letter-spacing: -.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-contract-ident span { font-size: 12px; color: #8B769D; }
+.app-contract-figures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.app-contract-figures span { display: block; font-size: 10px; color: #8B769D; }
+.app-contract-figures strong { display: block; font-size: 14px; font-weight: 800; margin-top: 3px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.app-contract-steps { display: grid; gap: 8px; }
+.app-milestone { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: #F8F4FD; border: 1px solid transparent; border-radius: 14px; padding: 12px 14px; color: #1E0B3B; transition: background .15s, border-color .15s; }
+.app-milestone:hover { background: #fff; border-color: #D6BEF2; }
+.app-contract.is-single .app-milestone { background: #fff; border: 1px solid #EFE4FA; border-radius: 18px; padding: 14px 16px; }
+.app-milestone-idx { width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; background: #7300FF; color: #fff; font-size: 12px; font-weight: 800; display: grid; place-items: center; }
+.app-milestone-body { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.app-milestone-body strong { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-milestone-amount { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.app-milestone > svg { color: #B79AD6; flex-shrink: 0; }
+.app-contract-add { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; border: 1.5px dashed #C9ACEA; border-radius: 14px; background: #FBF7FF; color: #7300FF; font-size: 13px; font-weight: 700; }
+.app-contract-add:hover { background: #F4ECFE; }
+.app-contract-note { display: flex; align-items: center; gap: 8px; background: #F2E8FD; border-radius: 14px; padding: 12px 14px; font-size: 13px; font-weight: 600; color: #3A1670; margin-bottom: 18px; }
+.app-contract-note svg { color: #7300FF; flex-shrink: 0; }
+
 /* Designed empty state */
 .app-empty { display: grid; justify-items: center; text-align: center; gap: 8px; background: #fff; border: 1px dashed #E0CEF3; border-radius: 22px; padding: 30px 24px; }
 .app-empty-icon { width: 54px; height: 54px; border-radius: 50%; background: #F4ECFE; color: #7300FF; display: grid; place-items: center; margin-bottom: 4px; }

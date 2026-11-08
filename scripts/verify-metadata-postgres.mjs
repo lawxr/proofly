@@ -49,11 +49,16 @@ assert.equal(own.title, 'Rediseño de marca', 'title must survive the restart, n
 assert.ok(own.effectiveAnnualRate > 0, 'rate must survive the restart, not fall back to 0');
 assert.ok(['QUOTED', 'APPROVED_PENDING_FUNDING'].includes(own.status), `operation is tracked in status ${own.status}`);
 
+// Contract grouping metadata must survive the restart too: the milestone keeps
+// its contractId and 1-based index so the Contracts tab can regroup it.
+assert.ok(typeof own.contractId === 'string' && own.contractId.length > 0, 'contractId must survive the restart');
+assert.equal(own.milestoneIndex, 1, 'milestoneIndex must survive the restart');
+
 const titles = snapshot.events.map(e => e.title);
 assert.ok(snapshot.events.length >= 2, 'activity events must survive the restart');
 assert.ok(titles.includes('Hito creado · confirmación pendiente'), 'create event persisted');
 assert.ok(titles.includes('Cotización aceptada'), 'accept event persisted');
-console.log('PROCESS 2 (restart): título', own.title, '· E.A.', own.effectiveAnnualRate, '· estado', own.status, '· eventos', snapshot.events.length);
+console.log('PROCESS 2 (restart): título', own.title, '· E.A.', own.effectiveAnnualRate, '· estado', own.status, '· contrato', own.contractId?.slice(0, 8), '· hito', own.milestoneIndex, '· eventos', snapshot.events.length);
 
 console.log('\nPASS: la metadata (título, tasa E.A., operación propia y actividad) sobrevive al reinicio con Postgres.');
 process.exit(0);

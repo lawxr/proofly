@@ -126,6 +126,15 @@ try {
   await page.keyboard.press('Escape');
   await page.locator('.app-notif-menu').waitFor({ state: 'hidden' });
 
+  // Contracts tab: the dock's fourth slot. The invoice raised above is a single
+  // item; the tab renders without errors and shows the raised operation.
+  await nav().getByRole('button', { name: 'Contratos', exact: true }).click();
+  await page.waitForFunction(() => location.hash === '#contracts');
+  await page.getByRole('heading', { name: 'Contratos', exact: true }).waitFor();
+  await page.locator('.app-milestone').filter({ hasText: 'QA-FACTURA' }).waitFor();
+  await page.evaluate(() => document.fonts.ready);
+  await page.screenshot({ path: '/private/tmp/proofly-contracts.png', fullPage: true });
+
   // Settings: its own full-screen page, reached from the profile.
   await page.getByRole('button', { name: 'Abrir tu cuenta', exact: true }).click();
   await page.waitForFunction(() => location.hash === '#settings');
@@ -140,7 +149,7 @@ try {
   // Responsive: routes, no overflow or clipping at key widths.
   for (const width of [320, 390, 430, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const route of ['home', 'invest', 'raise', 'activity', 'settings']) {
+    for (const route of ['home', 'invest', 'raise', 'contracts', 'settings']) {
       await page.goto(`${base}/app/#${route}`);
       await page.locator('.proofly-app').waitFor();
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `${route} overflows at ${width}`);
@@ -157,5 +166,5 @@ try {
   await page.goto(`${base}/app/`);
   await page.waitForURL('**/login');
   assert.deepEqual(errors, []);
-  console.log('PASS: signup without a name (KYC provides it); KYC unlocks operating; invest market with summary, filter and rich opportunity cards; redesigned raise form (asset tabs, live quote, event checklist, conditional invoice attachment, gated submit); invest live estimate + settlement; seed tier one active op; reload persists; five routes clean 320-1440; no JS errors.');
+  console.log('PASS: signup without a name (KYC provides it); KYC unlocks operating; invest market with summary, filter and rich opportunity cards; redesigned raise form (asset tabs, live quote, event checklist, conditional invoice attachment, gated submit); invest live estimate + settlement; seed tier one active op; contracts tab groups raised operations; reload persists; five routes clean 320-1440; no JS errors.');
 } finally { await browser.close(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }

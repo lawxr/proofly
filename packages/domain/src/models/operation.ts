@@ -37,6 +37,10 @@ export interface OperationProps {
   // Optional so the domain never requires them, but persisted when present.
   title?: string;
   effectiveAnnualRate?: number;
+  // Contract grouping (presentation only): milestones of the same contract share
+  // a contractId and carry their 1-based index. Invoices leave both undefined.
+  contractId?: string;
+  milestoneIndex?: number;
 }
 
 export class OperationEntity {
@@ -62,6 +66,8 @@ export class OperationEntity {
   updatedAt: Date;
   title?: string;
   effectiveAnnualRate?: number;
+  contractId?: string;
+  milestoneIndex?: number;
 
   constructor(props: OperationProps) {
     this.id = props.id;
@@ -86,6 +92,8 @@ export class OperationEntity {
     this.updatedAt = props.updatedAt;
     this.title = props.title;
     this.effectiveAnnualRate = props.effectiveAnnualRate;
+    this.contractId = props.contractId;
+    this.milestoneIndex = props.milestoneIndex;
   }
 
   isFullyFunded(): boolean {

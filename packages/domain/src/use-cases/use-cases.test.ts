@@ -79,11 +79,13 @@ class InMemoryOperationRepository implements OperationRepositoryPort {
     }
   }
 
-  async setPresentation(id: string, title: string, effectiveAnnualRate: number): Promise<void> {
+  async setPresentation(id: string, meta: { title: string; effectiveAnnualRate: number; contractId?: string; milestoneIndex?: number }): Promise<void> {
     const op = this.operations.get(id);
     if (op) {
-      op.title = title;
-      op.effectiveAnnualRate = effectiveAnnualRate;
+      op.title = meta.title;
+      op.effectiveAnnualRate = meta.effectiveAnnualRate;
+      op.contractId = meta.contractId;
+      op.milestoneIndex = meta.milestoneIndex;
     }
   }
 }
