@@ -15,6 +15,8 @@ import type {
   InvestmentRepositoryPort,
   UserRepositoryPort,
   OutboxRepositoryPort,
+  ActivityRepositoryPort,
+  ActivityEvent,
   OperationMarketplaceFilter,
   OutboxEventProps,
   FreelancerTier
@@ -60,12 +62,47 @@ export class InMemoryOperationRepository implements OperationRepositoryPort {
     return list;
   }
 
+  async listByFreelancer(freelancerId: string): Promise<OperationEntity[]> {
+    return Array.from(this.operations.values()).filter(op => op.freelancerId === freelancerId);
+  }
+
   async updateStatus(id: string, newStatus: OperationStatus): Promise<void> {
     const op = this.operations.get(id);
     if (op) {
       op.status = newStatus;
       op.updatedAt = new Date();
     }
+  }
+
+  async setPresentation(id: string, title: string, effectiveAnnualRate: number): Promise<void> {
+    const op = this.operations.get(id);
+    if (op) {
+      op.title = title;
+      op.effectiveAnnualRate = effectiveAnnualRate;
+    }
+  }
+}
+
+export class InMemoryActivityRepository implements ActivityRepositoryPort {
+  private events: ActivityEvent[] = [];
+
+  async record(event: Omit<ActivityEvent, 'id' | 'date'> & { id?: string; date?: string }): Promise<ActivityEvent> {
+    const stored: ActivityEvent = {
+      id: event.id ?? crypto.randomUUID(),
+      userId: event.userId,
+      operationId: event.operationId,
+      kind: event.kind,
+      title: event.title,
+      date: event.date ?? new Date().toISOString()
+    };
+    this.events.push(stored);
+    return stored;
+  }
+
+  async listByUser(userId: string): Promise<ActivityEvent[]> {
+    return this.events
+      .filter(e => e.userId === userId)
+      .sort((a, b) => b.date.localeCompare(a.date));
   }
 }
 

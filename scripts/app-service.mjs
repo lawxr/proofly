@@ -14,15 +14,7 @@ const DAY = 86400000;
  * Receives a shared `deps` so auth and the app use the same user repository.
  */
 export async function createAppService(deps) {
-  const tracked = new Set();
-  const titles = new Map();
-  const rates = new Map();
-  const events = new Map(); // userId -> events[]
-  const projections = new Map();
-  const settlements = new Map();
   let tail = Promise.resolve();
-  const save = deps.operationRepo.save.bind(deps.operationRepo);
-  deps.operationRepo.save = async operation => { await save(operation); tracked.add(operation.id); };
   if (deps.milestoneNotifier) deps.milestoneNotifier.sendConfirmationLink = async () => true;
   const quote = new SimulateQuoteUseCase();
   const confirm = new ConfirmMilestoneUseCase(deps.operationRepo, deps.outboxRepo);
@@ -30,27 +22,36 @@ export async function createAppService(deps) {
   const simulate = new SimulateParticipationUseCase(deps.operationRepo);
   const purchase = new PurchaseParticipationUseCase(deps.operationRepo, deps.investmentRepo, deps.userRepo, deps.outboxRepo);
   const reconcile = new ReconcileBankReceiptUseCase(deps.operationRepo, deps.investmentRepo, deps.outboxRepo);
-  const allOperations = async () => {
-    // Operations created in this process, plus any funding-open operations the
-    // repository already holds (so persisted market supply survives restarts).
+  // All operations relevant to `meId`: the market supply (funding-open), the
+  // user's own operations in any status, and any operation the user has invested
+  // in (even once it leaves the market). All come from the repository, so they
+  // survive a process restart with Postgres. Pass no id for market-only views.
+  const allOperations = async (meId) => {
     const byId = new Map();
-    for (const op of (await Promise.all([...tracked].map(id => deps.operationRepo.findById(id)))).filter(Boolean)) byId.set(op.id, op);
     if (typeof deps.operationRepo.listMarketplace === 'function') {
-      try { for (const op of await deps.operationRepo.listMarketplace()) if (!byId.has(op.id)) byId.set(op.id, op); } catch { /* repo without marketplace listing */ }
+      try { for (const op of await deps.operationRepo.listMarketplace()) byId.set(op.id, op); } catch { /* repo without marketplace listing */ }
+    }
+    if (meId && typeof deps.operationRepo.listByFreelancer === 'function') {
+      try { for (const op of await deps.operationRepo.listByFreelancer(meId)) if (!byId.has(op.id)) byId.set(op.id, op); } catch { /* repo without per-freelancer listing */ }
+    }
+    if (meId) {
+      const invested = await deps.investmentRepo.findByInvestorId(meId);
+      for (const inv of invested) {
+        if (byId.has(inv.operationId)) continue;
+        const op = await deps.operationRepo.findById(inv.operationId);
+        if (op) byId.set(op.id, op);
+      }
     }
     return [...byId.values()];
   };
-  const eventsFor = userId => events.get(userId) || [];
+  const eventsFor = async userId => (await deps.activityRepo.listByUser(userId)).map(e => ({ id: e.id, operationId: e.operationId, kind: e.kind, title: e.title, date: e.date }));
   const serialize = operation => {
     const { hmacKey: _hmac, confirmationToken: _token, electronicSignatureHash: _signature, ...safe } = operation;
-    return plain({ ...safe, title: titles.get(operation.id) || 'Operación', effectiveAnnualRate: rates.get(operation.id) || 0,
+    return plain({ ...safe, title: operation.title || 'Operación', effectiveAnnualRate: operation.effectiveAnnualRate || 0,
       remainingFundingCents: operation.remainingFundingCents() });
   };
-  const record = (userId, operation, kind, title) => {
-    const list = events.get(userId) || [];
-    list.unshift({ id: randomUUID(), operationId: operation.id, kind, title, date: new Date().toISOString() });
-    events.set(userId, list);
-  };
+  const record = (userId, operation, kind, title) =>
+    deps.activityRepo.record({ userId, operationId: operation.id, kind, title, date: new Date().toISOString() });
   const enqueue = action => { const next = tail.then(action); tail = next.then(() => undefined, () => undefined); return next; };
 
   // A market counterparty that funds a person's own operations. Never a second
@@ -71,7 +72,7 @@ export async function createAppService(deps) {
     if (input.checks !== true) throw new Error('All acceptance checks must be complete.');
     const user = await deps.userRepo.findById(owner);
     const config = TiersPolicy.TIER_CONFIG[user.tier];
-    const active = (await allOperations()).filter(op => op.freelancerId === owner && !['SETTLED', 'REJECTED_CANCELLED'].includes(op.status));
+    const active = (await allOperations(owner)).filter(op => op.freelancerId === owner && !['SETTLED', 'REJECTED_CANCELLED'].includes(op.status));
     if (active.length >= config.maxActiveOperations) throw new Error('Your tier has reached its active operation limit.');
     const dueDate = new Date(Date.now() + term * DAY).toISOString().slice(0, 10);
     const payerLegalName = String(input.payerLegalName || 'Cliente corporativo').slice(0, 80);
@@ -88,15 +89,19 @@ export async function createAppService(deps) {
           deliverableUrl: 'https://deliverable.example/op', payerNit: '901234567-8', payerLegalName,
           payerEmail: 'payer@example.invalid', nominalAmountCents: amount, termDays: term, dueDate });
     }
-    titles.set(operation.id, input.title.trim());
-    rates.set(operation.id, (await simulate.execute({ operationId: operation.id, amountToFundCents: operation.advanceAmountCents })).effectiveAnnualRate);
+    const quotedRate = (await simulate.execute({ operationId: operation.id, amountToFundCents: operation.advanceAmountCents })).effectiveAnnualRate;
+    await deps.operationRepo.setPresentation(operation.id, input.title.trim(), quotedRate);
+    // Reflect the persisted presentation metadata on the in-hand entity so the
+    // caller serializes the real title/rate without an extra read.
+    operation.title = input.title.trim();
+    operation.effectiveAnnualRate = quotedRate;
     return operation;
   }
 
   async function action(meId, name, input) {
     if (name === 'create') {
       const op = await create(input, meId);
-      record(meId, op, 'create', input.assetType === 'MILESTONE' ? 'Hito creado · confirmación pendiente' : 'Factura verificada');
+      await record(meId, op, 'create', input.assetType === 'MILESTONE' ? 'Hito creado · confirmación pendiente' : 'Factura verificada');
       return serialize(op);
     }
     const operation = await deps.operationRepo.findById(String(input.id));
@@ -104,12 +109,12 @@ export async function createAppService(deps) {
     if (name === 'confirm') {
       if (!operation.confirmationToken) throw new Error('This operation has no pending confirmation.');
       await confirm.execute({ token: operation.confirmationToken, confirmedByIp: 'private' });
-      record(meId, operation, name, 'Confirmación del pagador');
+      await record(meId, operation, name, 'Confirmación del pagador');
     } else if (name === 'accept') {
       if (input.accepted !== true) throw new Error('Explicit quote acceptance is required.');
       await accept.execute({ operationId: operation.id, freelancerId: operation.freelancerId,
         electronicSignatureHash: createHash('sha256').update('acceptance:' + operation.id).digest('hex') });
-      record(meId, operation, name, 'Cotización aceptada');
+      await record(meId, operation, name, 'Cotización aceptada');
     } else if (name === 'simulate' || name === 'participate') {
       if (!/^\d{1,15}$/.test(String(input.amountCents))) throw new Error('Invalid participation amount.');
       const asCounterparty = input.counterparty === true;
@@ -120,41 +125,58 @@ export async function createAppService(deps) {
       if (name === 'simulate') return result;
       const existing = await deps.investmentRepo.findByInvestorId(investorId);
       if (existing.some(inv => inv.operationId === operation.id)) throw new Error('You already have a participation in this operation.');
-      const { investment } = await purchase.execute({ operationId: operation.id, investorId, fundedCapitalCents: amount });
-      projections.set(investment.id, result);
-      record(meId, operation, name, 'Participación registrada');
+      await purchase.execute({ operationId: operation.id, investorId, fundedCapitalCents: amount });
+      await record(meId, operation, name, 'Participación registrada');
       return result;
     } else if (name === 'settle') {
       const result = await reconcile.execute({ operationId: operation.id, bankReceiptHash: randomBytes(32).toString('hex'),
         receivedAmountCents: operation.nominalAmountCents, bankTransactionRef: 'RCPT-' + randomUUID() });
-      settlements.set(operation.id, result);
       if (result.isFullySettled) {
         const owner = await deps.userRepo.findById(operation.freelancerId);
-        const owned = (await allOperations()).filter(op => op.freelancerId === owner.id);
+        const owned = (await allOperations(owner.id)).filter(op => op.freelancerId === owner.id);
         const completed = owned.filter(op => op.status === 'SETTLED').length;
         const tier = TiersPolicy.determineTier(completed, owner.executionScore || 0);
         const used = owned.filter(op => !['SETTLED', 'REJECTED_CANCELLED'].includes(op.status)).reduce((sum, op) => sum + op.nominalAmountCents, 0n);
         await deps.userRepo.updateTier(owner.id, tier, TiersPolicy.TIER_CONFIG[tier].maxQuotaCents - used);
       }
-      record(meId, operation, name, 'Recaudo y distribución');
+      await record(meId, operation, name, 'Recaudo y distribución');
       return result;
     } else throw new Error('Unknown action.');
     return serialize(operation);
   }
 
+  // Rebuild an investment's projection from the persisted operation + amount.
+  // SimulateParticipationUseCase is deterministic, so this survives a restart
+  // without storing an ephemeral snapshot per investment.
+  async function projectionFor(investment) {
+    try { return await simulate.execute({ operationId: investment.operationId, amountToFundCents: investment.fundedCapitalCents }); }
+    catch { return undefined; }
+  }
+
+  // Derive the investor's settlement share from the persisted operation when it
+  // has fully settled, instead of caching the reconcile result in memory.
+  async function settlementFor(investment) {
+    const op = await deps.operationRepo.findById(investment.operationId);
+    if (!op || op.status !== 'SETTLED') return undefined;
+    const share = Number(investment.fundedCapitalCents) / Number(op.advanceAmountCents);
+    const profit = BigInt(Math.floor(Number(op.commercialDiscountCents) * share));
+    return { investorId: investment.investorId, capitalReturnedCents: investment.fundedCapitalCents,
+      profitEarnedCents: profit, totalDistributedCents: investment.fundedCapitalCents + profit };
+  }
+
   async function snapshot(meId) {
     const me = await deps.userRepo.findById(meId);
     if (!me) throw new Error('User not found.');
-    const operations = await allOperations();
+    const operations = await allOperations(meId);
     const investments = await deps.investmentRepo.findByInvestorId(meId);
     const name = me.legalName.replace(/\s*\(.*\)\s*$/, '').trim() || me.legalName;
+    const investmentsOut = await Promise.all(investments.map(async investment => ({
+      ...investment, projection: await projectionFor(investment), settlement: await settlementFor(investment),
+    })));
     return plain({ me: { id: me.id, name, tier: me.tier, kycStatus: me.kycStatus,
       availableLimitCents: me.availableLimitCents, maxQuotaCents: me.tier ? TiersPolicy.TIER_CONFIG[me.tier].maxQuotaCents : '0',
       executionScore: me.executionScore },
-      operations: operations.map(serialize), investments: investments.map(investment => ({
-        ...investment, projection: projections.get(investment.id),
-        settlement: settlements.get(investment.operationId)?.investorDistributions.find(item => item.investorId === investment.investorId),
-      })), events: eventsFor(meId) });
+      operations: operations.map(serialize), investments: investmentsOut, events: await eventsFor(meId) });
   }
 
   // Seed market supply once: other people's operations, available to invest in.

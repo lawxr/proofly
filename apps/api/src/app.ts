@@ -23,6 +23,7 @@ import type {
   InvestmentRepositoryPort,
   UserRepositoryPort,
   OutboxRepositoryPort,
+  ActivityRepositoryPort,
   InvoiceVerificationPort,
   MilestoneConfirmationPort,
   KycPort
@@ -32,14 +33,16 @@ import {
   InMemoryOperationRepository,
   InMemoryInvestmentRepository,
   InMemoryUserRepository,
-  InMemoryOutboxRepository
+  InMemoryOutboxRepository,
+  InMemoryActivityRepository
 } from './adapters/in-memory/in-memory-repositories.ts';
 
 import {
   PostgresOperationRepository,
   PostgresInvestmentRepository,
   PostgresUserRepository,
-  PostgresOutboxRepository
+  PostgresOutboxRepository,
+  PostgresActivityRepository
 } from './adapters/postgres/postgres-repositories.ts';
 import { PgSqlClient } from './adapters/postgres/pg-client.ts';
 
@@ -54,6 +57,7 @@ export interface AppDependencies {
   investmentRepo: InvestmentRepositoryPort;
   userRepo: UserRepositoryPort;
   outboxRepo: OutboxRepositoryPort;
+  activityRepo: ActivityRepositoryPort;
   invoiceVerifier: InvoiceVerificationPort;
   milestoneNotifier: MilestoneConfirmationPort;
   kycVerifier: KycPort;
@@ -66,6 +70,7 @@ export function createDependencies(serverSecret = 'proofly-dev-secret-salt-2026-
     investmentRepo: new InMemoryInvestmentRepository(),
     userRepo: new InMemoryUserRepository(),
     outboxRepo: new InMemoryOutboxRepository(),
+    activityRepo: new InMemoryActivityRepository(),
     invoiceVerifier: new SandboxInvoiceVerificationAdapter(),
     milestoneNotifier: new SandboxMilestoneConfirmationAdapter(),
     kycVerifier: new SandboxKycAdapter(),
@@ -80,6 +85,7 @@ export function createPostgresDependencies(connectionString: string, serverSecre
     investmentRepo: new PostgresInvestmentRepository(client),
     userRepo: new PostgresUserRepository(client),
     outboxRepo: new PostgresOutboxRepository(client),
+    activityRepo: new PostgresActivityRepository(client),
     invoiceVerifier: new SandboxInvoiceVerificationAdapter(),
     milestoneNotifier: new SandboxMilestoneConfirmationAdapter(),
     kycVerifier: new SandboxKycAdapter(),

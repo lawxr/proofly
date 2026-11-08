@@ -67,11 +67,23 @@ class InMemoryOperationRepository implements OperationRepositoryPort {
     );
   }
 
+  async listByFreelancer(freelancerId: string): Promise<OperationEntity[]> {
+    return Array.from(this.operations.values()).filter(op => op.freelancerId === freelancerId);
+  }
+
   async updateStatus(id: string, newStatus: OperationStatus): Promise<void> {
     const op = this.operations.get(id);
     if (op) {
       op.status = newStatus;
       op.updatedAt = new Date();
+    }
+  }
+
+  async setPresentation(id: string, title: string, effectiveAnnualRate: number): Promise<void> {
+    const op = this.operations.get(id);
+    if (op) {
+      op.title = title;
+      op.effectiveAnnualRate = effectiveAnnualRate;
     }
   }
 }

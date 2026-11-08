@@ -16,5 +16,10 @@ export interface OperationRepositoryPort {
   findByHmac(hmacKey: string): Promise<OperationEntity | null>;
   findByConfirmationToken(token: string): Promise<OperationEntity | null>;
   listMarketplace(filter?: OperationMarketplaceFilter): Promise<OperationEntity[]>;
+  listByFreelancer(freelancerId: string): Promise<OperationEntity[]>;
   updateStatus(id: string, newStatus: OperationState): Promise<void>;
+  // Persist presentation metadata (title, quoted E.A.) for an operation so it
+  // survives a restart. Kept separate from save() because the domain use cases
+  // create operations without this UI-facing metadata.
+  setPresentation(id: string, title: string, effectiveAnnualRate: number): Promise<void>;
 }
