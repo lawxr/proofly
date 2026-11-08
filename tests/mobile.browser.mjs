@@ -48,9 +48,12 @@ try {
   assert.ok(cardsAboveDock, 'Home cards must sit above the fixed dock.');
   // No demo/sandbox wording anywhere visible.
   assert.equal(await page.evaluate(() => /\b(demo|sandbox|simulad)/i.test(document.body.innerText)), false, 'No demo wording.');
-  // Two separate balances, never summed into a total.
-  await page.getByText('Capital invertido', { exact: true }).waitFor();
-  await page.getByText('Cupo para anticipar', { exact: true }).waitFor();
+  // Balance hero shows both sides separately (never a single summed total).
+  await page.locator('.app-hero-balance').getByText('Capital invertido', { exact: true }).waitFor();
+  await page.locator('.app-hero-balance').getByText('Cupo para anticipar', { exact: true }).waitFor();
+  assert.ok(await page.locator('.app-hero-spark i').count() >= 5, 'balance hero shows a spark trend');
+  // A fresh account shows a designed empty state with actions, not bare text.
+  await page.locator('.app-empty .app-empty-actions').waitFor();
   const nav = () => page.getByRole('navigation', { name: 'Navegación' });
 
   // Invest in someone else's operation.

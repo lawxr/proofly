@@ -255,27 +255,45 @@ export default function AppShell() {
 
         {page === 'home' && <>
           <h1 className="app-title">Tu capital,<br/>más flexible</h1>
+
+          {/* Balance hero: the two sides of the account, with a live spark. */}
+          <section className="app-hero-balance">
+            <div className="app-hero-main">
+              <span className="app-hero-label">Capital invertido</span>
+              <strong className="app-hero-amount">{money(invested)}</strong>
+              <span className={`app-hero-trend ${profit > 0n ? 'is-up' : ''}`}>{profit > 0n ? `▲ ${money(profit)} de ganancia estimada` : 'Empieza a invertir y haz crecer tu capital'}</span>
+            </div>
+            <div className="app-hero-spark" aria-hidden="true">{[38,52,44,70,58,84,66].map((h, i) => <i key={i} style={{ height: `${h}%` }}/>)}</div>
+            <div className="app-hero-quota">
+              <span><Icon name="bolt" size={15}/> Cupo para anticipar</span>
+              <strong>{money(data.me.availableLimitCents)}</strong>
+            </div>
+          </section>
+
+          {/* Two actions with color accent and depth. */}
           <div className="app-twin">
-            <button className="app-twin-card" onClick={() => go('invest')}>
+            <button className="app-twin-card app-twin-invest" onClick={() => go('invest')}>
               <img src="/assets/proofly/ilustracion-crecer.png" alt="" width={96} height={96}/>
               <h3>Invertir</h3><p>Haz crecer tu capital en operaciones.</p><span className="app-twin-go"><Icon name="arrow" size={18}/></span>
             </button>
-            <button className="app-twin-card" onClick={() => { setKind('INVOICE'); setCreating(true); }}>
+            <button className="app-twin-card app-twin-raise" onClick={() => { setKind('INVOICE'); setCreating(true); }}>
               <img src="/assets/proofly/ilustracion-tiempo.png" alt="" width={96} height={96}/>
               <h3>Anticipar</h3><p>Adelanta el cobro de tus facturas.</p><span className="app-twin-go"><Icon name="arrow" size={18}/></span>
             </button>
           </div>
-          <section className="app-balance">
-            <div className="app-balance-row">
-              <div><span>Capital invertido</span><strong>{money(invested)}</strong></div>
-              <div><span>Cupo para anticipar</span><strong>{money(data.me.availableLimitCents)}</strong></div>
-            </div>
-            <p className="app-balance-note">Ganancia estimada {money(profit)} · retorno no garantizado</p>
-          </section>
+
           <div className="app-sec-head"><h2>Actividad reciente</h2>{data.events.length > 0 && <button className="app-link" onClick={() => go('activity')}>Ver todo</button>}</div>
           {data.events.length
-            ? <div className="app-list">{data.events.slice(0, 3).map(ev => <div key={ev.id} className="app-act"><span className="app-row-icon"><Icon name={ev.kind === 'settle' ? 'check' : 'clock'} size={18}/></span><div><strong>{ev.title}</strong><span>{new Date(ev.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</span></div></div>)}</div>
-            : <p className="app-muted">Aún no tienes movimientos. Empieza invirtiendo o anticipando.</p>}
+            ? <div className="app-list">{data.events.slice(0, 4).map(ev => <div key={ev.id} className="app-act"><span className="app-row-icon"><Icon name={ev.kind === 'settle' ? 'check' : ev.kind === 'participate' ? 'growth' : 'clock'} size={18}/></span><div><strong>{ev.title}</strong><span>{new Date(ev.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</span></div></div>)}</div>
+            : <div className="app-empty">
+                <span className="app-empty-icon"><Icon name="clock" size={26}/></span>
+                <strong>Tu actividad aparecerá aquí</strong>
+                <p>Haz tu primera inversión o anticipa una factura para empezar a mover tu capital.</p>
+                <div className="app-empty-actions">
+                  <button className="app-primary app-primary-sm" onClick={() => go('invest')}>Explorar inversiones</button>
+                  <button className="app-chip" onClick={() => { setKind('INVOICE'); setCreating(true); }}>Anticipar</button>
+                </div>
+              </div>}
         </>}
 
         {page === 'invest' && <>
