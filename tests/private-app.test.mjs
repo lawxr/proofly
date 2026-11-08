@@ -70,6 +70,34 @@ test('rejected creation preserves data and concurrent funding cannot overfill an
   assert.equal(after.operations.find(item => item.id === target.id).fundedCapitalCents, target.advanceAmountCents);
 });
 
+test('a new user starts at seed tier and progresses with settled operations', async () => {
+  const { app, meId, deps } = await setup();
+  // Fresh account: seed tier, one active operation allowed.
+  const start = await app.snapshot(meId);
+  assert.equal(start.me.tier, 'TIER_1_SEED');
+
+  // Settle two own operations (funded by a market counterparty) to progress.
+  for (let i = 0; i < 2; i++) {
+    const op = await app.execute(meId, 'create', { assetType: 'MILESTONE', title: `Hito ${i}`, nominalAmountCents: '50000000', termDays: 30, checks: true });
+    await app.execute(meId, 'confirm', { id: op.id });
+    await app.execute(meId, 'accept', { id: op.id, accepted: true });
+    await app.execute(meId, 'participate', { id: op.id, amountCents: op.advanceAmountCents, counterparty: true });
+    await app.execute(meId, 'settle', { id: op.id });
+  }
+  const me = await deps.userRepo.findById(meId);
+  assert.equal(me.tier, 'TIER_2_GROWTH', 'two settled operations should reach growth tier');
+});
+
+test('a seed user cannot hold two active operations at once', async () => {
+  const { app, meId } = await setup();
+  await app.execute(meId, 'create', { assetType: 'MILESTONE', title: 'Primera', nominalAmountCents: '50000000', termDays: 30, checks: true });
+  await assert.rejects(
+    app.execute(meId, 'create', { assetType: 'INVOICE', title: 'Segunda', nominalAmountCents: '50000000', termDays: 30, checks: true }),
+    /active operation limit/i,
+    'seed tier allows only one active operation'
+  );
+});
+
 test('two different users see their own operations and investments separately', async () => {
   const { createDependencies: make } = await import('../apps/api/src/app.ts');
   const deps = make();

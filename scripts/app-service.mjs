@@ -20,7 +20,6 @@ export async function createAppService(deps) {
   const events = new Map(); // userId -> events[]
   const projections = new Map();
   const settlements = new Map();
-  const promoted = new Set();
   let tail = Promise.resolve();
   const save = deps.operationRepo.save.bind(deps.operationRepo);
   deps.operationRepo.save = async operation => { await save(operation); tracked.add(operation.id); };
@@ -176,19 +175,9 @@ export async function createAppService(deps) {
   }
   await seedMarket();
 
-  // Ensure a freshly-registered user can hold several active operations.
-  async function ensurePromoted(meId) {
-    if (promoted.has(meId)) return;
-    const me = await deps.userRepo.findById(meId);
-    if (me && me.tier !== FreelancerTier.TIER_3_PRO) {
-      await deps.userRepo.updateTier(meId, FreelancerTier.TIER_3_PRO, TiersPolicy.TIER_CONFIG[FreelancerTier.TIER_3_PRO].maxQuotaCents);
-    }
-    promoted.add(meId);
-  }
-
   return {
-    execute: (meId, name, input = {}) => enqueue(async () => { await ensurePromoted(meId); return plain(await action(meId, name, input)); }),
-    snapshot: meId => enqueue(async () => { await ensurePromoted(meId); return snapshot(meId); }),
+    execute: (meId, name, input = {}) => enqueue(async () => plain(await action(meId, name, input))),
+    snapshot: meId => enqueue(async () => snapshot(meId)),
     async handle(req, res, ctx) {
       const reply = (status, payload) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(payload)); };
       const meId = ctx?.userId;
