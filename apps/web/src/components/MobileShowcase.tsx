@@ -1,431 +1,349 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { Milestone } from '../App';
 
-export const MobileShowcase: React.FC = () => {
-  const [phone2Tab, setPhone2Tab] = useState<'overview' | 'activity'>('overview');
-  const [bookmarked, setBookmarked] = useState(false);
+function formatCOP(val: number) {
+  return '$ ' + Math.round(val).toLocaleString('es-CO');
+}
+
+const ACTIVITY = [
+  { title: 'Recaudo · Sura',     company: 'Liquidado hoy · 10:00 AM',  amount: '+$ 1.531.500' },
+  { title: 'Hito UX · Nubank',  company: 'Liquidado ayer · 4:15 PM',   amount: '+$ 2.042.000' },
+  { title: 'Adelanto Sofía V.', company: 'Abonado en cuenta',           amount: '+$ 4.200.000' },
+];
+
+interface MobileShowcaseProps {
+  milestones:  Milestone[];
+  selectedIdx: number;
+  onSelect:    (idx: number) => void;
+  onFund:      (idx: number) => void;
+  onPublish:   () => void;
+  onSimulate:  () => void;
+}
+
+export function MobileShowcase({
+  milestones, selectedIdx, onSelect, onFund, onPublish, onSimulate,
+}: MobileShowcaseProps) {
+  const [tab, setTab] = useState<'resumen' | 'actividad'>('resumen');
+
+  const current = milestones[selectedIdx] ?? milestones[0];
+  const estimatedTotal = Math.round((current?.amount ?? 0) * 1.021);
+
+  function cycleProject(dir: number) {
+    onSelect((selectedIdx + dir + milestones.length) % milestones.length);
+  }
 
   return (
-    <section id="app-movil" className="px-4 sm:px-6 lg:px-8 py-16 max-w-7xl mx-auto space-y-10">
-      {/* Header */}
+    <section id="app-movil" className="space-y-10 pt-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <span className="text-xs font-black uppercase tracking-widest text-proofly-electric block mb-2">
-            EXPERIENCIA MÓVIL · MODO CLARO
-          </span>
-          <h2 className="font-extrabold text-3xl sm:text-5xl lg:text-6xl tracking-tight text-black">
-            Liquidez y retornos en tu celular.
+          <span className="text-xs font-extrabold uppercase tracking-widest text-electric block mb-2">EXPERIENCIA MÓVIL · MODO CLARO</span>
+          <h2 className="balance-text font-extrabold text-3xl sm:text-5xl tracking-tight text-ink">
+            Adelanta tus pagos o financia desde el celular.
           </h2>
         </div>
-        <p className="text-sm sm:text-base text-proofly-muted max-w-md font-medium leading-relaxed">
-          Diseñado con estética minimalista en lavanda pastel y negro puro. Monitorea entregables, invierte en hitos auditados y transfiere en COP al instante.
+        <p className="text-sm text-zinc-600 max-w-md font-medium">
+          Interactúa con las tres pantallas: cambia pestañas, explora los proyectos o haz clic en cualquier hito para respaldarlo.
         </p>
       </div>
 
-      {/* Stage Container */}
-      <div className="rounded-[44px] bg-gradient-to-b from-proofly-lavender/40 via-proofly-lavender/10 to-proofly-subtle border-[2px] border-black/10 p-6 sm:p-10 lg:p-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 items-center justify-items-center">
+      {/* Stage */}
+      <div className="rounded-[44px] bg-gradient-to-b from-lilac/55 via-lilac/20 to-lilac-soft border border-ink/12/15 p-6 sm:p-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-center justify-items-center">
 
-          {/* ========================================================= */}
-          {/* PHONE 1: ONBOARDING & WELCOME (Lavender + Stacked Coins)   */}
-          {/* ========================================================= */}
-          <div className="w-full max-w-[324px] h-[660px] bg-proofly-lavender rounded-[44px] shadow-phone flex flex-col justify-between overflow-hidden relative border-[2.5px] border-black">
-            {/* Status Bar */}
-            <div className="px-7 pt-4 flex items-center justify-between text-xs font-black text-black tabular-nums">
+          {/* ── Phone 1: Onboarding ── */}
+          <div className="w-full max-w-[336px] h-[688px] bg-lilac rounded-[46px] shadow-phone flex flex-col justify-between overflow-hidden relative">
+            <div className="px-7 pt-4 flex items-center justify-between text-[11px] font-extrabold text-ink tabular-nums">
               <span>19:27</span>
               <div className="flex items-center gap-1.5" aria-hidden="true">
                 <span className="tracking-tighter">•••</span>
-                <span className="w-4 h-2.5 rounded-[2px] bg-black inline-block"></span>
+                <span className="w-4 h-2.5 rounded-sm bg-ink inline-block" />
               </div>
             </div>
 
-            {/* Upper Art: Hand & 3D Violet Coins Stack */}
             <div className="relative flex-1 flex flex-col items-center justify-center px-4">
-              <svg className="w-60 h-60" viewBox="0 0 240 240" fill="none" aria-hidden="true">
-                {/* Growth Arrow in Background */}
-                <path d="M40 50 L110 130 L145 100 L210 185" stroke="#7300FF" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M40 42 L110 122 L145 92 L210 177" stroke="#FFFFFF" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-                <polygon points="26,26 60,34 36,60" fill="#FFFFFF" stroke="#000000" strokeWidth="2"/>
-
-                {/* Decorative Plus Symbols */}
-                <path d="M175 30H185V20H193V30H203V38H193V48H185V38H175V30Z" fill="#7300FF" stroke="#000" strokeWidth="1.5"/>
-                <path d="M205 50H215V40H223V50H233V58H223V68H215V58H205V50Z" fill="#E5A8F2" stroke="#000" strokeWidth="1.5"/>
-
-                {/* Hand Dropping Purple Coin */}
-                <path d="M240 85 C210 80, 180 62, 150 72 C132 78, 118 96, 126 104 C134 112, 154 96, 170 100 C156 114, 142 126, 150 134 C158 142, 180 122, 196 120 L240 126 Z" fill="#FFFFFF" stroke="#000000" strokeWidth="2"/>
-                <ellipse cx="116" cy="118" rx="22" ry="11" fill="#7300FF" stroke="#000000" strokeWidth="2"/>
-                <ellipse cx="116" cy="116" rx="16" ry="8" fill="#F8D4FD"/>
-
-                {/* Stack of Purple Coins */}
-                <g transform="translate(38, 110)">
-                  <ellipse cx="32" cy="74" rx="26" ry="11" fill="#4C00A4" stroke="#000" strokeWidth="1.8"/>
-                  <ellipse cx="32" cy="62" rx="26" ry="11" fill="#7300FF" stroke="#000" strokeWidth="1.8"/>
-                  <ellipse cx="32" cy="50" rx="26" ry="11" fill="#4C00A4" stroke="#000" strokeWidth="1.8"/>
-                  <ellipse cx="32" cy="38" rx="26" ry="11" fill="#7300FF" stroke="#000" strokeWidth="1.8"/>
-                  <ellipse cx="32" cy="26" rx="26" ry="11" fill="#E5A8F2" stroke="#000" strokeWidth="1.8"/>
-                  <ellipse cx="32" cy="14" rx="26" ry="11" fill="#7300FF" stroke="#000" strokeWidth="1.8"/>
+              <svg className="w-64 h-64" viewBox="0 0 260 250" fill="none" aria-hidden="true" filter="url(#soft3DShadow)">
+                <path d="M182 32H192V22H200V32H210V40H200V50H192V40H182V32Z" fill="#7300FF" stroke="#1E0B3B" strokeWidth="1.8"/>
+                <path d="M212 52H224V40H234V52H246V62H234V74H224V62H212V52Z" fill="#E056FD" stroke="#1E0B3B" strokeWidth="2"/>
+                <path d="M38 48 L112 132 L152 100 L226 196" stroke="#7300FF" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M38 40 L112 124 L152 92 L226 188" stroke="#FFFFFF" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round"/>
+                <polygon points="24,24 62,34 36,62" fill="#FFFFFF" stroke="#1E0B3B" strokeWidth="2.2"/>
+                <ellipse cx="120" cy="116" rx="24" ry="12" fill="url(#clayViolet)" stroke="#1E0B3B" strokeWidth="2.2"/>
+                <g transform="translate(34,126)">
+                  <ellipse cx="34" cy="76" rx="28" ry="12" fill="url(#coinRim)" stroke="#1E0B3B" strokeWidth="2"/>
+                  <ellipse cx="34" cy="64" rx="28" ry="12" fill="url(#clayViolet)" stroke="#1E0B3B" strokeWidth="2"/>
+                  <ellipse cx="34" cy="52" rx="28" ry="12" fill="url(#coinRim)" stroke="#1E0B3B" strokeWidth="2"/>
+                  <ellipse cx="34" cy="40" rx="28" ry="12" fill="url(#clayViolet)" stroke="#1E0B3B" strokeWidth="2"/>
+                  <ellipse cx="34" cy="28" rx="28" ry="12" fill="url(#clayLilac)" stroke="#1E0B3B" strokeWidth="2"/>
+                  <ellipse cx="34" cy="16" rx="28" ry="12" fill="url(#clayViolet)" stroke="#1E0B3B" strokeWidth="2"/>
                 </g>
-
-                {/* Second Smaller Coin Stack */}
-                <g transform="translate(94, 136)">
-                  <ellipse cx="28" cy="50" rx="24" ry="10" fill="#4C00A4" stroke="#000" strokeWidth="1.8"/>
-                  <ellipse cx="28" cy="38" rx="24" ry="10" fill="#7300FF" stroke="#000" strokeWidth="1.8"/>
-                  <ellipse cx="28" cy="26" rx="24" ry="10" fill="#E5A8F2" stroke="#000" strokeWidth="1.8"/>
-                  <ellipse cx="28" cy="14" rx="24" ry="10" fill="#7300FF" stroke="#000" strokeWidth="1.8"/>
+                <g transform="translate(94,152)">
+                  <ellipse cx="32" cy="50" rx="28" ry="12" fill="url(#coinRim)" stroke="#1E0B3B" strokeWidth="2"/>
+                  <ellipse cx="32" cy="38" rx="28" ry="12" fill="url(#clayViolet)" stroke="#1E0B3B" strokeWidth="2"/>
+                  <ellipse cx="32" cy="26" rx="28" ry="12" fill="url(#clayLilac)" stroke="#1E0B3B" strokeWidth="2"/>
+                  <ellipse cx="32" cy="14" rx="28" ry="12" fill="url(#clayViolet)" stroke="#1E0B3B" strokeWidth="2"/>
                 </g>
               </svg>
             </div>
 
-            {/* Bottom White Card */}
-            <div className="bg-white rounded-t-[36px] px-6 pt-7 pb-6 shadow-card border-t border-black/10">
-              <h3 className="font-extrabold text-2xl leading-tight text-center text-black">
-                Tu <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-proofly-lavender align-middle text-sm">🔥</span> Puente a<br />
-                Liquidez Inmediata
+            <div className="bg-white rounded-t-[36px] px-6 pt-7 pb-6 shadow-lg">
+              <h3 className="balance-text font-extrabold text-[23px] leading-tight text-center text-ink">
+                Tu <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-lilac align-middle text-base">🔥</span> Puente a<br />Liquidez y Retornos
               </h3>
-              <p className="text-xs text-proofly-muted text-center mt-2.5 leading-relaxed px-2 font-medium">
-                Adelanta tus hitos freelance o respalda entregables con retornos de hasta <strong className="text-proofly-electric font-black tabular-nums">27.4% E.A.</strong>
+              <p className="text-xs text-zinc-500 text-center mt-2.5 leading-relaxed px-2">
+                Adelanta tus hitos o respalda contratos verificados con retornos de hasta{' '}
+                <strong className="text-electric font-extrabold tabular-nums">16,8% E.A.</strong>
               </p>
-
               <button
                 type="button"
-                className="mt-6 w-full bg-black hover:bg-proofly-electric text-white font-extrabold text-xs py-4 rounded-full transition-all shadow-[0_3px_0_#000000] active:translate-y-0.5"
+                onClick={() => document.getElementById('app-movil')?.scrollIntoView({ behavior: 'smooth' })}
+                className="mt-6 w-full bg-electric hover:bg-electric text-white font-extrabold text-xs py-4 rounded-full transition-colors"
               >
-                Get Started
+                Explorar oportunidades
               </button>
-
               <button
                 type="button"
-                className="mt-2.5 w-full text-center text-xs font-bold text-proofly-muted hover:text-black py-1 transition-colors"
+                onClick={onPublish}
+                className="mt-2.5 w-full text-center text-xs font-extrabold text-zinc-700 hover:text-electric py-1"
               >
-                Ingresar como Freelancer
+                Soy Freelancer
               </button>
             </div>
           </div>
 
-          {/* ========================================================= */}
-          {/* PHONE 2: INVESTMENT & OPPORTUNITIES HUB (White Canvas)    */}
-          {/* ========================================================= */}
-          <div className="w-full max-w-[324px] h-[660px] bg-white rounded-[44px] shadow-phone flex flex-col justify-between overflow-hidden relative border-[2.5px] border-black">
-            {/* Status Bar */}
-            <div className="px-7 pt-4 flex items-center justify-between text-xs font-black text-black tabular-nums">
+          {/* ── Phone 2: Marketplace ── */}
+          <div className="w-full max-w-[336px] h-[688px] bg-white rounded-[46px] shadow-phone flex flex-col justify-between overflow-hidden relative">
+            <div className="px-7 pt-4 flex items-center justify-between text-[11px] font-extrabold text-ink tabular-nums">
               <span>19:27</span>
               <div className="flex items-center gap-1.5" aria-hidden="true">
                 <span className="tracking-tighter">•••</span>
-                <span className="w-4 h-2.5 rounded-[2px] bg-black inline-block"></span>
+                <span className="w-4 h-2.5 rounded-sm bg-ink inline-block" />
               </div>
             </div>
 
-            {/* User Profile Bar */}
             <div className="px-6 pt-3 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-proofly-electric to-proofly-lavender p-0.5 border border-black">
-                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-xs font-black text-proofly-electric">
-                    PS
-                  </div>
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-ink/12 bg-lilac">
+                  <img
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
+                    alt="Avatar de Sofía Vargas" width="40" height="40" loading="lazy"
+                    className="editorial-photo w-full h-full object-cover"
+                  />
                 </div>
                 <div>
-                  <div className="text-[10px] text-proofly-muted font-bold flex items-center gap-1">
-                    <span>Premium</span>
-                    <span>🔥</span>
-                  </div>
-                  <div className="text-xs font-extrabold text-black">Peter Smith</div>
+                  <div className="text-[10px] text-zinc-500 font-bold">Nivel Pro 🔥</div>
+                  <div className="text-xs font-extrabold text-ink">Sofía Vargas</div>
                 </div>
               </div>
-
-              {/* Notification icon */}
               <button
                 type="button"
-                aria-label="Notificaciones"
-                className="w-8 h-8 rounded-full bg-proofly-subtle flex items-center justify-center text-xs text-black border border-black/10"
-              >
-                🔔
-              </button>
+                onClick={onPublish}
+                aria-label="Publicar nuevo hito"
+                className="w-9 h-9 rounded-full bg-lilac/60 hover:bg-lilac border border-ink/15 flex items-center justify-center text-ink font-extrabold text-sm transition-colors"
+              >+</button>
             </div>
 
-            {/* Scrollable Center Content */}
             <div className="px-6 pt-2 pb-20 overflow-y-auto no-scrollbar space-y-3.5 flex-1">
-              <h3 className="font-extrabold text-2xl text-black tracking-tight">Investment</h3>
+              <h3 className="font-extrabold text-2xl text-ink tracking-tight">Participaciones</h3>
 
-              {/* Center Cash Vortex Illustration */}
               <div className="flex flex-col items-center text-center">
                 <div className="relative flex items-center justify-center py-1">
-                  <div className="w-32 h-24 rounded-full bg-proofly-lavender blur-xl absolute"></div>
-                  <svg className="w-36 h-28 relative z-10" viewBox="0 0 180 140" fill="none" aria-hidden="true">
-                    <rect x="25" y="30" width="50" height="28" rx="6" transform="rotate(-20 25 30)" fill="#7300FF" stroke="#000" strokeWidth="1.8"/>
-                    <rect x="105" y="20" width="50" height="28" rx="6" transform="rotate(18 105 20)" fill="#7300FF" stroke="#000" strokeWidth="1.8"/>
-                    <rect x="25" y="75" width="50" height="28" rx="6" transform="rotate(12 25 75)" fill="#F8D4FD" stroke="#000" strokeWidth="1.8"/>
-                    <rect x="105" y="72" width="50" height="28" rx="6" transform="rotate(-15 105 72)" fill="#7300FF" stroke="#000" strokeWidth="1.8"/>
-                    <circle cx="90" cy="68" r="24" fill="#FFFFFF" stroke="#000" strokeWidth="2"/>
-                    <circle cx="90" cy="68" r="18" fill="#F8D4FD"/>
-                    <path d="M90 56V68L98 73" stroke="#000" strokeWidth="2.5" strokeLinecap="round"/>
+                  <div className="w-32 h-24 rounded-full bg-lilac/80 blur-xl absolute" />
+                  <svg className="w-36 h-28 relative z-10" viewBox="0 0 200 145" fill="none" aria-hidden="true" filter="url(#soft3DShadow)">
+                    <rect x="30" y="34" width="54" height="30" rx="6" transform="rotate(-22 30 34)" fill="url(#clayViolet)" stroke="#1E0B3B" strokeWidth="2"/>
+                    <rect x="114" y="22" width="54" height="30" rx="6" transform="rotate(20 114 22)" fill="url(#clayViolet)" stroke="#1E0B3B" strokeWidth="2"/>
+                    <rect x="28" y="80" width="54" height="30" rx="6" transform="rotate(14 28 80)" fill="url(#clayLilac)" stroke="#1E0B3B" strokeWidth="2"/>
+                    <rect x="112" y="76" width="54" height="30" rx="6" transform="rotate(-16 112 76)" fill="url(#clayViolet)" stroke="#1E0B3B" strokeWidth="2"/>
+                    <circle cx="100" cy="72" r="25" fill="#FFFFFF" stroke="#1E0B3B" strokeWidth="2.2"/>
+                    <circle cx="100" cy="72" r="19" fill="url(#clayLilac)"/>
+                    <path d="M100 59V72L109 77" stroke="#1E0B3B" strokeWidth="2.5" strokeLinecap="round"/>
                   </svg>
                 </div>
-
-                <h4 className="font-extrabold text-base text-black mt-1">Grow Your Wealth Today</h4>
-                <p className="text-[11px] text-proofly-muted mt-0.5 max-w-[220px]">
-                  Join thousands of investors and start building your portfolio with as little as $1.
+                <h4 className="font-extrabold text-base text-ink">Haz crecer tu capital hoy</h4>
+                <p className="text-[11px] text-zinc-500 mt-0.5 max-w-[220px]">
+                  Respalda entregas confirmadas desde <span className="text-ink font-bold tabular-nums">$ 500.000</span>.
                 </p>
-
                 <button
                   type="button"
-                  className="mt-3 w-full bg-black hover:bg-proofly-electric text-white font-extrabold text-xs py-3.5 rounded-full transition-colors shadow-[0_2px_0_#000000]"
+                  onClick={() => onFund(selectedIdx)}
+                  className="mt-3 w-full bg-electric hover:bg-electric text-white font-extrabold text-xs py-3.5 rounded-full transition-colors"
                 >
-                  Explore more investments
+                  Explorar más operaciones
                 </button>
               </div>
 
-              {/* Segmented Control Pill Tabs */}
-              <div className="bg-proofly-subtle p-1 rounded-full grid grid-cols-2 text-center" role="tablist">
-                <button
-                  type="button"
-                  onClick={() => setPhone2Tab('overview')}
-                  role="tab"
-                  aria-selected={phone2Tab === 'overview'}
-                  className={`py-1.5 rounded-full text-xs font-black transition-all ${
-                    phone2Tab === 'overview'
-                      ? 'bg-white text-black shadow-sm'
-                      : 'text-proofly-muted hover:text-black'
-                  }`}
-                >
-                  Overview
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPhone2Tab('activity')}
-                  role="tab"
-                  aria-selected={phone2Tab === 'activity'}
-                  className={`py-1.5 rounded-full text-xs font-black transition-all ${
-                    phone2Tab === 'activity'
-                      ? 'bg-white text-black shadow-sm'
-                      : 'text-proofly-muted hover:text-black'
-                  }`}
-                >
-                  Activity
-                </button>
+              {/* Tabs */}
+              <div className="bg-surface p-1 rounded-full grid grid-cols-2" role="tablist">
+                {(['resumen', 'actividad'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === t}
+                    onClick={() => setTab(t)}
+                    className={`py-1.5 rounded-full text-xs transition-all ${
+                      tab === t
+                        ? 'font-extrabold bg-white text-ink shadow-sm'
+                        : 'font-semibold text-zinc-500 hover:text-ink'
+                    }`}
+                  >
+                    {t === 'resumen' ? 'Disponibles' : 'Actividad'}
+                  </button>
+                ))}
               </div>
 
-              {/* Transaction List Item (Matching Reference) */}
               <div className="space-y-2">
-                <div className="p-3 bg-proofly-subtle rounded-2xl border border-black/5 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-proofly-lavender flex items-center justify-center text-xs font-black text-proofly-electric">
-                      🏦
-                    </div>
-                    <div>
-                      <p className="text-xs font-extrabold text-black">Mandiri-508745653546</p>
-                      <p className="text-[10px] text-proofly-muted font-medium">Success, 10.00 AM</p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-black text-proofly-emerald tabular-nums">
-                    +$500.00
-                  </span>
-                </div>
-
-                {phone2Tab === 'activity' && (
-                  <div className="p-3 bg-proofly-subtle rounded-2xl border border-black/5 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-xs font-black text-black">
-                        ⚡
+                {tab === 'resumen'
+                  ? milestones.map((m, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => { onSelect(idx); onFund(idx); }}
+                        className="w-full p-3 rounded-2xl bg-surface hover:bg-lilac/45 cursor-pointer transition-colors flex items-center justify-between text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-full bg-white border border-ink/15 flex items-center justify-center font-extrabold text-xs text-electric shrink-0">
+                            {m.initial}
+                          </div>
+                          <div>
+                            <div className="text-xs font-extrabold text-ink">{m.title}</div>
+                            <div className="text-[10px] text-zinc-500">{m.company} · {m.returnPct}</div>
+                          </div>
+                        </div>
+                        <div className="font-extrabold text-xs text-emerald-600 tabular-nums">+{formatCOP(m.amount)}</div>
+                      </button>
+                    ))
+                  : ACTIVITY.map((a, i) => (
+                      <div key={i} className="p-3 rounded-2xl bg-surface flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-extrabold text-ink">{a.title}</div>
+                          <div className="text-[10px] text-zinc-500">{a.company}</div>
+                        </div>
+                        <div className="font-extrabold text-xs text-emerald-600 tabular-nums">{a.amount}</div>
                       </div>
-                      <div>
-                        <p className="text-xs font-extrabold text-black">Bancolombia ACH</p>
-                        <p className="text-[10px] text-proofly-muted font-medium">Liquidado en Base L2</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-black text-proofly-emerald tabular-nums">
-                      +$1.250.000 COP
-                    </span>
-                  </div>
-                )}
+                    ))
+                }
               </div>
             </div>
 
-            {/* Bottom Floating Glass Dock */}
-            <div className="absolute bottom-3 inset-x-5 bg-white/95 backdrop-blur-md border border-black/15 rounded-full p-1.5 flex items-center justify-between shadow-sm z-20">
-              <button type="button" aria-label="Inicio" className="w-8 h-8 rounded-full bg-proofly-subtle flex items-center justify-center text-xs font-bold text-black">
-                ⌂
+            {/* Bottom nav */}
+            <div className="absolute bottom-3 inset-x-5 bg-white/90 backdrop-blur-md border border-ink/15 rounded-full p-1.5 flex items-center justify-between shadow-sm">
+              <button type="button" onClick={() => setTab('resumen')} aria-label="Inicio" className="w-9 h-9 rounded-full bg-surface flex items-center justify-center text-xs font-bold">⌂</button>
+              <button type="button" onClick={() => onFund(selectedIdx)} className="px-4 py-2 rounded-full bg-electric text-white text-[11px] font-extrabold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-lilac" />
+                <span>Participar</span>
               </button>
-              <button type="button" className="px-4 py-1.5 rounded-full bg-black text-white text-[11px] font-extrabold flex items-center gap-1.5">
-                <span>Invest</span>
-              </button>
-              <button type="button" aria-label="Billetera" className="w-8 h-8 rounded-full bg-proofly-subtle flex items-center justify-center text-xs font-bold text-black">
-                💳
-              </button>
-              <button type="button" aria-label="Perfil" className="w-8 h-8 rounded-full bg-proofly-subtle flex items-center justify-center text-xs font-bold text-black">
-                👤
-              </button>
+              <button type="button" onClick={onPublish}  aria-label="Publicar Hito"  className="w-9 h-9 rounded-full bg-surface flex items-center justify-center text-xs font-bold">+</button>
+              <button type="button" onClick={onSimulate} aria-label="Simulador"       className="w-9 h-9 rounded-full bg-surface flex items-center justify-center text-xs font-bold">★</button>
             </div>
           </div>
 
-          {/* ========================================================= */}
-          {/* PHONE 3: DETAIL & ANALYTICS (2-Column Bento + Promo Banner)*/}
-          {/* ========================================================= */}
-          <div className="w-full max-w-[324px] h-[660px] bg-white rounded-[44px] shadow-phone flex flex-col justify-between overflow-hidden relative border-[2.5px] border-black md:col-span-2 lg:col-span-1">
-            {/* Status Bar */}
-            <div className="px-7 pt-4 flex items-center justify-between text-xs font-black text-black tabular-nums">
+          {/* ── Phone 3: Analytics ── */}
+          <div className="w-full max-w-[336px] h-[688px] bg-white rounded-[46px] shadow-phone flex flex-col justify-between overflow-hidden relative">
+            <div className="px-7 pt-4 flex items-center justify-between text-[11px] font-extrabold text-ink tabular-nums">
               <span>19:27</span>
               <div className="flex items-center gap-1.5" aria-hidden="true">
                 <span className="tracking-tighter">•••</span>
-                <span className="w-4 h-2.5 rounded-[2px] bg-black inline-block"></span>
+                <span className="w-4 h-2.5 rounded-sm bg-ink inline-block" />
               </div>
             </div>
 
-            {/* Navigation Header */}
             <div className="px-6 pt-3 flex items-center justify-between">
-              <button
-                type="button"
-                aria-label="Volver"
-                className="w-8 h-8 rounded-full bg-proofly-subtle flex items-center justify-center text-xs font-bold text-black hover:bg-proofly-lavender transition-colors"
-              >
-                ←
-              </button>
+              <button type="button" onClick={() => cycleProject(-1)} aria-label="Proyecto anterior" className="w-9 h-9 rounded-full bg-surface hover:bg-lilac flex items-center justify-center text-xs font-extrabold transition-colors">←</button>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  aria-label="Compartir"
-                  className="w-8 h-8 rounded-full bg-proofly-subtle flex items-center justify-center text-xs font-bold text-black"
-                >
-                  ↗
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBookmarked(!bookmarked)}
-                  aria-label="Marcar como favorito"
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                    bookmarked ? 'bg-proofly-electric text-white' : 'bg-proofly-subtle text-black'
-                  }`}
-                >
-                  ★
-                </button>
+                <button type="button" onClick={() => cycleProject(1)} aria-label="Siguiente proyecto" className="w-9 h-9 rounded-full bg-surface hover:bg-lilac flex items-center justify-center text-xs font-extrabold transition-colors">→</button>
+                <button type="button" onClick={() => onFund(selectedIdx)} aria-label="Destacar proyecto" className="w-9 h-9 rounded-full bg-surface hover:bg-lilac flex items-center justify-center text-xs font-extrabold transition-colors">☆</button>
               </div>
             </div>
 
-            {/* Scrollable Detail Body */}
-            <div className="px-6 pt-2 pb-6 overflow-y-auto no-scrollbar space-y-4 flex-1">
-              {/* Deliverable Title & Brand */}
-              <div className="flex items-start justify-between gap-3">
+            <div className="px-6 pt-3 pb-6 overflow-y-auto no-scrollbar space-y-4 flex-1">
+              <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-extrabold text-lg leading-tight text-black">
-                    Invest in Entertainment
-                  </h3>
-                  <p className="text-[11px] text-proofly-muted mt-0.5 leading-snug">
-                    Leading the world in streaming entertainment with over 200M paid memberships.
+                  <h3 className="font-extrabold text-xl leading-tight text-ink">{current?.title}</h3>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Confirmado por <span className="text-electric font-bold">{current?.company}</span> · {current?.days} días
                   </p>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center text-white font-black text-sm shrink-0">
-                  N
+                <div className="w-10 h-10 rounded-full bg-lilac border border-ink/15 flex items-center justify-center font-extrabold text-sm text-ink shrink-0">
+                  {current?.initial}
                 </div>
               </div>
 
-              {/* 2-Column Bento Grid */}
+              {/* Twin bento analytics */}
               <div className="grid grid-cols-2 gap-2.5">
-                {/* Left Card: Bar Chart */}
-                <div className="bg-proofly-subtle rounded-2xl p-3 flex flex-col justify-between border border-black/5">
+                <div className="bg-surface rounded-2xl p-3.5 flex flex-col justify-between border border-ink/5">
                   <div>
-                    <p className="text-[11px] font-extrabold text-black leading-snug">
-                      Analysis of your <span className="text-proofly-electric">portfolio</span>
-                    </p>
-                    <p className="text-[9px] text-proofly-muted mt-0.5">Active stock performance</p>
+                    <div className="text-xs font-extrabold text-ink leading-snug">Análisis de <span className="text-electric">entregas</span></div>
+                    <div className="text-[10px] text-zinc-500 mt-0.5">Historial activo</div>
                   </div>
-
-                  <div className="pt-3">
-                    <div className="flex items-end justify-between h-12 gap-1 px-0.5">
-                      <div className="w-2 h-5 bg-proofly-lavender-deep rounded-full"></div>
-                      <div className="w-2 h-7 bg-proofly-lavender-deep rounded-full"></div>
-                      <div className="w-2 h-4 bg-proofly-lavender-deep rounded-full"></div>
-                      <div className="w-2 h-6 bg-proofly-lavender-deep rounded-full"></div>
-                      {/* Active Friday Bar in Electric Purple */}
-                      <div className="w-2 h-12 bg-proofly-electric rounded-full"></div>
-                      <div className="w-2 h-7 bg-proofly-lavender-deep rounded-full"></div>
-                      <div className="w-2 h-9 bg-proofly-lavender-deep rounded-full"></div>
+                  <div className="pt-4">
+                    <div className="flex items-end justify-between h-14 gap-1.5 px-0.5">
+                      {[28, 40, 24, 32, 56, 36, 44].map((h, i) => (
+                        <div key={i} className={`w-2 rounded-full ${i === 4 ? 'bg-electric' : 'bg-lilac-deep/60'}`} style={{ height: h }} />
+                      ))}
                     </div>
-                    <div className="flex justify-between text-[8px] font-black text-zinc-400 mt-1 px-0.5">
-                      <span>M</span><span>T</span><span>W</span><span>T</span><span className="text-proofly-electric">F</span><span>S</span><span>S</span>
+                    <div className="flex justify-between text-[9px] font-bold text-zinc-400 mt-1.5 px-0.5">
+                      {['L','M','M','J','V','S','D'].map((d, i) => (
+                        <span key={i} className={i === 4 ? 'text-electric' : ''}>{d}</span>
+                      ))}
                     </div>
                   </div>
                 </div>
 
-                {/* Right Card: Lavender Stat Card */}
-                <div className="bg-proofly-lavender rounded-2xl p-3 flex flex-col justify-between border border-black/10">
+                <div className="bg-lilac/65 rounded-2xl p-3.5 flex flex-col justify-between border border-ink/10">
                   <div>
-                    <p className="text-[11px] font-extrabold text-black leading-snug">
-                      Strategic insights
-                    </p>
-                    <p className="text-[9px] text-zinc-700 mt-0.5">Path to wealth growth</p>
+                    <div className="text-xs font-extrabold text-ink leading-snug">Retorno <span className="italic font-semibold">estimado</span></div>
+                    <div className="text-[10px] text-zinc-700 mt-0.5">Por participación</div>
                   </div>
-
-                  <div className="pt-2">
-                    <div className="font-black text-lg text-black tracking-tight tabular-nums">
-                      $640.22
-                    </div>
-                    <div className="text-[10px] font-black text-proofly-electric mt-0.5 tabular-nums">
-                      Avg. 85.2%
-                    </div>
+                  <div className="pt-4">
+                    <div className="font-extrabold text-base text-ink tracking-tight tabular-nums">{formatCOP(estimatedTotal)}</div>
+                    <div className="text-[11px] font-extrabold text-electric mt-0.5 tabular-nums">{current?.ea}</div>
                   </div>
                 </div>
               </div>
 
-              {/* Black Promo Banner Card: Invest Smarter, Not Harder */}
-              <div className="bg-black text-white rounded-2xl p-3.5 relative overflow-hidden shadow-sm">
-                <div className="pr-12 space-y-1">
-                  <h4 className="font-extrabold text-xs leading-tight">Invest Smarter, Not Harder</h4>
-                  <p className="text-[10px] text-zinc-400 leading-snug">
-                    Access global markets with real-time insights and professional tools.
-                  </p>
+              {/* Promo banner */}
+              <div className="bg-gradient-to-r from-electric to-[#5600C4] text-white rounded-2xl p-4 border border-ink/12 flex items-center justify-between relative overflow-hidden shadow-card">
+                <div className="space-y-1 relative z-10">
+                  <h4 className="font-extrabold text-sm leading-tight">Financia Inteligente</h4>
+                  <p className="text-[10px] text-lilac/95 max-w-[148px]">Respaldo directo con pago empresarial en cuenta de recaudo.</p>
                   <button
                     type="button"
-                    className="mt-2 inline-block bg-white hover:bg-proofly-lavender text-black font-extrabold text-[10px] px-3.5 py-1.5 rounded-full transition-colors"
+                    onClick={() => onFund(selectedIdx)}
+                    className="mt-2 inline-block bg-lilac hover:bg-white text-ink font-extrabold text-[11px] px-4 py-1.5 rounded-full border border-ink/15 transition-colors"
                   >
-                    Learn More
+                    Participar
                   </button>
                 </div>
-
-                {/* Card Illustration in Background */}
-                <div className="absolute right-2 top-2 bottom-2 w-12 flex items-center justify-center opacity-85">
-                  <svg className="w-12 h-12" viewBox="0 0 60 60" fill="none">
-                    <rect x="5" y="15" width="40" height="25" rx="6" fill="#7300FF" stroke="#FFF" strokeWidth="1.5"/>
-                    <circle cx="35" cy="40" r="12" fill="#F8D4FD" stroke="#000" strokeWidth="1.5"/>
-                  </svg>
-                </div>
+                <svg className="w-16 h-16 shrink-0 relative z-10" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                  <circle cx="44" cy="24" r="12" fill="url(#clayLilac)" stroke="#1E0B3B" strokeWidth="1.5"/>
+                  <ellipse cx="26" cy="46" rx="14" ry="7" fill="url(#clayLavender)" stroke="#1E0B3B" strokeWidth="1.2"/>
+                  <ellipse cx="26" cy="38" rx="14" ry="7" fill="url(#clayLilac)" stroke="#1E0B3B" strokeWidth="1.2"/>
+                </svg>
               </div>
 
-              {/* Stock Purchase / Recent Items */}
+              {/* Recent milestones */}
               <div>
-                <p className="text-xs font-black text-black mb-2">Stock Purchase</p>
+                <div className="text-xs font-extrabold text-ink mb-2">Hitos Recientes</div>
                 <div className="space-y-2">
-                  {/* Item 1 */}
-                  <div className="p-2.5 bg-proofly-subtle rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-proofly-lavender flex items-center justify-center text-xs">
-                        🍎
+                  {milestones.slice(0, 2).map((m, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => onSelect(idx)}
+                      className={`w-full p-3 rounded-2xl ${idx === 0 ? 'bg-lilac/45' : 'bg-surface'} flex items-center justify-between cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-white border border-ink/10 flex items-center justify-center font-extrabold text-xs text-ink shrink-0">{m.initial}</div>
+                        <div>
+                          <div className="text-xs font-extrabold text-ink">{m.company}</div>
+                          <div className="text-[10px] text-zinc-500">{m.title}</div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-extrabold text-black leading-tight">Apple Inc</p>
-                        <p className="text-[9px] text-proofly-muted">Tue, 20 January · 10:15 AM</p>
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-black text-proofly-rose bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                      -$150.00
-                    </span>
-                  </div>
-
-                  {/* Item 2 */}
-                  <div className="p-2.5 bg-proofly-subtle rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-proofly-lavender flex items-center justify-center text-xs">
-                        ⚡
-                      </div>
-                      <div>
-                        <p className="text-xs font-extrabold text-black leading-tight">Tesla Motors</p>
-                        <p className="text-[9px] text-proofly-muted">Wed, 21 January · 2:45 PM</p>
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-black text-proofly-emerald bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                      +$210.50
-                    </span>
-                  </div>
+                      <span className="text-xs font-extrabold text-emerald-600 tabular-nums">+{formatCOP(m.amount)}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
-
             </div>
           </div>
 
@@ -433,4 +351,4 @@ export const MobileShowcase: React.FC = () => {
       </div>
     </section>
   );
-};
+}

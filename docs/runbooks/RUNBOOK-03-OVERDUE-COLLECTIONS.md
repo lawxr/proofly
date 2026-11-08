@@ -81,3 +81,4 @@ Cuando se logra el cobro del capital en mora más los intereses moratorios:
    - Se utiliza el **Algoritmo del Mayor Resto** para garantizar cero centavos de pérdida en la asignación.
 3. **Actualización de Estado On-Chain:**
    - El worker despacha `settleOperation` en `ProoflyOperations.sol` reflejando la cancelación total de la deuda.
+

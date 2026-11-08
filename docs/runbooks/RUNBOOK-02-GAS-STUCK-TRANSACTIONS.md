@@ -121,3 +121,4 @@ WHERE tx_hash = '$STUCK_TX_HASH';
    - Asegurar que `maxPriorityFeePerGas` tenga un multiplicador de seguridad dinámico de al menos $1.15 \times$ sobre la estimación de Base L2.
 2. **Monitor de Mempool:**
    - Habilitar métricas de Prometheus para el tiempo de residencia de transacciones en mempool (`proofly_outbox_tx_age_seconds`).
+

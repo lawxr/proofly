@@ -114,3 +114,4 @@ En caso de detectarse alguna anomalía crítica post-lanzamiento:
    ```
 3. **Auditar Libros Contables:**
    - Correr el script forense `npm run worker:reconcile -- --mode=dry-run` para validar que los balances se mantengan intactos.
+

@@ -1,14 +1,16 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  base: './',
+  base: '/',
+  plugins: [react()],
   server: {
     port: 3000,
-    host: true
+    host: true,
   },
   build: {
     outDir: 'dist',
-    emptyOutDir: true
-  }
+    emptyOutDir: true,
+    rollupOptions: { output: { chunkFileNames: chunk => chunk.name === 'DemoApp' ? 'private/[name]-[hash].js' : 'assets/[name]-[hash].js' } },
+  },
 });
-

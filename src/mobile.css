@@ -184,3 +184,6 @@
   .mobile-invoice-amount { font-size: 13px; }
   dialog[data-type="detail"], dialog[data-type="form"] { padding-left: 18px; padding-right: 18px; }
 }
+
+/* Private demo session controls remain reachable on compact layouts. */
+.demo-signout { min-height: 44px; min-width: 44px; cursor: pointer; }
