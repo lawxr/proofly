@@ -17,6 +17,7 @@
     "test:browser": "node --experimental-strip-types tests/mobile.browser.mjs"
   },
   "dependencies": {
+    "pg": "^8.23.1",
     "viem": "^2.57.16"
   }
 }

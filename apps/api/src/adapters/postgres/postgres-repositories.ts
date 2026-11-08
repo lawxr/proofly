@@ -44,13 +44,13 @@ export class PostgresOperationRepository implements OperationRepositoryPort {
   async save(op: OperationEntity): Promise<void> {
     const sql = `
       INSERT INTO operations (
-        id, freelancer_id, asset_type, nominal_amount_cents, advance_amount_cents,
-        commercial_discount_cents, platform_fee_cents, funded_capital_cents,
-        term_days, due_date, status, canonical_hmac, confirmation_token,
-        electronic_signature_hash, payer_solvency_score, freelancer_execution_score,
-        created_at, updated_at
+        id, freelancer_id, asset_type, payer_nit, payer_legal_name,
+        nominal_amount_cents, advance_amount_cents, commercial_discount_cents,
+        platform_fee_cents, funded_capital_cents, term_days, due_date, status,
+        canonical_hmac, confirmation_token, electronic_signature_hash,
+        payer_solvency_score, freelancer_execution_score, created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
       )
       ON CONFLICT (id) DO UPDATE SET
         funded_capital_cents = EXCLUDED.funded_capital_cents,
@@ -64,6 +64,8 @@ export class PostgresOperationRepository implements OperationRepositoryPort {
       op.id,
       op.freelancerId,
       op.assetType === AssetType.INVOICE ? 'ELECTRONIC_INVOICE' : 'CONTRACT_MILESTONE',
+      op.payerNit,
+      op.payerLegalName,
       op.nominalAmountCents.toString(),
       op.advanceAmountCents.toString(),
       op.commercialDiscountCents.toString(),
@@ -129,8 +131,8 @@ export class PostgresOperationRepository implements OperationRepositoryPort {
     return new OperationEntity({
       id: row.id,
       freelancerId: row.freelancer_id,
-      payerNit: row.payer_nit ?? '900000000-1',
-      payerLegalName: row.payer_legal_name ?? 'Empresa Pagadora',
+      payerNit: row.payer_nit,
+      payerLegalName: row.payer_legal_name,
       assetType: row.asset_type === 'ELECTRONIC_INVOICE' ? AssetType.INVOICE : AssetType.MILESTONE,
       nominalAmountCents: BigInt(row.nominal_amount_cents),
       termDays: row.term_days,
@@ -230,12 +232,13 @@ export class PostgresUserRepository implements UserRepositoryPort {
   async save(user: UserEntity): Promise<void> {
     const sql = `
       INSERT INTO users (
-        id, email, legal_name, tax_id, role, kyc_status, wallet_address,
+        id, email, legal_name, tax_id, role, kyc_status, password_hash, wallet_address,
         tier, available_quota_cents, execution_score, completed_operations_count,
         created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       ON CONFLICT (id) DO UPDATE SET
         kyc_status = EXCLUDED.kyc_status,
+        password_hash = COALESCE(EXCLUDED.password_hash, users.password_hash),
         wallet_address = EXCLUDED.wallet_address,
         tier = EXCLUDED.tier,
         available_quota_cents = EXCLUDED.available_quota_cents,
@@ -251,6 +254,7 @@ export class PostgresUserRepository implements UserRepositoryPort {
       user.taxId,
       user.role === UserRole.INVESTOR ? 'FINANCIER' : user.role,
       user.kycStatus,
+      user.passwordHash ?? null,
       user.walletAddress ?? null,
       user.tier ?? null,
       user.availableLimitCents !== undefined ? user.availableLimitCents.toString() : null,
@@ -302,6 +306,7 @@ export class PostgresUserRepository implements UserRepositoryPort {
       taxId: row.tax_id,
       role: row.role === 'FINANCIER' ? UserRole.INVESTOR : (row.role as UserRole),
       kycStatus: row.kyc_status as KycStatus,
+      passwordHash: row.password_hash ?? undefined,
       walletAddress: row.wallet_address ?? undefined,
       tier: row.tier as FreelancerTier ?? undefined,
       availableLimitCents: row.available_quota_cents ? BigInt(row.available_quota_cents) : undefined,

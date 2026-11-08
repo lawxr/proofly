@@ -13,6 +13,7 @@
   "dependencies": {
     "@proofly/contracts-sdk": "*",
     "@proofly/domain": "*",
+    "pg": "^8.23.1",
     "viem": "^2.57.16",
     "zod": "^3.23.0"
   },

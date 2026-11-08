@@ -27,6 +27,7 @@ export interface UserProps {
   taxId: string;
   role: UserRole;
   kycStatus: KycStatus;
+  passwordHash?: string;
   walletAddress?: string;
   tier?: FreelancerTier;
   availableLimitCents?: bigint;
@@ -43,6 +44,7 @@ export class UserEntity {
   taxId: string;
   role: UserRole;
   kycStatus: KycStatus;
+  passwordHash?: string;
   walletAddress?: string;
   tier?: FreelancerTier;
   availableLimitCents?: bigint;
@@ -58,6 +60,7 @@ export class UserEntity {
     this.taxId = props.taxId;
     this.role = props.role;
     this.kycStatus = props.kycStatus;
+    this.passwordHash = props.passwordHash;
     this.walletAddress = props.walletAddress;
     this.tier = props.tier;
     this.availableLimitCents = props.availableLimitCents;

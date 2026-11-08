@@ -2,42 +2,46 @@
 -- PROOFLY - ESQUEMA DE BASE DE DATOS OPERACIONAL (PostgreSQL 16)
 -- Archivo: db/schema.sql
 -- ============================================================================
+-- Reconciliado con el dominio canónico (packages/domain) y los repositorios
+-- Postgres (apps/api/src/adapters/postgres). El dominio es la fuente de verdad:
+-- este esquema refleja exactamente lo que las entidades definen y lo que los
+-- repositorios escriben y leen, para evitar migraciones posteriores.
+--
 -- Principios:
--- 1. Identificadores universales UUID v4
--- 2. Montos monetarios estrictamente en centavos de COP (BIGINT)
--- 3. Marcas de tiempo completas con zona horaria (TIMESTAMPTZ)
--- 4. Invariante anti-duplicado por HMAC UNIQUE
--- 5. Patrón Transactional Outbox para resiliencia blockchain
+-- 1. Identificadores UUID (los IDs del dominio son strings arbitrarios).
+-- 2. Montos monetarios estrictamente en centavos de COP (BIGINT).
+-- 3. Marcas de tiempo completas con zona horaria (TIMESTAMPTZ).
+-- 4. Invariante anti-duplicado por HMAC UNIQUE.
+-- 5. Patrón Transactional Outbox para resiliencia blockchain.
 -- ============================================================================
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ----------------------------------------------------------------------------
--- 1. ENUMS DEL DOMINIO
+-- 1. ENUMS DEL DOMINIO (alineados con packages/domain)
 -- ----------------------------------------------------------------------------
 
+-- UserRole del dominio: FREELANCER | INVESTOR | ADMIN.
+-- El repositorio mapea INVESTOR <-> FINANCIER para conservar el término de negocio.
 CREATE TYPE user_role AS ENUM (
     'FREELANCER',
     'FINANCIER',
-    'CLIENT_PAYER',
-    'OPERATOR',
     'ADMIN'
 );
 
 CREATE TYPE kyc_status AS ENUM (
     'PENDING',
     'VERIFIED',
-    'REJECTED',
-    'SUSPENDED'
+    'REJECTED'
 );
 
 CREATE TYPE freelancer_tier AS ENUM (
-    'TIER_1_SEED',       -- Hasta 2M COP, 1 op activa
-    'TIER_2_GROWTH',     -- Hasta 8M COP, 2 ops activas
-    'TIER_3_PRO'         -- Hasta 25M COP, 3 ops activas
+    'TIER_1_SEED',
+    'TIER_2_GROWTH',
+    'TIER_3_PRO'
 );
 
+-- AssetType del dominio, persistido como operation_type en el repositorio.
 CREATE TYPE operation_type AS ENUM (
     'ELECTRONIC_INVOICE',
     'CONTRACT_MILESTONE'
@@ -56,6 +60,12 @@ CREATE TYPE operation_status AS ENUM (
     'REJECTED_CANCELLED'
 );
 
+CREATE TYPE investment_status AS ENUM (
+    'CONFIRMED',
+    'SETTLED',
+    'CANCELLED'
+);
+
 CREATE TYPE outbox_status AS ENUM (
     'PENDING',
     'PROCESSING',
@@ -64,241 +74,119 @@ CREATE TYPE outbox_status AS ENUM (
 );
 
 -- ----------------------------------------------------------------------------
--- 2. USUARIOS Y PERFILES
+-- 2. USUARIOS (UserEntity del dominio, en una sola tabla)
 -- ----------------------------------------------------------------------------
+-- Una sola identidad por persona: puede anticipar (freelancer) e invertir
+-- (financiador) a la vez. Los campos de cupo/tier/score aplican al lado de
+-- anticipo; son NULL para quien aún no opera como freelancer.
+--
+-- password_hash es NULLABLE a propósito: hoy el acceso es por PIN único y las
+-- cuentas reales con contraseña llegan en la siguiente rebanada (auth). Dejar
+-- la columna desde ahora evita una migración posterior.
 
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id VARCHAR(64) PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
-    full_name VARCHAR(255) NOT NULL,
-    role user_role NOT NULL,
-    phone_number VARCHAR(30),
-    wallet_address CHAR(42), -- 0x... en Base L2 (abstraída o externa)
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE kyc_verifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    document_type VARCHAR(10) NOT NULL, -- CC, CE, NIT, PASSPORT
-    document_number VARCHAR(30) NOT NULL,
-    status kyc_status NOT NULL DEFAULT 'PENDING',
-    risk_score INT, -- 0 a 100
-    sanctions_cleared BOOLEAN NOT NULL DEFAULT FALSE,
-    external_provider_id VARCHAR(100),
-    rejection_reason TEXT,
-    verified_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uq_kyc_document UNIQUE (document_type, document_number)
-);
-
-CREATE TABLE freelancer_profiles (
-    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    tier freelancer_tier NOT NULL DEFAULT 'TIER_1_SEED',
-    current_quota_cents BIGINT NOT NULL DEFAULT 200000000, -- $ 2.000.000 COP iniciales
-    available_quota_cents BIGINT NOT NULL DEFAULT 200000000,
-    execution_score INT NOT NULL DEFAULT 70, -- 0 a 100
-    successful_operations_count INT NOT NULL DEFAULT 0,
-    dispute_count INT NOT NULL DEFAULT 0,
-    portfolio_url TEXT,
-    github_profile VARCHAR(100),
-    linkedin_profile VARCHAR(100),
-    bank_name VARCHAR(100),
-    bank_account_type VARCHAR(20),
-    bank_account_number VARCHAR(50),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE companies (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nit VARCHAR(20) NOT NULL UNIQUE,
     legal_name VARCHAR(255) NOT NULL,
-    commercial_name VARCHAR(255),
-    contact_email VARCHAR(255) NOT NULL,
-    contact_phone VARCHAR(30),
-    credit_score INT NOT NULL DEFAULT 75, -- 0 a 100
-    is_dian_active BOOLEAN NOT NULL DEFAULT TRUE,
-    total_financed_cents BIGINT NOT NULL DEFAULT 0,
-    defaulted_operations_count INT NOT NULL DEFAULT 0,
+    tax_id VARCHAR(40) NOT NULL,
+    role user_role NOT NULL,
+    kyc_status kyc_status NOT NULL DEFAULT 'PENDING',
+    password_hash TEXT,
+    wallet_address CHAR(42),
+    tier freelancer_tier,
+    available_quota_cents BIGINT,
+    execution_score INT,
+    completed_operations_count INT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_execution_score CHECK (execution_score IS NULL OR (execution_score BETWEEN 0 AND 100)),
+    CONSTRAINT chk_available_quota CHECK (available_quota_cents IS NULL OR available_quota_cents >= 0)
 );
 
+CREATE INDEX idx_users_email ON users(email);
+
 -- ----------------------------------------------------------------------------
--- 3. OPERACIONES (FACTURAS E HITOS)
+-- 3. OPERACIONES (OperationEntity del dominio)
 -- ----------------------------------------------------------------------------
+-- El pagador se guarda desnormalizado (payer_nit, payer_legal_name) tal como lo
+-- maneja el dominio hoy; no hay tabla de empresas separada todavía.
 
 CREATE TABLE operations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    canonical_hmac VARCHAR(64) NOT NULL UNIQUE, -- Invariante I5
-    freelancer_id UUID NOT NULL REFERENCES users(id),
-    company_id UUID NOT NULL REFERENCES companies(id),
-    operation_type operation_type NOT NULL,
-    status operation_status NOT NULL DEFAULT 'DRAFT',
-    
-    -- Magnitudes financieras en centavos enteros (Invariante I9)
+    id VARCHAR(64) PRIMARY KEY,
+    freelancer_id VARCHAR(64) NOT NULL REFERENCES users(id),
+    asset_type operation_type NOT NULL,
+    payer_nit VARCHAR(20) NOT NULL,
+    payer_legal_name VARCHAR(255) NOT NULL,
+
+    -- Magnitudes financieras en centavos enteros
     nominal_amount_cents BIGINT NOT NULL,
-    discount_amount_cents BIGINT NOT NULL,
-    proofly_fee_cents BIGINT NOT NULL,
     advance_amount_cents BIGINT NOT NULL,
-    funded_amount_cents BIGINT NOT NULL DEFAULT 0,
-    reconciled_amount_cents BIGINT NOT NULL DEFAULT 0,
-    
-    -- Parámetros temporales y tasas
-    issue_date DATE NOT NULL,
-    due_date DATE NOT NULL,
+    commercial_discount_cents BIGINT NOT NULL,
+    platform_fee_cents BIGINT NOT NULL,
+    funded_capital_cents BIGINT NOT NULL DEFAULT 0,
+
     term_days INT NOT NULL,
-    monthly_discount_rate NUMERIC(6, 4) NOT NULL, -- ej. 0.0175
-    effective_annual_rate NUMERIC(6, 4) NOT NULL, -- ej. 0.2363 (23.63 % E.A.)
-    
-    -- Trazabilidad de Dossier y On-Chain
-    dossier_hash CHAR(64), -- SHA-256 del paquete documental
-    onchain_token_id BIGINT, -- ID del token ERC-1155 en Base
-    mint_tx_hash VARCHAR(66),
-    settle_tx_hash VARCHAR(66),
-    
+    due_date DATE NOT NULL,
+    status operation_status NOT NULL DEFAULT 'DRAFT',
+
+    -- Anti-duplicado e integridad
+    canonical_hmac VARCHAR(64) NOT NULL UNIQUE,
+    confirmation_token VARCHAR(64) UNIQUE,
+    electronic_signature_hash VARCHAR(80),
+
+    -- Puntuaciones de riesgo separadas
+    payer_solvency_score INT,
+    freelancer_execution_score INT,
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
+
     CONSTRAINT chk_positive_nominal CHECK (nominal_amount_cents > 0),
-    CONSTRAINT chk_valid_advance CHECK (advance_amount_cents = nominal_amount_cents - discount_amount_cents - proofly_fee_cents),
-    CONSTRAINT chk_future_due_date CHECK (due_date >= issue_date)
+    CONSTRAINT chk_valid_advance CHECK (advance_amount_cents = nominal_amount_cents - commercial_discount_cents - platform_fee_cents),
+    CONSTRAINT chk_funded_non_negative CHECK (funded_capital_cents >= 0)
 );
 
-CREATE TABLE invoice_details (
-    operation_id UUID PRIMARY KEY REFERENCES operations(id) ON DELETE CASCADE,
-    cufe CHAR(64) NOT NULL UNIQUE,
-    invoice_number VARCHAR(50) NOT NULL,
-    xml_s3_key TEXT,
-    has_receipt_acknowledgement BOOLEAN NOT NULL DEFAULT FALSE,
-    has_goods_services_received BOOLEAN NOT NULL DEFAULT FALSE,
-    has_express_tacit_acceptance BOOLEAN NOT NULL DEFAULT FALSE,
-    radian_verified_at TIMESTAMPTZ
-);
-
-CREATE TABLE milestone_details (
-    operation_id UUID PRIMARY KEY REFERENCES operations(id) ON DELETE CASCADE,
-    contract_uuid UUID NOT NULL,
-    milestone_index INT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    deliverable_url TEXT NOT NULL,
-    confirmation_secure_token VARCHAR(64) NOT NULL UNIQUE,
-    token_expires_at TIMESTAMPTZ NOT NULL,
-    confirmed_by_client_at TIMESTAMPTZ,
-    client_ip VARCHAR(45),
-    CONSTRAINT uq_contract_milestone UNIQUE (contract_uuid, milestone_index)
-);
+CREATE INDEX idx_operations_status ON operations(status);
+CREATE INDEX idx_operations_freelancer ON operations(freelancer_id);
+CREATE INDEX idx_operations_due_date ON operations(due_date);
 
 -- ----------------------------------------------------------------------------
--- 4. MARKETPLACE Y PARTICIPACIONES DE FINANCIADORES
+-- 4. PARTICIPACIONES DE FINANCIADORES (InvestmentEntity del dominio)
 -- ----------------------------------------------------------------------------
+-- 1 token ERC-1155 = 1 centavo de COP (tokens_count == funded_capital_cents).
 
-CREATE TABLE participations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    operation_id UUID NOT NULL REFERENCES operations(id) ON DELETE RESTRICT,
-    financier_id UUID NOT NULL REFERENCES users(id),
-    
-    -- Montos en centavos enteros
-    funded_capital_cents BIGINT NOT NULL,      -- Capital aportado K_i
-    expected_yield_cents BIGINT NOT NULL,      -- Ganancia neta pactada G_i
-    nominal_share_cents BIGINT NOT NULL,       -- V_n proporcional a recibir
-    settled_capital_cents BIGINT NOT NULL DEFAULT 0,
-    settled_yield_cents BIGINT NOT NULL DEFAULT 0,
-    
-    is_settled BOOLEAN NOT NULL DEFAULT FALSE,
+CREATE TABLE investments (
+    id VARCHAR(64) PRIMARY KEY,
+    operation_id VARCHAR(64) NOT NULL REFERENCES operations(id) ON DELETE RESTRICT,
+    financier_id VARCHAR(64) NOT NULL REFERENCES users(id),
+    funded_capital_cents BIGINT NOT NULL,
+    tokens_count BIGINT NOT NULL,
+    status investment_status NOT NULL DEFAULT 'CONFIRMED',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT chk_participation_positive CHECK (funded_capital_cents > 0),
-    CONSTRAINT chk_nominal_share CHECK (nominal_share_cents = funded_capital_cents + expected_yield_cents)
+    CONSTRAINT chk_investment_positive CHECK (funded_capital_cents > 0)
 );
 
-CREATE TABLE financier_balances (
-    financier_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    available_balance_cents BIGINT NOT NULL DEFAULT 0,
-    invested_capital_cents BIGINT NOT NULL DEFAULT 0,
-    accumulated_yield_cents BIGINT NOT NULL DEFAULT 0,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chk_non_negative_balance CHECK (available_balance_cents >= 0)
-);
+CREATE INDEX idx_investments_operation ON investments(operation_id);
+CREATE INDEX idx_investments_financier ON investments(financier_id);
 
 -- ----------------------------------------------------------------------------
--- 5. RECAUDO BANCARIO Y LIQUIDACIÓN (WATERFALL)
+-- 5. SINCRONIZACIÓN BLOCKCHAIN (TRANSACTIONAL OUTBOX, ADR-0004)
 -- ----------------------------------------------------------------------------
-
-CREATE TABLE bank_receipts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    operation_id UUID NOT NULL REFERENCES operations(id),
-    bank_reference VARCHAR(100) NOT NULL UNIQUE,
-    received_amount_cents BIGINT NOT NULL,
-    bank_account_dest VARCHAR(50) NOT NULL,
-    payment_method VARCHAR(30) NOT NULL, -- PSE, ACH, WIRE
-    payer_source_nit VARCHAR(20) NOT NULL,
-    receipt_proof_hash CHAR(64) NOT NULL, -- Hash SHA-256 del extracto
-    received_at TIMESTAMPTZ NOT NULL,
-    reconciled_by UUID REFERENCES users(id),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE settlement_distributions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    bank_receipt_id UUID NOT NULL REFERENCES bank_receipts(id),
-    operation_id UUID NOT NULL REFERENCES operations(id),
-    financier_id UUID NOT NULL REFERENCES users(id),
-    participation_id UUID NOT NULL REFERENCES participations(id),
-    
-    -- Distribución exacta con Algoritmo del Mayor Resto (Invariante I9)
-    capital_paid_cents BIGINT NOT NULL,
-    yield_paid_cents BIGINT NOT NULL,
-    proofly_fee_paid_cents BIGINT NOT NULL DEFAULT 0,
-    distributed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- ----------------------------------------------------------------------------
--- 6. SINCRONIZACIÓN BLOCKCHAIN (TRANSACTIONAL OUTBOX)
--- ----------------------------------------------------------------------------
+-- Compartido entre apps/api (productor) y apps/worker (consumidor con SKIP LOCKED).
 
 CREATE TABLE outbox_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id VARCHAR(64) PRIMARY KEY,
     aggregate_type VARCHAR(50) NOT NULL,
     aggregate_id VARCHAR(100) NOT NULL,
     event_type VARCHAR(100) NOT NULL,
     payload JSONB NOT NULL,
     status outbox_status NOT NULL DEFAULT 'PENDING',
     retry_count INT NOT NULL DEFAULT 0,
-    max_retries INT NOT NULL DEFAULT 5,
-    next_retry_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    error_log TEXT,
+    last_error TEXT,
     tx_hash VARCHAR(66),
     block_number BIGINT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     processed_at TIMESTAMPTZ
 );
 
-CREATE TABLE indexed_chain_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    contract_address CHAR(42) NOT NULL,
-    event_name VARCHAR(50) NOT NULL,
-    tx_hash CHAR(66) NOT NULL,
-    block_number BIGINT NOT NULL,
-    block_hash CHAR(66) NOT NULL,
-    event_payload JSONB NOT NULL,
-    indexed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uq_tx_event UNIQUE (tx_hash, event_name, block_number)
-);
-
--- ----------------------------------------------------------------------------
--- 7. ÍNDICES DE RENDIMIENTO
--- ----------------------------------------------------------------------------
-
-CREATE INDEX idx_operations_status ON operations(status);
-CREATE INDEX idx_operations_freelancer ON operations(freelancer_id);
-CREATE INDEX idx_operations_company ON operations(company_id);
-CREATE INDEX idx_operations_due_date ON operations(due_date);
-CREATE INDEX idx_participations_operation ON participations(operation_id);
-CREATE INDEX idx_participations_financier ON participations(financier_id);
-CREATE INDEX idx_outbox_pending ON outbox_events(status, next_retry_at) WHERE status = 'PENDING';
-CREATE INDEX idx_indexed_events_block ON indexed_chain_events(block_number);
-
+CREATE INDEX idx_outbox_pending ON outbox_events(status, created_at) WHERE status = 'PENDING';

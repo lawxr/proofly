@@ -75,7 +75,11 @@ describe('Postgres Repositories Unit Tests', () => {
     await repo.save(op);
     assert.equal(client.queries.length, 1);
     assert.ok(client.queries[0]?.sql.includes('INSERT INTO operations'));
-    assert.equal(client.queries[0]?.params?.[3], '500000000');
+    // Reconciled schema: payer fields are persisted (not defaulted on read).
+    assert.ok(client.queries[0]?.sql.includes('payer_nit'));
+    assert.equal(client.queries[0]?.params?.[3], '901234567-8');
+    assert.equal(client.queries[0]?.params?.[4], 'Rappi SAS');
+    assert.equal(client.queries[0]?.params?.[5], '500000000');
 
     // Simular retorno de SELECT
     client.mockRows = [{
@@ -103,7 +107,45 @@ describe('Postgres Repositories Unit Tests', () => {
     assert.equal(found?.status, OperationStatus.QUOTED);
   });
 
-  it('2. PostgresOutboxRepository uses SKIP LOCKED for concurrent worker safety (ADR-0004)', async () => {
+  it('2. PostgresUserRepository persists password_hash and reconciled columns round-trip', async () => {
+    const repo = new PostgresUserRepository(client);
+    const now = new Date();
+    const user = new UserEntity({
+      id: 'user-sql-001',
+      email: 'persona@proofly.co',
+      legalName: 'Persona Real',
+      taxId: '1098765432',
+      role: UserRole.INVESTOR,
+      kycStatus: KycStatus.VERIFIED,
+      passwordHash: 'scrypt$deadbeef',
+      tier: FreelancerTier.TIER_1_SEED,
+      availableLimitCents: 200000000n,
+      executionScore: 90,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    await repo.save(user);
+    assert.ok(client.queries[0]?.sql.includes('password_hash'));
+    // INVESTOR maps to FINANCIER on write; password hash is passed through.
+    assert.equal(client.queries[0]?.params?.[4], 'FINANCIER');
+    assert.equal(client.queries[0]?.params?.[6], 'scrypt$deadbeef');
+
+    client.mockRows = [{
+      id: user.id, email: user.email, legal_name: user.legalName, tax_id: user.taxId,
+      role: 'FINANCIER', kyc_status: 'VERIFIED', password_hash: 'scrypt$deadbeef',
+      wallet_address: null, tier: 'TIER_1_SEED', available_quota_cents: '200000000',
+      execution_score: 90, completed_operations_count: 0,
+      created_at: now.toISOString(), updated_at: now.toISOString()
+    }];
+    const found = await repo.findByEmail(user.email);
+    assert.ok(found);
+    assert.equal(found?.role, UserRole.INVESTOR); // FINANCIER maps back to INVESTOR
+    assert.equal(found?.passwordHash, 'scrypt$deadbeef');
+    assert.equal(found?.availableLimitCents, 200000000n);
+  });
+
+  it('3. PostgresOutboxRepository uses SKIP LOCKED for concurrent worker safety (ADR-0004)', async () => {
     const repo = new PostgresOutboxRepository(client);
 
     await repo.recordEvent({
