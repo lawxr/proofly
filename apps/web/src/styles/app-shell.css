@@ -14,7 +14,7 @@
 .app-boot p { color: #6C577E; font-size: 14px; }
 
 /* Top bar */
-.app-top { display: flex; align-items: center; justify-content: space-between; padding: 20px 22px 10px; }
+.app-top { display: flex; align-items: center; justify-content: space-between; padding: 20px 22px 10px; position: relative; z-index: 49; }
 .app-id { display: flex; align-items: center; gap: 12px; }
 .app-avatar { width: 44px; height: 44px; border-radius: 50%; background: #EADCF9; color: #7300FF; display: grid; place-items: center; font-weight: 800; font-size: 14px; }
 .app-id div { display: grid; gap: 2px; }
@@ -31,7 +31,7 @@
 
 /* Notifications dropdown — standard, opens downward from the bell */
 .app-notif-anchor { position: relative; }
-.app-notif-scrim { position: fixed; inset: 0; z-index: 48; }
+.app-notif-scrim { position: fixed; inset: 0; z-index: 48; pointer-events: none; }
 .app-notif-menu { position: absolute; top: calc(100% + 10px); right: 0; z-index: 50; width: min(320px, calc(100vw - 32px)); max-height: min(70svh, 440px); overflow-y: auto; background: #fff; border: 1px solid #ECE0F8; border-radius: 18px; box-shadow: 0 18px 50px -16px #38165540; padding: 8px; }
 .app-notif-head { font-size: 13px; font-weight: 800; color: #3A1670; padding: 8px 10px 10px; }
 .app-notif-list { display: grid; gap: 4px; }

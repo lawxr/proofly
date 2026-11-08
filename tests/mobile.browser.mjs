@@ -63,7 +63,7 @@ try {
   await amountInput.fill(String(Math.floor(Number(remainingCents) / 100)));
   // Live estimate shows without an intermediate button; the invest button carries the amount.
   await page.locator('.app-invest-preview').getByText('Ganancia estimada').waitFor();
-  await page.getByRole('button', { name: /^Invertir/ }).click();
+  await page.locator('.app-sheet').getByRole('button', { name: /^Invertir/ }).click();
   await page.getByRole('button', { name: 'Registrar recaudo', exact: true }).click();
   await page.getByText('Recaudo distribuido', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
@@ -74,8 +74,8 @@ try {
   await page.getByRole('dialog').getByLabel('Tipo').selectOption('MILESTONE');
   await page.getByLabel('Título').fill('QA-HITO');
   await page.getByLabel('Empresa pagadora').fill('Empresa de pruebas');
-  await page.getByLabel('Valor (COP)', { exact: true }).fill('1000000');
-  await page.getByLabel('Plazo', { exact: true }).selectOption('45');
+  await page.locator('.app-sheet input[name="amount"]').fill('1000000');
+  await page.locator('.app-sheet select[name="term"]').selectOption('45');
   // Live quote preview shows the net advance before creating.
   await page.locator('.app-quote-advance').getByText('Recibes por anticipado').waitFor();
   await page.getByLabel('El entregable está listo').check();
@@ -102,9 +102,11 @@ try {
     return menu.top >= bell.bottom - 2;
   });
   assert.ok(belowBell, 'notifications dropdown opens downward from the bell');
-  await page.locator('.app-notif-scrim').click();
+  // Dismiss with Escape (outside-click also closes it), then confirm it closed.
+  await page.keyboard.press('Escape');
+  await page.locator('.app-notif-menu').waitFor({ state: 'hidden' });
 
-  // Settings: its own screen (not a modal), reached from the profile.
+  // Settings: its own full-screen page, reached from the profile.
   await page.getByRole('button', { name: 'Abrir tu cuenta', exact: true }).click();
   await page.waitForFunction(() => location.hash === '#settings');
   await page.getByRole('heading', { name: 'Ajustes', exact: true }).waitFor();
@@ -135,5 +137,5 @@ try {
   await page.goto(`${base}/app/`);
   await page.waitForURL('**/login');
   assert.deepEqual(errors, []);
-  console.log('PASS: real signup → session; simplified MVP + desktop two-zone layout; 4-tab nav; notifications bell + settings sheet with logout; dedicated invest flow with live estimate; invest in market + settlement; seed tier owner creates one operation and cannot invest in it; reload persists; four routes clean at 320/390/430/768/1440; no JS errors.');
+  console.log('PASS: real signup → session; simplified MVP + desktop two-zone layout; 4-tab nav; notifications dropdown (opens downward, closes on Escape/outside); settings as a full-screen page with logout; dedicated invest flow with live estimate; raise flow with live quote; invest in market + settlement; seed tier owner creates one operation and cannot invest in it; reload persists; five routes clean at 320/390/430/768/1440; no JS errors.');
 } finally { await browser.close(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }

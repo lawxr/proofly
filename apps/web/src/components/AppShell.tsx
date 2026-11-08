@@ -125,7 +125,16 @@ export default function AppShell() {
   useEffect(() => { let alive = true; request('/api/app').then(v => { if (alive) setData(v); }).catch(r => { if (alive) setError(r.message); }); return () => { alive = false; }; }, []);
   useEffect(() => { const h = () => { const hash = location.hash.slice(1); if (PAGES.includes(hash as Page)) setPage(hash as Page); }; addEventListener('hashchange', h); return () => removeEventListener('hashchange', h); }, []);
   useEffect(() => { if (!notice) return; const t = setTimeout(() => setNotice(''), 4000); return () => clearTimeout(t); }, [notice]);
-  function go(next: Page) { setPage(next); location.hash = next; scrollTo({ top: 0, behavior: 'auto' }); }
+  // Close the notifications dropdown on an outside click or Escape.
+  useEffect(() => {
+    if (!notifOpen) return;
+    const onDown = (e: MouseEvent) => { if (!(e.target as HTMLElement)?.closest('.app-notif-anchor')) setNotifOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setNotifOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [notifOpen]);
+  function go(next: Page) { setPage(next); setNotifOpen(false); location.hash = next; scrollTo({ top: 0, behavior: 'auto' }); }
   function open(op: Operation) { setSelected(op.id); setAmount('250000'); setAccepted(false); setError(''); }
   async function mutate(action: string, input: Record<string, unknown> = {}) {
     if (busy) return;
@@ -230,7 +239,7 @@ export default function AppShell() {
         <div className="app-notif-anchor">
           <button className="app-icon-btn app-bell" onClick={toggleNotifications} aria-haspopup="true" aria-expanded={notifOpen} aria-label={unread ? `Notificaciones, ${unread} sin leer` : 'Notificaciones'}><Icon name="bell" size={20}/>{unread > 0 && <span className="app-badge" aria-hidden="true">{unread > 9 ? '9+' : unread}</span>}</button>
           {notifOpen && <>
-            <div className="app-notif-scrim" onClick={() => setNotifOpen(false)} aria-hidden="true"/>
+            <div className="app-notif-scrim" aria-hidden="true"/>
             <div className="app-notif-menu" role="menu">
               <div className="app-notif-head">Notificaciones</div>
               {data.events.length
