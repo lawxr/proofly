@@ -1,0 +1,15 @@
+/* Proofly cookie-consent banner — bottom sheet, light mode, violet accent. */
+.cookie-consent { position: fixed; left: 50%; transform: translateX(-50%); bottom: max(16px, env(safe-area-inset-bottom)); z-index: 90; width: min(calc(100% - 28px), 760px); background: #fff; border: 1px solid #ECE0F8; border-radius: 20px; box-shadow: 0 18px 50px -16px #38165545; padding: 18px 20px; font-family: 'Plus Jakarta Sans', sans-serif; }
+.cookie-consent-body { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.cookie-consent-body p { flex: 1; min-width: 240px; font-size: 13px; line-height: 1.6; color: #4D3A5E; margin: 0; }
+.cookie-consent-body a { color: #7300FF; font-weight: 600; }
+.cookie-consent-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.cookie-consent-actions button { min-height: 42px; padding: 10px 20px; border-radius: 999px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: background .15s, border-color .15s; }
+.cookie-consent-reject { background: #fff; border-color: #D6BEF2; color: #6C577E; }
+.cookie-consent-reject:hover { background: #F7F1FE; }
+.cookie-consent-accept { background: #7300FF; color: #fff; }
+.cookie-consent-accept:hover { background: #5700C3; }
+@media (max-width: 560px) {
+  .cookie-consent-actions { width: 100%; }
+  .cookie-consent-actions button { flex: 1; }
+}

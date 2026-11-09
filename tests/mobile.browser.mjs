@@ -26,6 +26,24 @@ try {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(base);
+  // Cookie consent banner: shown on first visit, honest copy, links to the policies.
+  await page.locator('.cookie-consent').waitFor();
+  await page.locator('.cookie-consent').getByRole('link', { name: 'política de cookies' }).waitFor();
+  await page.locator('.cookie-consent-accept').click();
+  await page.locator('.cookie-consent').waitFor({ state: 'hidden' });
+  // The choice persists: a reload does not bring the banner back.
+  await page.reload();
+  assert.equal(await page.locator('.cookie-consent').count(), 0, 'consent choice must persist across reloads');
+
+  // Legal pages render on their own routes, served by the SPA.
+  await page.goto(`${base}/privacidad`);
+  await page.getByRole('heading', { name: 'Política de tratamiento de datos personales', exact: true }).waitFor();
+  assert.ok(await page.getByText('Ley 1581 de 2012').count() >= 1, 'privacy policy cites the Colombian law');
+  await page.goto(`${base}/cookies`);
+  await page.getByRole('heading', { name: 'Política de cookies', exact: true }).waitFor();
+  await page.getByText('proofly_session', { exact: false }).waitFor();
+
+  await page.goto(base);
   await page.getByRole('button', { name: 'Empezar', exact: true }).click();
   await page.waitForURL('**/login');
   // Welcome screen → create a real account. No name field: it comes from KYC later.
@@ -169,5 +187,5 @@ try {
   await page.goto(`${base}/app/`);
   await page.waitForURL('**/login');
   assert.deepEqual(errors, []);
-  console.log('PASS: signup without a name (KYC provides it); KYC unlocks operating; invest market with summary, filter and rich opportunity cards; redesigned raise form (asset tabs, live quote, event checklist, conditional invoice attachment, gated submit); invest live estimate + settlement; seed tier one active op; honest baseline with no investment history; contracts tab groups raised operations; reload persists; five routes clean 320-1440; no JS errors.');
+  console.log('PASS: cookie consent banner accepts and persists; privacy + cookie policies render (Ley 1581); signup without a name (KYC provides it); KYC unlocks operating; invest market with summary, filter and rich opportunity cards; redesigned raise form (asset tabs, live quote, event checklist, conditional invoice attachment, gated submit); invest live estimate + settlement; seed tier one active op; honest baseline with no investment history; contracts tab groups raised operations; reload persists; five routes clean 320-1440; no JS errors.');
 } finally { await browser.close(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }

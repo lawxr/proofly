@@ -149,10 +149,16 @@ export function Footer({ onPublish }: FooterProps) {
       <div ref={groundRef} className="proofly-footer-ground bg-surface pt-10 sm:pt-12 px-6 sm:px-14 overflow-hidden relative">
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
-          <p className="text-xs sm:text-sm text-ink font-medium leading-relaxed max-w-md">
-            Liquidez por hitos y facturas simplificada para independientes modernos.<br />
-            Adelanta tus cobros, recibe pesos en la cuenta que elijas.
-          </p>
+          <div className="max-w-md">
+            <p className="text-xs sm:text-sm text-ink font-medium leading-relaxed">
+              Liquidez por hitos y facturas simplificada para independientes modernos.<br />
+              Adelanta tus cobros, recibe pesos en la cuenta que elijas.
+            </p>
+            <nav className="mt-4 flex flex-wrap gap-x-5 gap-y-2" aria-label="Enlaces legales">
+              <a href="/privacidad" className="text-xs font-bold text-ink/70 hover:text-electric transition-colors">Privacidad</a>
+              <a href="/cookies" className="text-xs font-bold text-ink/70 hover:text-electric transition-colors">Cookies</a>
+            </nav>
+          </div>
 
           {/* Social icons */}
           <div className="flex items-center gap-3">

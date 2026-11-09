@@ -146,6 +146,10 @@ export function createProoflyServer({ root = process.cwd(), secureCookies = proc
         if (pathname.startsWith('/login') && session(req)) return redirect(res, '/app/');
         return serve(res, dist, 'index.html');
       }
+      // Public legal pages: rendered by the SPA, no session required.
+      if (pathname === '/privacidad' || pathname === '/privacidad/' || pathname === '/cookies' || pathname === '/cookies/') {
+        return serve(res, dist, 'index.html');
+      }
       if (pathname.startsWith('/assets/')) return serve(res, resolve(dist, 'assets'), pathname.slice(8));
       return json(res, 404, 'not_found');
     } catch {
