@@ -402,12 +402,17 @@
 .app-hero-balance::after { display: none; }
 .app-hero-label, .app-hero-trend, .app-hero-quota span { color: #E4D3FF; }
 .app-hero-amount { font-size: clamp(32px, 5vw, 44px); line-height: 1.2; font-weight: 600; }
-.app-twin-card { border-radius: 16px; box-shadow: none; padding: 18px; gap: 8px; }
-.app-twin-card::before { display: none; }
-.app-twin-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px -18px #1E0B3B66; }
+.app-twin-card { border-radius: 20px; padding: 18px; gap: 6px; }
+.app-twin-card:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -20px #7300ff6e; }
+/* Brand illustration on each action card; floats gently on hover. */
+.app-twin-art { width: 72px; height: 72px; object-fit: contain; margin-bottom: 4px; transition: transform .25s cubic-bezier(.22,1,.36,1); }
+.app-twin-card:hover .app-twin-art { transform: translateY(-4px) rotate(-3deg); }
 .app-action-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; color: var(--app-accent); background: #F2E8FD; margin-bottom: 6px; }
 .app-twin-raise .app-action-icon { color: #7300FF; background: #F2E8FD; }
 .app-twin-card h3 { font-size: 17px; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) {
+  .app-twin-card:hover .app-twin-art { transform: none; }
+}
 .app-account-prompt { display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; gap: 12px; padding: 16px; background: #fff; border: 1px solid #E6D8F6; border-radius: 16px; }
 .app-account-prompt > div { flex: 1; min-width: 0; }
 .app-account-prompt strong { font-size: 13px; }
@@ -458,6 +463,50 @@
   .app-detail-facts dd { font-size: 13px; }
 }
 @media (min-width: 480px) { .app-sheet { width: min(520px, calc(100vw - 48px)); border-radius: 20px; padding: 28px; } }
+
+/* --- Motion: fintech-style entrance and feedback --- */
+
+/* Each page's top-level blocks rise and fade in, lightly staggered, when a tab
+   mounts. Keyed to the page so switching tabs replays the entrance. */
+@keyframes app-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.app-main > * { animation: app-rise .4s cubic-bezier(.22, 1, .36, 1) both; }
+.app-main > *:nth-child(2) { animation-delay: .05s; }
+.app-main > *:nth-child(3) { animation-delay: .1s; }
+.app-main > *:nth-child(4) { animation-delay: .15s; }
+.app-main > *:nth-child(n+5) { animation-delay: .2s; }
+
+/* Opportunity, contract and list cards settle in with a soft stagger. */
+@keyframes app-pop {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.app-op-card, .app-contract, .app-row, .app-act {
+  animation: app-pop .38s cubic-bezier(.22, 1, .36, 1) both;
+}
+.app-op-grid > :nth-child(2), .app-contract-grid > :nth-child(2), .app-list > :nth-child(2) { animation-delay: .04s; }
+.app-op-grid > :nth-child(3), .app-contract-grid > :nth-child(3), .app-list > :nth-child(3) { animation-delay: .08s; }
+.app-op-grid > :nth-child(4), .app-contract-grid > :nth-child(4), .app-list > :nth-child(4) { animation-delay: .12s; }
+.app-op-grid > :nth-child(n+5), .app-contract-grid > :nth-child(n+5), .app-list > :nth-child(n+5) { animation-delay: .16s; }
+
+/* The bottom-sheet modal eases up from the bottom. */
+@keyframes app-sheet-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.app-sheet[open] { animation: app-sheet-in .3s cubic-bezier(.22, 1, .36, 1); }
+.app-sheet::backdrop { animation: app-fade-in .25s ease both; }
+@keyframes app-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* The progress bars grow from empty to their width. */
+.app-op-progress i, .app-contract .app-op-progress i { transform-origin: left; animation: app-grow .6s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes app-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Toast slides up into view. */
+.app-toast { animation: app-rise .3s cubic-bezier(.22, 1, .36, 1) both; }
+
 @media (prefers-reduced-motion: reduce) {
   .proofly-app *, .app-sheet * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }

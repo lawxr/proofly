@@ -373,7 +373,7 @@ export default function AppShell() {
         </div>
       </header>
 
-      <main className="app-main">
+      <main className="app-main" key={page}>
         {error && !active && !creating && <p className="app-error" role="alert">{error}</p>}
 
         {page === 'home' && <>
@@ -398,11 +398,11 @@ export default function AppShell() {
           {/* Two actions with color accent and depth. */}
           <div className="app-twin">
             <button className="app-twin-card app-twin-invest" onClick={() => go('invest')}>
-              <span className="app-action-icon"><Icon name="growth" size={24}/></span>
+              <img className="app-twin-art" src="/assets/proofly/ilustracion-crecer.webp" alt="" width={72} height={72} loading="lazy" decoding="async"/>
               <h3>Invertir</h3><p>Haz crecer tu capital en operaciones.</p><span className="app-twin-go"><Icon name="arrow" size={18}/></span>
             </button>
             <button className="app-twin-card app-twin-raise" onClick={() => openCreate('INVOICE')}>
-              <span className="app-action-icon"><Icon name="file" size={24}/></span>
+              <img className="app-twin-art" src="/assets/proofly/ilustracion-tiempo.webp" alt="" width={72} height={72} loading="lazy" decoding="async"/>
               <h3>Anticipar</h3><p>Adelanta el cobro de tus facturas.</p><span className="app-twin-go"><Icon name="arrow" size={18}/></span>
             </button>
           </div>
