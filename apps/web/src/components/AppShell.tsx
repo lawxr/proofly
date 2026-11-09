@@ -87,6 +87,18 @@ function Icon({ name, size = 22 }: { name: string; size?: number }) {
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.file}</svg>;
 }
+// A laurel branch for the settings identity crest; mirrored by side.
+function Laurel({ side }: { side: 'left' | 'right' }) {
+  return (
+    <svg className={`app-laurel app-laurel-${side}`} width="40" height="64" viewBox="0 0 40 64" fill="none" aria-hidden="true">
+      <path d="M30 60C18 52 12 40 12 28 12 18 16 8 24 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      {[10, 20, 30, 40, 50].map((y, i) => (
+        <path key={i} d={`M${26 - i} ${y}c-6 1-11-2-13-7 5-2 11-1 14 4`} fill="currentColor" opacity="0.9"/>
+      ))}
+    </svg>
+  );
+}
+
 function Modal({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => { ref.current?.showModal(); return () => { ref.current?.close(); }; }, []);
@@ -309,10 +321,28 @@ export default function AppShell() {
       </header>
       <main className="app-main app-main-plain">
         <div className="app-settings">
-          <div className="app-settings-id"><span className="app-avatar app-avatar-lg">{initials(data.me.name)}</span><div><strong>{data.me.name}</strong><span>Nivel {tier} · cupo {money(data.me.availableLimitCents)}</span></div></div>
+          {/* Identity crest: centered avatar framed by laurels, name and tier badge. */}
+          <div className="app-crest">
+            <Laurel side="left"/>
+            <span className="app-avatar app-avatar-xl">{initials(data.me.name)}</span>
+            <Laurel side="right"/>
+          </div>
+          <div className="app-crest-id">
+            <strong>{data.me.name}</strong>
+            <span className="app-tier-badge">Nivel {tier}</span>
+          </div>
 
           {acctMsg && <p className="app-ok" role="status">{acctMsg}</p>}
           {acctErr && <p className="app-error" role="alert">{acctErr}</p>}
+
+          <div className="app-settings-group">
+            <h3>Preferencias</h3>
+            <div className="app-pref-list">
+              <div className="app-pref-row"><span>Idioma</span><span className="app-pref-value">Español</span></div>
+              <div className="app-pref-row"><span>Moneda</span><span className="app-pref-value">COP · peso colombiano</span></div>
+              <div className="app-pref-row"><span>Apariencia</span><span className="app-pref-value">Modo claro</span></div>
+            </div>
+          </div>
 
           {data.me.kycStatus === 'VERIFIED'
             ? <div className="app-settings-group">

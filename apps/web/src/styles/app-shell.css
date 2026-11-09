@@ -50,12 +50,25 @@
 
 /* Settings sheet */
 .app-settings { display: grid; gap: 16px; }
-.app-settings-id { display: flex; align-items: center; gap: 14px; }
-.app-avatar-lg { width: 56px; height: 56px; font-size: 18px; }
-.app-settings-id strong { display: block; font-size: 17px; font-weight: 800; }
-.app-settings-id span { font-size: 13px; color: #8B769D; }
+
+/* Identity crest: avatar framed by laurels, name + tier badge, centered. */
+.app-crest { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 4px; }
+.app-laurel { color: #C9ACEA; flex-shrink: 0; }
+.app-laurel-right { transform: scaleX(-1); }
+.app-avatar-xl { width: 92px; height: 92px; font-size: 30px; box-shadow: 0 10px 30px -12px #7300ff55; }
+.app-crest-id { display: grid; justify-items: center; gap: 8px; text-align: center; margin: 2px 0 4px; }
+.app-crest-id strong { font-size: 22px; font-weight: 800; letter-spacing: -.03em; }
+.app-tier-badge { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--app-accent); background: #F2E8FD; padding: 5px 14px; border-radius: 999px; }
+
 .app-settings-group { display: grid; gap: 12px; padding: 16px; background: #F8F4FD; border-radius: 18px; }
-.app-settings-group h3 { font-size: 13px; font-weight: 800; letter-spacing: -.02em; margin: 0; color: #3A1670; }
+/* iOS-style section header: small uppercase label above the card. */
+.app-settings-group h3 { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; margin: 0; color: #8B769D; }
+
+/* Preference list: label left, value right, hairline rows. */
+.app-pref-list { display: grid; background: #fff; border-radius: 14px; overflow: hidden; }
+.app-pref-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; font-size: 14px; font-weight: 600; }
+.app-pref-row + .app-pref-row { border-top: 1px solid #F0E7FA; }
+.app-pref-value { font-size: 14px; font-weight: 600; color: #8B769D; }
 .app-settings-group .app-secondary { width: 100%; }
 .app-settings-group .app-form-label input { background: #fff; }
 .app-settings-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; }
