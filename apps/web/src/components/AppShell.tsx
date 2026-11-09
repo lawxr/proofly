@@ -90,8 +90,8 @@ function Icon({ name, size = 22 }: { name: string; size?: number }) {
 function Modal({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => { ref.current?.showModal(); return () => { ref.current?.close(); }; }, []);
-  return <dialog ref={ref} className="app-sheet" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose(); }} aria-labelledby="app-sheet-title">
-    <div className="app-sheet-head"><h2 id="app-sheet-title">{title}</h2><button className="app-icon-btn" aria-label="Cerrar" onClick={onClose}><Icon name="close"/></button></div>{children}
+  return <dialog ref={ref} className="app-sheet" onCancel={event => { event.preventDefault(); onClose(); }} onClick={event => { if (event.target === event.currentTarget) onClose(); }} aria-labelledby="app-sheet-title">
+    <div className="app-sheet-head"><h2 id="app-sheet-title" tabIndex={-1}>{title}</h2><button className="app-icon-btn" aria-label="Cerrar" onClick={onClose}><Icon name="close"/></button></div>{children}
   </dialog>;
 }
 
@@ -107,7 +107,10 @@ export default function AppShell() {
   const [raiseAmount, setRaiseAmount] = useState('1000000');
   const [raiseTerm, setRaiseTerm] = useState('30');
   const [checks, setChecks] = useState<Record<string, boolean>>({});
-  const [attachment, setAttachment] = useState<string>('');
+  const [createStep, setCreateStep] = useState(0);
+  const [raiseDetails, setRaiseDetails] = useState({ title: '', payer: '' });
+  const [investStage, setInvestStage] = useState<'detail' | 'review' | 'receipt'>('detail');
+  const [riskAccepted, setRiskAccepted] = useState(false);
   const [investFilter, setInvestFilter] = useState<'ALL' | 'INVOICE' | 'MILESTONE'>('ALL');
   const [contractId, setContractId] = useState('');
   const [accepted, setAccepted] = useState(false);
@@ -117,6 +120,17 @@ export default function AppShell() {
   const [seen, setSeen] = useState<string>(() => { try { return localStorage.getItem('proofly-seen-event') || ''; } catch { return ''; } });
   const [acctMsg, setAcctMsg] = useState('');
   const [acctErr, setAcctErr] = useState('');
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const dialog = document.querySelector<HTMLDialogElement>('.app-sheet[open]');
+      if (!dialog) return;
+      dialog.scrollTop = 0;
+      const heading = dialog.querySelector<HTMLElement>('.app-wizard-panel:not([hidden]) legend, .app-review-heading h3, .app-receipt h3') ?? dialog.querySelector<HTMLElement>('h2');
+      heading?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [createStep, investStage, creating, selected]);
 
   async function verifyKyc(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -175,7 +189,7 @@ export default function AppShell() {
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
   }, [notifOpen]);
   function go(next: Page) { setPage(next); setNotifOpen(false); location.hash = next; scrollTo({ top: 0, behavior: 'auto' }); }
-  function open(op: Operation) { setSelected(op.id); setAmount('250000'); setAccepted(false); setError(''); }
+  function open(op: Operation) { setInvestStage('detail'); setRiskAccepted(false); setSelected(op.id); setAmount('250000'); setAccepted(false); setError(''); }
   async function mutate(action: string, input: Record<string, unknown> = {}) {
     if (busy) return;
     setBusy(true); setError('');
@@ -192,15 +206,16 @@ export default function AppShell() {
   }
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (createStep !== 2) return;
     const form = new FormData(event.currentTarget);
     try {
       const required = kind === 'MILESTONE' ? ['ready'] : ['validated', 'received', 'delivered', 'accepted'];
       const allConfirmed = required.every(k => checks[k]);
       const result = await mutate('create', { assetType: kind, title: form.get('title'), payerLegalName: form.get('company'), nominalAmountCents: cents(String(form.get('amount'))), termDays: Number(form.get('term')), checks: allConfirmed, contractId: kind === 'MILESTONE' && contractId ? contractId : undefined });
-      if (result) { setCreating(false); setSelected(result.id); go('raise'); }
+      if (result) { setCreating(false); setSelected(result.id); setInvestStage('detail'); setNotice('Solicitud registrada. Consulta el siguiente paso en tu operación.'); go('raise'); }
     } catch (r) { setError(r instanceof Error ? r.message : 'Revisa los datos.'); }
   }
-  function openCreate(assetKind: string, contractId?: string) { setKind(assetKind); setChecks({}); setAttachment(''); setRaiseAmount('1000000'); setRaiseTerm('30'); setContractId(contractId ?? ''); setError(''); setCreating(true); }
+  function openCreate(assetKind: string, contractId?: string) { setKind(assetKind); setChecks({}); setCreateStep(0); setRaiseDetails({ title: '', payer: '' }); setSelected(null); setRaiseAmount('1000000'); setRaiseTerm('30'); setContractId(contractId ?? ''); setError(''); setCreating(true); }
 
   if (!data) return <main className="app-boot"><div className="font-script text-3xl text-electric">Proofly</div><p role="status">{error || 'Preparando tu espacio…'}</p>{error && <button className="app-primary" onClick={() => location.reload()}>Reintentar</button>}</main>;
 
@@ -268,7 +283,7 @@ export default function AppShell() {
       </div>
       <div className="app-op-figures">
         <div><span>Monto</span><strong>{money(op.nominalAmountCents)}</strong></div>
-        <div><span>Ganancia estimada</span><strong className="app-positive">+{money(estProfit.toString())}</strong></div>
+        <div><span>Estimación sobre el saldo</span><strong className="app-positive">+{money(estProfit.toString())}</strong></div>
         <div><span>Plazo</span><strong>{op.termDays} días</strong></div>
       </div>
       <div className="app-op-progress"><i style={{ width: `${pct}%` }}/></div>
@@ -306,7 +321,7 @@ export default function AppShell() {
                   <div><dt className="app-kyc-label">Nombre</dt><dd className="app-kyc-value">{data.me.name}</dd></div>
                   <span className="app-kyc-badge is-verified">Verificado</span>
                 </div>
-                <p className="app-muted">Tu identidad está verificada. El nombre proviene de tu documento.</p>
+                <p className="app-muted">Estado de identidad registrado en tu cuenta.</p>
               </div>
             : <form className="app-settings-group" onSubmit={verifyKyc}>
                 <h3>Verifica tu identidad</h3>
@@ -362,7 +377,7 @@ export default function AppShell() {
         {error && !active && !creating && <p className="app-error" role="alert">{error}</p>}
 
         {page === 'home' && <>
-          <h1 className="app-title">Tu capital,<br/>más flexible</h1>
+          <div className="app-page-intro"><span className="app-eyebrow">Resumen de tu cuenta · COP</span><h1 className="app-title">Tu capital, más flexible</h1><p className="app-lead">Tus inversiones y tu financiación, en un solo lugar.</p></div>
 
           {/* Balance hero: the two sides of the account, with a live spark. */}
           <section className="app-hero-balance">
@@ -383,15 +398,16 @@ export default function AppShell() {
           {/* Two actions with color accent and depth. */}
           <div className="app-twin">
             <button className="app-twin-card app-twin-invest" onClick={() => go('invest')}>
-              <img src="/assets/proofly/ilustracion-crecer.png" alt="" width={96} height={96}/>
+              <span className="app-action-icon"><Icon name="growth" size={24}/></span>
               <h3>Invertir</h3><p>Haz crecer tu capital en operaciones.</p><span className="app-twin-go"><Icon name="arrow" size={18}/></span>
             </button>
             <button className="app-twin-card app-twin-raise" onClick={() => openCreate('INVOICE')}>
-              <img src="/assets/proofly/ilustracion-tiempo.png" alt="" width={96} height={96}/>
+              <span className="app-action-icon"><Icon name="file" size={24}/></span>
               <h3>Anticipar</h3><p>Adelanta el cobro de tus facturas.</p><span className="app-twin-go"><Icon name="arrow" size={18}/></span>
             </button>
           </div>
 
+          {data.me.kycStatus !== 'VERIFIED' && <div className="app-account-prompt"><span className="app-row-icon"><Icon name="file" size={20}/></span><div><strong>Prepara tu cuenta para operar</strong><p>La verificación de identidad es necesaria para invertir y solicitar financiación.</p></div><button className="app-link" onClick={() => go('settings')}>Verificar identidad<Icon name="chevron" size={16}/></button></div>}
           <div className="app-sec-head"><h2>Actividad reciente</h2>{mine.some(op => op.contractId) && <button className="app-link" onClick={() => go('contracts')}>Ver contratos</button>}</div>
           {data.events.length
             ? <div className="app-list">{data.events.slice(0, 4).map(ev => <div key={ev.id} className="app-act"><span className="app-row-icon"><Icon name={ev.kind === 'settle' ? 'check' : ev.kind === 'participate' ? 'growth' : 'clock'} size={18}/></span><div><strong>{ev.title}</strong><span>{new Date(ev.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</span></div></div>)}</div>
@@ -411,11 +427,11 @@ export default function AppShell() {
           const bestRate = market.reduce((m, op) => Math.max(m, op.effectiveAnnualRate), 0);
           return <>
             <h1 className="app-title">Invertir</h1>
-            <p className="app-lead">Aporta capital a operaciones verificadas y recibe tu retorno al vencimiento, en pesos.</p>
+            <p className="app-lead">Consulta operaciones, compara sus condiciones y revisa los riesgos antes de aportar capital.</p>
             {market.length > 0 && <section className="app-invest-summary">
               <div><span>Oportunidades</span><strong>{market.length}</strong></div>
-              <div><span>Retorno hasta</span><strong className="app-positive">{percent(bestRate)}</strong></div>
-              <div><span>Respaldo</span><strong>Entregas confirmadas</strong></div>
+              <div><span>Tasa anual hasta</span><strong className="app-positive">{percent(bestRate)}</strong></div>
+              <div><span>Moneda</span><strong>Pesos colombianos</strong></div>
             </section>}
             {market.length > 0 && <div className="app-segments" role="tablist">
               {([['ALL', 'Todas'], ['INVOICE', 'Facturas'], ['MILESTONE', 'Hitos']] as const).map(([k, label]) =>
@@ -501,62 +517,71 @@ export default function AppShell() {
         : [['ready', 'El entregable está listo']];
       const required = events.map(([k]) => k);
       const allConfirmed = required.every(k => checks[k]);
-      const confirmedCount = required.filter(k => checks[k]).length;
       // Adding a milestone to an existing contract: lock to MILESTONE, inherit the payer.
       const contractOps = contractId ? mine.filter(op => op.contractId === contractId) : [];
       const inContract = contractId !== '' && contractOps.length > 0;
       const contractPayer = contractOps[0]?.payerLegalName ?? '';
       const nextIndex = contractOps.reduce((max, op) => Math.max(max, op.milestoneIndex || 0), 0) + 1;
-      return <Modal title={inContract ? 'Añadir hito al contrato' : 'Anticipar cobro'} onClose={() => { setCreating(false); setError(''); }}>
+      return <Modal title={inContract ? 'Añadir hito al contrato' : 'Anticipar cobro'} onClose={() => { if (!busy) { setCreating(false); setError(''); } }}>
+        {data.me.kycStatus !== 'VERIFIED' ? <div className="app-onboarding">
+          <span className="app-action-icon"><Icon name="file" size={26}/></span><h3>Tu primer paso: la identidad</h3>
+          <p>Verifica tu identidad antes de solicitar financiación.</p><p className="app-muted">Después podrás indicar qué quieres financiar, revisar los requisitos y consultar tu anticipo estimado.</p>
+          <button className="app-primary" onClick={() => { setCreating(false); go('settings'); }}>Ir a verificar identidad<Icon name="arrow" size={18}/></button>
+        </div> : <>
+        <ol className="app-stepper" aria-label="Pasos de la solicitud">{['Datos', 'Requisitos', 'Revisión'].map((label, i) => <li key={label} aria-current={i === createStep ? 'step' : undefined} className={i < createStep ? 'is-complete' : ''}><span>{i < createStep ? <Icon name="check" size={13}/> : i + 1}</span>{label}</li>)}</ol>
+        <form onSubmit={create} className="app-form">
+        <fieldset className="app-wizard-panel" hidden={createStep !== 0}><legend tabIndex={-1}>¿Qué quieres financiar?</legend><p className="app-muted">Una factura por cobrar o una entrega de tu proyecto. Elige el tipo y cuéntanos sus datos.</p>
         {inContract
           ? <div className="app-contract-note"><Icon name="layers" size={16}/> Hito {nextIndex} de un contrato con {contractPayer}. Hereda la empresa pagadora.</div>
           : <div className="app-asset-tabs" role="tablist">
               <button type="button" role="tab" aria-selected={isInvoice} className={isInvoice ? 'is-on' : ''} onClick={() => { setKind('INVOICE'); setChecks({}); }}><Icon name="file" size={16}/> Factura</button>
-              <button type="button" role="tab" aria-selected={!isInvoice} className={!isInvoice ? 'is-on' : ''} onClick={() => { setKind('MILESTONE'); setChecks({}); setAttachment(''); }}><Icon name="bolt" size={16}/> Hito</button>
+              <button type="button" role="tab" aria-selected={!isInvoice} className={!isInvoice ? 'is-on' : ''} onClick={() => { setKind('MILESTONE'); setChecks({}); }}><Icon name="bolt" size={16}/> Hito</button>
             </div>}
-        <form onSubmit={create} className="app-form">
           <label>Título<input name="title" required minLength={3} maxLength={80} placeholder={inContract ? `Hito ${nextIndex}: entrega` : 'Diseño de identidad'}/></label>
-          <label>Empresa pagadora<input name="company" required maxLength={80} placeholder="Estudio Nube" defaultValue={contractPayer} readOnly={inContract}/></label>
+          <label>Empresa pagadora<input name="company" aria-label="Empresa pagadora" required maxLength={80} placeholder="Estudio Nube" defaultValue={contractPayer} readOnly={inContract}/><small>La empresa que debe pagar la factura o el entregable.</small></label>
           <div className="app-form-pair"><label>Valor (COP)<input name="amount" type="number" required min="1000" step="1000" value={raiseAmount} onChange={e => setRaiseAmount(e.target.value)}/></label><label>Plazo<select name="term" value={raiseTerm} onChange={e => setRaiseTerm(e.target.value)}><option value="15">15 días</option><option value="30">30 días</option><option value="45">45 días</option><option value="60">60 días</option><option value="90">90 días</option></select></label></div>
 
+          <p className="app-muted">El plazo se usa para estimar el descuento. No es una promesa de desembolso.</p>
+          <button type="button" className="app-primary" onClick={event => { const form = event.currentTarget.form; if (form?.reportValidity()) { const values = new FormData(form); setRaiseDetails({ title: String(values.get('title')), payer: String(values.get('company')) }); setCreateStep(1); } }}>Continuar a requisitos<Icon name="arrow" size={18}/></button>
+        </fieldset>
+        <fieldset className="app-wizard-panel" hidden={createStep !== 1}><legend tabIndex={-1}>Requisitos de tu {isInvoice ? 'factura' : 'entregable'}</legend><p className="app-muted">Declara solo lo que puedes respaldar. Estas declaraciones no sustituyen una verificación externa.</p>
+          <div className="app-events">
+            <div className="app-events-head">{isInvoice ? 'Verifica tu factura' : 'Confirma tu entregable'}</div>
+            {events.map(([k, label]) => <button type="button" key={k} className={`app-event ${checks[k] ? 'is-on' : ''}`} aria-pressed={!!checks[k]} onClick={() => toggleCheck(k)}>
+              <span className="app-event-box" aria-hidden="true">{checks[k] && <Icon name="check" size={14}/>}</span>
+              <span className="app-event-label">{label}</span>
+              <span className={`app-event-state ${checks[k] ? 'is-ok' : ''}`}>{checks[k] ? 'Declarado' : 'Pendiente'}</span>
+            </button>)}
+
+          </div>
+          <p className="app-events-note">Se necesitan todas las declaraciones para solicitar la cotización. No adjuntes documentos sensibles: esta pantalla todavía no admite su envío.</p>
+          <button type="button" className="app-primary" disabled={!allConfirmed} onClick={() => setCreateStep(2)}>Revisar solicitud<Icon name="arrow" size={18}/></button>
+          <button type="button" className="app-link app-link-center" onClick={() => setCreateStep(0)}>Volver a datos</button>
+        </fieldset>
+        <fieldset className="app-wizard-panel" hidden={createStep !== 2}><legend tabIndex={-1}>Revisa tu solicitud</legend><p className="app-muted">Comprueba los valores antes de enviarla. Todavía no estás recibiendo dinero.</p><dl className="app-receipt-facts"><div><dt>Concepto</dt><dd>{raiseDetails.title}</dd></div><div><dt>Empresa pagadora</dt><dd>{raiseDetails.payer}</dd></div></dl>
           {advance > 0n && <div className="app-quote">
-            <div className="app-quote-advance"><div><span>Recibes hoy</span><strong>{money(advance.toString())}</strong></div><span className="app-quote-fast"><Icon name="bolt" size={13}/> Aprobación estimada en minutos</span></div>
+            <div className="app-quote-advance"><div><span>Anticipo estimado</span><strong>{money(advance.toString())}</strong></div><span className="app-quote-fast"><Icon name="bolt" size={13}/> Sujeto a aprobación</span></div>
             <div className="app-quote-break"><span>Valor nominal</span><span>{money(nominal.toString())}</span></div>
             <div className="app-quote-break"><span>Descuento ({days} días)</span><span>−{money(discount.toString())}</span></div>
             <div className="app-quote-break"><span>Comisión Proofly</span><span>−{money(fee.toString())}</span></div>
           </div>}
 
-          <div className="app-events">
-            <div className="app-events-head">{isInvoice ? 'Verifica tu factura' : 'Confirma tu entregable'}</div>
-            {events.map(([k, label]) => <button type="button" key={k} className={`app-event ${checks[k] ? 'is-on' : ''}`} onClick={() => toggleCheck(k)}>
-              <span className="app-event-box" aria-hidden="true">{checks[k] && <Icon name="check" size={14}/>}</span>
-              <span className="app-event-label">{label}</span>
-              <span className={`app-event-state ${checks[k] ? 'is-ok' : ''}`}>{checks[k] ? 'Confirmado' : 'Pendiente'}</span>
-            </button>)}
-
-            {/* Conditional attachment: once the invoice is validated, let them attach it (UI only). */}
-            {isInvoice && checks['validated'] && <div className="app-attach">
-              {attachment
-                ? <div className="app-attach-file"><Icon name="file" size={16}/><span>{attachment}</span><button type="button" aria-label="Quitar archivo" onClick={() => setAttachment('')}><Icon name="close" size={14}/></button></div>
-                : <label className="app-attach-drop"><Icon name="plus" size={16}/> Adjuntar factura (PDF o XML)
-                    <input type="file" accept=".pdf,.xml,application/pdf,text/xml" hidden onChange={e => { const f = e.target.files?.[0]; if (f) setAttachment(f.name); }}/>
-                  </label>}
-            </div>}
-          </div>
-
-          <p className="app-events-note"><Icon name="bell" size={14}/> Mientras más eventos confirmes, mejores condiciones puedes obtener. {confirmedCount}/{required.length} confirmados.</p>
+          <div className="app-disclosure"><Icon name="clock" size={18}/><p>El desembolso depende de la aprobación y del fondeo. Al enviar, podrás consultar el estado y el siguiente paso de tu operación.</p></div>
           {error && <p className="app-error" role="alert">{error}</p>}
-          <button className="app-primary" disabled={busy || !allConfirmed}>{busy ? 'Enviando…' : 'Solicitar anticipo'} <Icon name="arrow" size={18}/></button>
-          <button type="button" className="app-link app-link-center" onClick={() => { setCreating(false); setError(''); }}>Guardar borrador</button>
-        </form>
+          <button className="app-primary" disabled={busy || !allConfirmed}>{busy ? 'Enviando…' : 'Enviar solicitud'} <Icon name="arrow" size={18}/></button>
+          <button type="button" className="app-link app-link-center" disabled={busy} onClick={() => setCreateStep(1)}>Volver a requisitos</button>
+        </fieldset>
+        </form></>}
       </Modal>;
     })()}
 
-    {active && !creating && <Modal title={active.title} onClose={() => { setSelected(null); setError(''); }}>
-      <div className="app-detail-top"><span className="app-tag">{active.assetType === 'INVOICE' ? 'Factura' : 'Hito'}</span><span className="app-tag app-tag-plain">{STATUS[active.status]}</span></div>
+    {active && !creating && <Modal title={active.title} onClose={() => { if (!busy) { setSelected(null); setError(''); } }}>
+      {investStage === 'receipt' ? <div className="app-receipt"><div className="app-done"><Icon name="check" size={28}/><h3 tabIndex={-1}>Inversión registrada</h3><p>Tu aporte ya aparece en esta operación.</p></div>{data.investments.filter(i => i.operationId === active.id).map(i => <dl className="app-receipt-facts" key={i.id}><div><dt>Aporte registrado</dt><dd>{money(i.fundedCapitalCents)}</dd></div><div><dt>Referencia</dt><dd>{i.id}</dd></div><div><dt>Fecha de registro</dt><dd>{new Date(i.createdAt).toLocaleString('es-CO')}</dd></div></dl>)}<p className="app-muted">El registro del aporte no garantiza su rentabilidad ni el pago al vencimiento.</p><button className="app-primary" onClick={() => setInvestStage('detail')}>Ver operación<Icon name="arrow" size={18}/></button></div> : <>
+      {investStage === 'detail' && <><div className="app-detail-top"><span className="app-tag">{active.assetType === 'INVOICE' ? 'Factura' : 'Hito'}</span><span className="app-tag app-tag-plain">{STATUS[active.status]}</span></div>
       <div className="app-detail-hero"><span>Valor del entregable</span><strong>{money(active.nominalAmountCents)}</strong><p>{active.payerLegalName} · {active.termDays} días · {percent(active.effectiveAnnualRate)}</p></div>
-      <dl className="app-detail-facts"><div><dt>Adelanto neto</dt><dd>{money(active.advanceAmountCents)}</dd></div><div><dt>Comisión</dt><dd>{money(active.prooflyFeeCents)}</dd></div><div><dt>Fondeo pendiente</dt><dd>{money(active.remainingFundingCents)}</dd></div></dl>
+      <dl className="app-detail-facts"><div><dt>Adelanto neto</dt><dd>{money(active.advanceAmountCents)}</dd></div><div><dt>Comisión</dt><dd>{money(active.prooflyFeeCents)}</dd></div><div><dt>Fondeo pendiente</dt><dd>{money(active.remainingFundingCents)}</dd></div></dl></>}
 
+      {ownActive && <div className="app-disclosure"><Icon name="clock" size={18}/><p><strong>{STATUS[active.status] || active.status}.</strong> {active.status === 'PENDING_CLIENT_CONFIRMATION' ? 'Falta la confirmación del pagador. No se ha desembolsado el anticipo.' : active.status === 'QUOTED' ? 'Revisa la cotización y sus condiciones antes de aceptarla.' : active.status === 'APPROVED_PENDING_FUNDING' ? 'Tu operación espera aportes de financiadores. Aún no equivale a un desembolso.' : 'Consulta las acciones disponibles y los movimientos de tu operación.'}</p></div>}
       {active.status === 'PENDING_CLIENT_CONFIRMATION' && <button className="app-primary" disabled={busy} onClick={() => mutate('confirm', { id: active.id })}>Confirmar pago de la empresa</button>}
       {active.status === 'QUOTED' && <div className="app-panel"><label className="app-checkbox"><input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)}/>Acepto la cotización y la cesión de derechos.</label><button className="app-primary" disabled={!accepted || busy} onClick={() => mutate('accept', { id: active.id, accepted })}>Aceptar cotización</button></div>}
       {active.status === 'APPROVED_PENDING_FUNDING' && (ownActive
@@ -568,21 +593,28 @@ export default function AppShell() {
             const estProfit = cents_ > 0n ? (cents_ * BigInt(Math.round(active.effectiveAnnualRate * active.termDays / 365 * 1e6))) / 1000000n : 0n;
             const total = cents_ + estProfit;
             return <div className="app-invest">
-              <div className="app-invest-rate"><span>Retorno</span><strong>{percent(active.effectiveAnnualRate)}</strong><span>a {active.termDays} días</span></div>
+              <div className="app-invest-rate"><span>Tasa efectiva anual</span><strong>{percent(active.effectiveAnnualRate)}</strong><span>Plazo de la operación: {active.termDays} días</span></div>
+              {investStage === 'detail' ? <>
+              <div className="app-evidence"><h3>Información de la operación</h3><dl><div><dt>Empresa pagadora</dt><dd>{active.payerLegalName}</dd></div><div><dt>Puntaje de entrega</dt><dd>{active.freelancerExecutionScore}/100</dd></div><div><dt>Puntaje del pagador</dt><dd>{active.payerSolvencyScore}/100</dd></div></dl><p>Los puntajes son indicadores, no garantías de pago. No hay documentos de soporte consultables en esta vista.</p></div>
               <label className="app-form-label">¿Cuánto quieres invertir? (COP)<input type="number" min="1000" step="1000" data-remaining-cents={active.remainingFundingCents} value={amount} onChange={e => setAmount(e.target.value)}/></label>
               <p className="app-invest-hint">Disponible para invertir: {money(active.remainingFundingCents)}</p>
+              </> : <div className="app-review-heading"><span className="app-eyebrow">Último paso · Confirmación</span><h3 tabIndex={-1}>Revisa tu inversión</h3><p>Aportarás <strong>{money(cents_)}</strong> a {active.title}, con un plazo de {active.termDays} días.</p></div>}
               <div className="app-invest-preview">
                 <div><span>Ganancia estimada</span><strong className="app-positive">+{money(estProfit.toString())}</strong></div>
-                <div><span>Recibes al vencimiento</span><strong>{money(total.toString())}</strong></div>
+                <div><span>Total estimado al vencimiento</span><strong>{money(total.toString())}</strong></div>
               </div>
               {over && <p className="app-error" role="alert">El monto supera el fondeo disponible.</p>}
-              <button className="app-primary" disabled={busy || cents_ <= 0n || over} onClick={() => { try { void mutate('participate', { id: active.id, amountCents: cents(amount) }); } catch (r) { setError((r as Error).message); } }}>Invertir {cents_ > 0n ? money(cents_.toString()) : ''}</button>
-              <p className="app-muted app-invest-note">Estimación; el retorno no está garantizado. El cálculo final lo confirma el sistema al invertir.</p>
+              <div className="app-disclosure app-disclosure-risk"><Icon name="file" size={18}/><p>Puedes perder parte o todo el capital aportado. El pago puede retrasarse y el retorno no está garantizado. Esta vista no ofrece una opción de retiro anticipado.</p></div>
+              {data.me.kycStatus !== 'VERIFIED' ? <button className="app-primary" onClick={() => { setSelected(null); go('settings'); }}>Verificar identidad para invertir</button> : investStage === 'detail'
+                ? <button className="app-primary" disabled={cents_ <= 0n || over} onClick={() => { setRiskAccepted(false); setInvestStage('review'); }}>Revisar inversión<Icon name="arrow" size={18}/></button>
+                : <><label className="app-checkbox"><input type="checkbox" checked={riskAccepted} onChange={e => setRiskAccepted(e.target.checked)}/>Entiendo los riesgos y quiero realizar este aporte.</label><button className="app-primary" disabled={busy || !riskAccepted || cents_ <= 0n || over} onClick={async () => { const result = await mutate('participate', { id: active.id, amountCents: cents_.toString() }); if (result) { setInvestStage('receipt'); setNotice('Inversión registrada.'); } }}>{busy ? 'Registrando…' : `Confirmar inversión ${money(cents_)}`}</button><button className="app-link app-link-center" disabled={busy} onClick={() => setInvestStage('detail')}>Editar aporte</button></>}
+              <p className="app-muted app-invest-note">Estimación orientativa para el plazo indicado, no una promesa de rentabilidad. El cálculo final lo confirma el sistema al invertir.</p>
             </div>;
           })())}
       {['ACTIVE_FUNDED','DISBURSED'].includes(active.status) && <div className="app-panel"><p className="app-muted">Operación fondeada. Registra el pago de la empresa para distribuir.</p><button className="app-primary" disabled={busy} onClick={() => mutate('settle', { id: active.id })}>Registrar recaudo</button></div>}
       {active.status === 'SETTLED' && <div className="app-done"><Icon name="check"/><strong>Recaudo distribuido</strong></div>}
       {error && <p className="app-error" role="alert">{error}</p>}
+      </>}
     </Modal>}
   </div>;
 }
