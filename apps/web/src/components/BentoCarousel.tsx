@@ -177,7 +177,7 @@ export function BentoCarousel({ onFund, onSimulate }: BentoCarouselProps) {
       {/* Header */}
       <div className="proofly-ecosystem-heading grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
         <div className="lg:col-span-2">
-          <span className="inline-flex items-center gap-2 text-xs font-extrabold tracking-widest text-electric bg-lilac/50 border border-ink/15 px-3 py-1 rounded-full tabular-nums">01–06</span>
+          <span className="inline-flex items-center gap-2 text-xs font-extrabold tracking-widest text-electric bg-lilac/50 border border-ink/15 px-3 py-1 rounded-full tabular-nums">01-06</span>
         </div>
         <div className="lg:col-span-6">
           <h2 className="balance-text font-extrabold text-4xl sm:text-6xl tracking-tight text-ink leading-[1.03]">
@@ -204,7 +204,7 @@ export function BentoCarousel({ onFund, onSimulate }: BentoCarouselProps) {
                 <img
                   src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=700&q=80"
                   alt="Diseñador independiente validando su entregable"
-                  width="700" height="800" loading="lazy"
+                  width="700" height="800" loading="lazy" decoding="async"
                   className="editorial-photo w-full h-full object-cover"
                 />
               </div>
@@ -306,7 +306,7 @@ export function BentoCarousel({ onFund, onSimulate }: BentoCarouselProps) {
                 <img
                   src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=700&q=80"
                   alt="Equipo revisando retornos de portafolio"
-                  width="700" height="665" loading="lazy"
+                  width="700" height="665" loading="lazy" decoding="async"
                   className="editorial-photo w-full h-full object-cover"
                 />
               </div>

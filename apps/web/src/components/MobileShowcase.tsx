@@ -125,7 +125,7 @@ export function MobileShowcase({
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-ink/12 bg-lilac">
                   <img
                     src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
-                    alt="Avatar de Sofía Vargas" width="40" height="40" loading="lazy"
+                    alt="Avatar de Sofía Vargas" width="40" height="40" loading="lazy" decoding="async"
                     className="editorial-photo w-full h-full object-cover"
                   />
                 </div>
