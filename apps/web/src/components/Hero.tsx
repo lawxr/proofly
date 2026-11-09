@@ -45,18 +45,6 @@ export function Hero({ onPublish, onSimulate, onEcosistema, onAppMovil }: HeroPr
         });
       }
 
-      /* ── S5: CTA marquee — infinite right→left loop of the label ── */
-      const marqueeTrack = q('[data-marquee-track]')[0] as HTMLElement | undefined;
-      if (marqueeTrack) {
-        // Two copies sit side by side; shift by exactly one copy's width then loop.
-        gsap.to(marqueeTrack, {
-          xPercent: -50,
-          ease: 'none',
-          duration: 6,
-          repeat: -1,
-        });
-      }
-
       /* ── Desktop-only satellite choreography (hidden lg:flex) ── */
       const mm = gsap.matchMedia();
       mm.add(DESKTOP_QUERY, () => {
@@ -268,13 +256,8 @@ export function Hero({ onPublish, onSimulate, onEcosistema, onAppMovil }: HeroPr
           <p className="mt-6 text-base sm:text-lg text-ink-soft max-w-[470px] leading-relaxed">
             Adelanta el cobro de tus hitos y facturas. O financia el trabajo de otros y recibe retornos en pesos.
           </p>
-          <button type="button" onClick={onPublish} className="mt-8 bg-electric hover:bg-electric-dark text-white font-bold text-sm pl-7 pr-3 py-3 rounded-full flex items-center gap-5 transition-colors">
-            <span className="relative block overflow-hidden whitespace-nowrap" style={{ width: '12.5rem' }} aria-label="Adelantar mi primer hito">
-              <span data-marquee-track className="flex w-max" aria-hidden="true">
-                <span className="pr-8">Adelantar mi primer hito</span>
-                <span className="pr-8">Adelantar mi primer hito</span>
-              </span>
-            </span>
+          <button type="button" onClick={onPublish} className="mt-8 bg-electric hover:bg-electric-dark text-white font-bold text-sm pl-7 pr-3 py-3 rounded-full inline-flex items-center gap-4 transition-colors">
+            <span className="whitespace-nowrap">Adelantar mi primer hito</span>
             <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0" aria-hidden="true">↗</span>
           </button>
           <button type="button" onClick={onSimulate} className="mt-4 text-sm font-semibold text-ink-soft hover:text-electric underline underline-offset-4 min-h-11">Quiero financiar talento</button>

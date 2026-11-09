@@ -234,8 +234,8 @@ export function BentoCarousel({ onFund, onSimulate }: BentoCarouselProps) {
               <svg className="w-24 h-24" viewBox="0 0 110 110" fill="none" aria-hidden="true" filter="url(#soft3DShadow)">
                 <rect x="16" y="38" width="66" height="38" rx="10" transform="rotate(-14 16 38)" fill="url(#clayViolet)" stroke="#1E0B3B" strokeWidth="2.2"/>
                 <rect x="26" y="46" width="66" height="38" rx="10" transform="rotate(8 26 46)" fill="url(#clayLilac)" stroke="#1E0B3B" strokeWidth="2.2"/>
-                <circle cx="58" cy="65" r="11" fill="#7300FF" stroke="#1E0B3B" strokeWidth="1.8"/>
-                <text x="58" y="69" textAnchor="middle" fill="#FFF" fontSize="12" fontWeight="800">$</text>
+                <circle cx="55" cy="58" r="11" fill="#7300FF" stroke="#1E0B3B" strokeWidth="1.8"/>
+                <text x="55" y="58" textAnchor="middle" dominantBaseline="central" fill="#FFF" fontSize="12" fontWeight="800">$</text>
               </svg>
               <span className="text-[11px] font-extrabold text-ink">Efectivo al instante</span>
             </div>

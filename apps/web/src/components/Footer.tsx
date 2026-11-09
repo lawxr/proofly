@@ -89,22 +89,22 @@ export function Footer({ onPublish }: FooterProps) {
     return () => obs.disconnect();
   }, []);
 
-  /* ── Wordmark parallax reveal ── */
+  /* ── Wordmark reveal: rises from its baseline, scrubbed to scroll ── */
   useEffect(() => {
     const el = wordmarkRef.current;
     if (!el) return;
-    const handler = () => {
-      const rect = el.getBoundingClientRect();
-      const winH  = window.innerHeight;
-      if (rect.top < winH + 120) {
-        const vis    = Math.max(0, Math.min(1, (winH - rect.top + 80) / 320));
-        const ySlide = 14 + (1 - vis) * 18;
-        el.style.transform = `translate3d(0, ${ySlide.toFixed(1)}%, 0)`;
-      }
-    };
-    window.addEventListener('scroll', handler, { passive: true });
-    handler();
-    return () => window.removeEventListener('scroll', handler);
+    if (prefersReducedMotion()) { el.style.transform = 'translate3d(0,0,0)'; el.style.clipPath = 'none'; return; }
+    const ctx = gsap.context(() => {
+      gsap.fromTo(el,
+        { yPercent: 36, opacity: 0.35 },
+        {
+          yPercent: 0, opacity: 1, ease: 'none',
+          scrollTrigger: { trigger: el, start: 'top 95%', end: 'bottom bottom', scrub: 0.6 },
+        }
+      );
+    });
+    ScrollTrigger.refresh();
+    return () => ctx.revert();
   }, []);
 
   return (

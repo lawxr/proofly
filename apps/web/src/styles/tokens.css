@@ -174,10 +174,9 @@ input[type="range"].proofly-slider::-webkit-slider-thumb:hover {
 }
 .bento-track:active { cursor: grabbing; }
 
-/* ── Footer wordmark parallax ── */
+/* ── Footer wordmark reveal (transform + opacity driven by GSAP scrub) ── */
 .footer-wordmark {
-  transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
-  will-change: transform;
+  will-change: transform, opacity;
 }
 
 /* ── Legacy pill button (soft elevated, no hard offset) ── */
