@@ -77,6 +77,12 @@ try {
   await page.locator('.app-empty .app-empty-actions').waitFor();
   const nav = () => page.getByRole('navigation', { name: 'Navegación' });
 
+  // A newcomer sees the operating requirement before filling a financing form.
+  await nav().getByRole('button', { name: 'Anticipar', exact: true }).click();
+  await page.getByRole('button', { name: 'Nueva', exact: true }).click();
+  await page.getByText('Verifica tu identidad antes de solicitar financiación.', { exact: true }).waitFor({ timeout: 3000 });
+  await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
+
   // KYC is required before operating: a fresh account verifies identity first.
   await page.getByRole('button', { name: 'Abrir tu cuenta', exact: true }).click();
   await page.waitForFunction(() => location.hash === '#settings');
@@ -98,7 +104,23 @@ try {
   await amountInput.fill(String(Math.floor(Number(remainingCents) / 100)));
   // Live estimate shows without an intermediate button; the invest button carries the amount.
   await page.locator('.app-invest-preview').getByText('Ganancia estimada').waitFor();
-  await page.locator('.app-sheet').getByRole('button', { name: /^Invertir/ }).click();
+  const beforeReview = await page.request.get(`${base}/api/app`).then(r => r.json());
+  await page.getByRole('button', { name: 'Revisar inversión', exact: true }).click();
+  await page.getByRole('heading', { name: 'Revisa tu inversión', exact: true }).waitFor();
+  await page.screenshot({ path: '/private/tmp/proofly-invest-review.png', fullPage: true });
+  const afterReview = await page.request.get(`${base}/api/app`).then(r => r.json());
+  assert.equal(afterReview.investments.length, beforeReview.investments.length, 'review must not invest');
+  await page.getByText('Puedes perder parte o todo el capital aportado.', { exact: false }).waitFor();
+  await page.getByRole('checkbox', { name: 'Entiendo los riesgos y quiero realizar este aporte.' }).check();
+  // A failed request must preserve review and must never display a receipt.
+  await page.route('**/api/app/action', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }), { times: 1 });
+  await page.getByRole('button', { name: /^Confirmar inversión/ }).click();
+  await page.locator('.app-sheet .app-error').waitFor();
+  assert.equal(await page.getByRole('heading', { name: 'Inversión registrada', exact: true }).count(), 0);
+  await page.getByRole('button', { name: /^Confirmar inversión/ }).click();
+  await page.getByRole('heading', { name: 'Inversión registrada', exact: true }).waitFor();
+  await page.locator('.app-receipt').getByText('Referencia', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Ver operación', exact: true }).click();
   await page.getByRole('button', { name: 'Registrar recaudo', exact: true }).click();
   await page.getByText('Recaudo distribuido', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
@@ -106,24 +128,38 @@ try {
   // Raise: create one own invoice operation (seed tier allows one active).
   await nav().getByRole('button', { name: 'Anticipar', exact: true }).click();
   await page.getByRole('button', { name: 'Nueva', exact: true }).click();
+  // Both asset branches use the same wizard, without carrying declarations across types.
+  await page.getByRole('tab', { name: 'Hito', exact: true }).click();
+  await page.getByLabel('Título', { exact: true }).fill('QA-HITO');
+  await page.getByLabel('Empresa pagadora', { exact: true }).fill('Empresa de pruebas');
+  await page.getByRole('button', { name: 'Continuar a requisitos', exact: true }).click();
+  await page.getByRole('button', { name: /El entregable está listo/ }).click();
+  assert.equal(await page.getByRole('button', { name: 'Revisar solicitud', exact: true }).isEnabled(), true);
+  await page.getByRole('button', { name: 'Volver a datos', exact: true }).click();
   // Asset type is a tab, not a select. Default is Factura (invoice).
   await page.locator('.app-asset-tabs').getByRole('tab', { name: 'Factura' }).click();
   await page.getByLabel('Título').fill('QA-FACTURA');
   await page.getByLabel('Empresa pagadora').fill('Empresa de pruebas');
   await page.locator('.app-sheet input[name="amount"]').fill('1000000');
   await page.locator('.app-sheet select[name="term"]').selectOption('45');
-  // Live quote: "Recibes hoy".
-  await page.locator('.app-quote-advance').getByText('Recibes hoy').waitFor();
-  // The submit is disabled until every event is confirmed.
-  assert.equal(await page.getByRole('button', { name: /Solicitar anticipo/ }).isDisabled(), true, 'submit disabled until all events confirmed');
-  // Confirm the first event; it reveals the conditional attachment UI.
+  await page.getByRole('button', { name: 'Continuar a requisitos', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a datos', exact: true }).click();
+  assert.equal(await page.getByLabel('Título', { exact: true }).inputValue(), 'QA-FACTURA', 'back preserves title');
+  assert.equal(await page.getByLabel('Empresa pagadora', { exact: true }).inputValue(), 'Empresa de pruebas', 'back preserves payer');
+  await page.getByRole('button', { name: 'Continuar a requisitos', exact: true }).click();
+  assert.equal(await page.getByRole('button', { name: 'Revisar solicitud', exact: true }).isDisabled(), true);
+  // A checked declaration is not represented as external verification.
   await page.locator('.app-event').filter({ hasText: 'Validación DIAN' }).click();
-  await page.locator('.app-attach-drop').waitFor();
+  await page.getByText('Estas declaraciones no sustituyen una verificación externa.', { exact: false }).waitFor();
   // Confirm the remaining events.
   for (const label of ['Acuse de recibo', 'Entrega realizada', 'Aceptación del pagador']) {
     await page.locator('.app-event').filter({ hasText: label }).click();
   }
-  await page.getByRole('button', { name: /Solicitar anticipo/ }).click();
+  await page.getByRole('button', { name: 'Revisar solicitud', exact: true }).click();
+  await page.screenshot({ path: '/private/tmp/proofly-finance-review.png', fullPage: true });
+  await page.locator('.app-quote-advance').getByText('Anticipo estimado').waitFor();
+  await page.getByText('El desembolso depende de la aprobación y del fondeo.', { exact: false }).waitFor();
+  await page.getByRole('button', { name: 'Enviar solicitud', exact: true }).click();
   await page.getByRole('dialog').getByRole('heading', { name: 'QA-FACTURA', exact: true }).waitFor();
   // An invoice goes straight to QUOTED; owner cannot invest in their own operation.
   assert.equal(await page.getByLabel('¿Cuánto quieres invertir? (COP)').count(), 0, 'Owner must not see the invest input.');
@@ -176,6 +212,7 @@ try {
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false, `${route} overflows at ${width}`);
       const clipped = await page.locator('.app-twin-card, .app-op-card, .app-hero-balance, .app-invest-summary, .app-dock').evaluateAll(els => els.filter(el => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > innerWidth + 1).length);
       assert.equal(clipped, 0, `Clipped content on ${route} at ${width}`);
+      if (width === 1440 && route === 'home') await page.screenshot({ path: '/private/tmp/proofly-finance-desktop.png', fullPage: true });
     }
   }
   await page.setViewportSize({ width: 390, height: 844 });
@@ -187,5 +224,5 @@ try {
   await page.goto(`${base}/app/`);
   await page.waitForURL('**/login');
   assert.deepEqual(errors, []);
-  console.log('PASS: cookie consent banner accepts and persists; privacy + cookie policies render (Ley 1581); signup without a name (KYC provides it); KYC unlocks operating; invest market with summary, filter and rich opportunity cards; redesigned raise form (asset tabs, live quote, event checklist, conditional invoice attachment, gated submit); invest live estimate + settlement; seed tier one active op; honest baseline with no investment history; contracts tab groups raised operations; reload persists; five routes clean 320-1440; no JS errors.');
+  console.log('PASS: auth and account flows; early identity guidance; invoice and milestone wizard branches; back preserves fields; reviewed requests; investment review causes no mutation; failed investment shows no receipt; successful investment has persisted reference; settlement; notifications; contracts; reload persistence; five routes clean 320–1440; no JS errors.');
 } finally { await browser.close(); if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } }

@@ -11,6 +11,7 @@ import {
     KycVerificationRequired,
     ArrayLengthMismatch,
     ZeroAmount,
+    SharesDoNotEqualNominal,
     Unauthorized
 } from "../src/ProoflyOperations.sol";
 
@@ -62,8 +63,8 @@ contract ProoflyOperationsTest is Test {
         );
 
         assertEq(tokenId, 1);
-        assertEq(operations.balances(tokenId, financier1), 60000000);
-        assertEq(operations.balances(tokenId, financier2), 40000000);
+        assertEq(operations.balanceOf(financier1, tokenId), 60000000);
+        assertEq(operations.balanceOf(financier2, tokenId), 40000000);
         assertTrue(operations.isHmacRegistered(testHmac));
     }
 
@@ -124,7 +125,7 @@ contract ProoflyOperationsTest is Test {
         shares[0] = 99999999; // 1 centavo menos
 
         vm.prank(operator);
-        vm.expectRevert("Total shares do not equal nominal amount");
+        vm.expectRevert(abi.encodeWithSelector(SharesDoNotEqualNominal.selector, uint256(99999999), uint256(100000000)));
         operations.mintOperation(
             testHmac,
             testDossierHash,
@@ -204,7 +205,7 @@ contract ProoflyOperationsTest is Test {
 
         vm.prank(financier1);
         vm.expectRevert(abi.encodeWithSelector(KycVerificationRequired.selector, nonKycUser));
-        operations.safeTransferFrom(financier1, nonKycUser, tokenId, 10000000);
+        operations.safeTransferFrom(financier1, nonKycUser, tokenId, 10000000, "");
     }
 
     function test_TransferSucceedsBetweenKycAccounts() public {
@@ -224,10 +225,39 @@ contract ProoflyOperationsTest is Test {
         );
 
         vm.prank(financier1);
-        operations.safeTransferFrom(financier1, financier2, tokenId, 30000000);
+        operations.safeTransferFrom(financier1, financier2, tokenId, 30000000, "");
 
-        assertEq(operations.balances(tokenId, financier1), 70000000);
-        assertEq(operations.balances(tokenId, financier2), 30000000);
+        assertEq(operations.balanceOf(financier1, tokenId), 70000000);
+        assertEq(operations.balanceOf(financier2, tokenId), 30000000);
+    }
+
+    // It is a real ERC-1155: advertises the standard interfaces via ERC-165,
+    // so wallets, explorers and marketplaces recognize it as a token.
+    function test_SupportsERC1155Interface() public view {
+        assertTrue(operations.supportsInterface(0xd9b67a26), "ERC-1155");
+        assertTrue(operations.supportsInterface(0x0e89341c), "ERC-1155 metadata URI");
+        assertTrue(operations.supportsInterface(0x01ffc9a7), "ERC-165");
+    }
+
+    // Approved-operator transfers work through the standard interface, gated by KYC.
+    function test_ApprovedOperatorCanTransfer() public {
+        address[] memory financiers = new address[](1);
+        financiers[0] = financier1;
+        uint256[] memory shares = new uint256[](1);
+        shares[0] = 100000000;
+
+        vm.prank(operator);
+        uint256 tokenId = operations.mintOperation(
+            testHmac, testDossierHash, 100000000, block.timestamp + 30 days, financiers, shares
+        );
+
+        vm.prank(financier1);
+        operations.setApprovalForAll(financier2, true);
+        assertTrue(operations.isApprovedForAll(financier1, financier2));
+
+        vm.prank(financier2);
+        operations.safeTransferFrom(financier1, financier2, tokenId, 25000000, "");
+        assertEq(operations.balanceOf(financier2, tokenId), 25000000);
     }
 
     // --- Pruebas de Fuzzing (Invariantes) ---
@@ -282,10 +312,10 @@ contract ProoflyOperationsTest is Test {
         );
 
         vm.prank(financier1);
-        operations.safeTransferFrom(financier1, financier2, tokenId, amount);
+        operations.safeTransferFrom(financier1, financier2, tokenId, amount, "");
 
-        uint256 bal1 = operations.balances(tokenId, financier1);
-        uint256 bal2 = operations.balances(tokenId, financier2);
+        uint256 bal1 = operations.balanceOf(financier1, tokenId);
+        uint256 bal2 = operations.balanceOf(financier2, tokenId);
 
         assertEq(bal1 + bal2, totalNominal);
     }

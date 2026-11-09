@@ -8,7 +8,7 @@ function BrandAside() {
     <aside className="auth-aside" aria-hidden="true">
       <a href="/" className="auth-aside-brand">Proofly</a>
       <div className="auth-aside-body">
-        <img className="auth-aside-art" src="/assets/proofly/ilustracion-crecer.png" alt=""/>
+        <img className="auth-aside-art" src="/assets/proofly/ilustracion-crecer.webp" alt=""/>
         <h2>Invierte y anticipa tu capital.</h2>
         <p>Haz crecer tu dinero con participaciones en operaciones, o anticipa el cobro de tus facturas e hitos. Todo desde una sola cuenta.</p>
       </div>
@@ -20,7 +20,7 @@ function BrandAside() {
 function Welcome({ onSignup, onLogin }: { onSignup: () => void; onLogin: () => void }) {
   return (
     <div className="auth-welcome">
-      <img className="auth-welcome-art" src="/assets/proofly/ilustracion-crecer.png" alt=""/>
+      <img className="auth-welcome-art" src="/assets/proofly/ilustracion-crecer.webp" alt=""/>
       <h1>Invierte y anticipa tu capital</h1>
       <p className="auth-welcome-sub">Todo desde una sola cuenta.</p>
       <p className="auth-welcome-lead">Haz crecer tu dinero con inversiones seleccionadas y obtén liquidez inmediata anticipando tus facturas o pagos.</p>
