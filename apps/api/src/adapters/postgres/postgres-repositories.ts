@@ -21,7 +21,10 @@ import type {
   InvestmentRepositoryPort,
   UserRepositoryPort,
   OutboxRepositoryPort,
+  ActivityRepositoryPort,
+  ActivityEvent,
   OperationMarketplaceFilter,
+  PresentationMetadata,
   OutboxEventProps
 } from '@proofly/domain';
 
@@ -48,15 +51,22 @@ export class PostgresOperationRepository implements OperationRepositoryPort {
         nominal_amount_cents, advance_amount_cents, commercial_discount_cents,
         platform_fee_cents, funded_capital_cents, term_days, due_date, status,
         canonical_hmac, confirmation_token, electronic_signature_hash,
-        payer_solvency_score, freelancer_execution_score, created_at, updated_at
+        payer_solvency_score, freelancer_execution_score, title,
+        effective_annual_rate, contract_id, milestone_index, created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24
       )
       ON CONFLICT (id) DO UPDATE SET
         funded_capital_cents = EXCLUDED.funded_capital_cents,
         status = EXCLUDED.status,
         confirmation_token = EXCLUDED.confirmation_token,
         electronic_signature_hash = EXCLUDED.electronic_signature_hash,
+        -- Preservar la metadata de presentación: save() se llama sin ella
+        -- (la fija setPresentation), así que no la pisamos con NULL en updates.
+        title = COALESCE(EXCLUDED.title, operations.title),
+        effective_annual_rate = COALESCE(EXCLUDED.effective_annual_rate, operations.effective_annual_rate),
+        contract_id = COALESCE(EXCLUDED.contract_id, operations.contract_id),
+        milestone_index = COALESCE(EXCLUDED.milestone_index, operations.milestone_index),
         updated_at = EXCLUDED.updated_at
     `;
 
@@ -79,6 +89,10 @@ export class PostgresOperationRepository implements OperationRepositoryPort {
       op.electronicSignatureHash ?? null,
       op.payerSolvencyScore ?? null,
       op.freelancerExecutionScore ?? null,
+      op.title ?? null,
+      op.effectiveAnnualRate ?? null,
+      op.contractId ?? null,
+      op.milestoneIndex ?? null,
       op.createdAt,
       op.updatedAt
     ]);
@@ -120,10 +134,25 @@ export class PostgresOperationRepository implements OperationRepositoryPort {
     return res.rows.map(r => this.mapRowToEntity(r));
   }
 
+  async listByFreelancer(freelancerId: string): Promise<OperationEntity[]> {
+    const res = await this.client.query<any>(
+      `SELECT * FROM operations WHERE freelancer_id = $1 ORDER BY created_at DESC`,
+      [freelancerId]
+    );
+    return res.rows.map(r => this.mapRowToEntity(r));
+  }
+
   async updateStatus(id: string, newStatus: OperationStatus): Promise<void> {
     await this.client.query(
       `UPDATE operations SET status = $2, updated_at = NOW() WHERE id = $1`,
       [id, newStatus]
+    );
+  }
+
+  async setPresentation(id: string, meta: PresentationMetadata): Promise<void> {
+    await this.client.query(
+      `UPDATE operations SET title = $2, effective_annual_rate = $3, contract_id = $4, milestone_index = $5, updated_at = NOW() WHERE id = $1`,
+      [id, meta.title, meta.effectiveAnnualRate, meta.contractId ?? null, meta.milestoneIndex ?? null]
     );
   }
 
@@ -147,6 +176,11 @@ export class PostgresOperationRepository implements OperationRepositoryPort {
       electronicSignatureHash: row.electronic_signature_hash ?? undefined,
       payerSolvencyScore: row.payer_solvency_score ?? undefined,
       freelancerExecutionScore: row.freelancer_execution_score ?? undefined,
+      title: row.title ?? undefined,
+      // NUMERIC llega como string desde pg; lo normalizamos a número.
+      effectiveAnnualRate: row.effective_annual_rate != null ? Number(row.effective_annual_rate) : undefined,
+      contractId: row.contract_id ?? undefined,
+      milestoneIndex: row.milestone_index ?? undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     });
@@ -396,3 +430,37 @@ export class PostgresOutboxRepository implements OutboxRepositoryPort {
   }
 }
 
+
+export class PostgresActivityRepository implements ActivityRepositoryPort {
+  private client: SqlClient;
+
+  constructor(client: SqlClient) {
+    this.client = client;
+  }
+
+  async record(event: Omit<ActivityEvent, 'id' | 'date'> & { id?: string; date?: string }): Promise<ActivityEvent> {
+    const id = event.id ?? crypto.randomUUID();
+    const date = event.date ?? new Date().toISOString();
+    await this.client.query(
+      `INSERT INTO activity_events (id, user_id, operation_id, kind, title, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [id, event.userId, event.operationId, event.kind, event.title, date]
+    );
+    return { id, userId: event.userId, operationId: event.operationId, kind: event.kind, title: event.title, date };
+  }
+
+  async listByUser(userId: string): Promise<ActivityEvent[]> {
+    const res = await this.client.query<any>(
+      `SELECT * FROM activity_events WHERE user_id = $1 ORDER BY created_at DESC`,
+      [userId]
+    );
+    return res.rows.map(r => ({
+      id: r.id,
+      userId: r.user_id,
+      operationId: r.operation_id,
+      kind: r.kind,
+      title: r.title,
+      date: (r.created_at instanceof Date ? r.created_at.toISOString() : new Date(r.created_at).toISOString())
+    }));
+  }
+}

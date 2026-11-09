@@ -17,6 +17,7 @@ export * from './models/outbox.ts';
 
 // Puertos
 export * from './ports/operation-repository.port.ts';
+export * from './ports/activity-repository.port.ts';
 export * from './ports/investment-repository.port.ts';
 export * from './ports/user-repository.port.ts';
 export * from './ports/outbox-repository.port.ts';

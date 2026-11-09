@@ -49,7 +49,7 @@ async function fixture(t, options = {}) {
 
 test('public landing/login are the default; app requires a session', async t => {
   const { request } = await fixture(t);
-  for (const path of ['/', '/login']) assert.match(await (await request(path)).text(), /Landing/);
+  for (const path of ['/', '/login', '/privacidad', '/cookies']) assert.match(await (await request(path)).text(), /Landing/);
   assert.equal((await request('/assets/public.js')).status, 200);
   for (const path of ['/app', '/app/', '/app/index.html']) {
     const response = await request(path);

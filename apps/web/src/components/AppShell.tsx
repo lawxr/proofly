@@ -1,26 +1,27 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import '../styles/app-shell.css';
 
-type Page = 'home' | 'invest' | 'raise' | 'activity' | 'settings';
-const PAGES: Page[] = ['home', 'invest', 'raise', 'activity', 'settings'];
+type Page = 'home' | 'invest' | 'raise' | 'contracts' | 'settings';
+const PAGES: Page[] = ['home', 'invest', 'raise', 'contracts', 'settings'];
 type Operation = {
   id: string; freelancerId: string; title: string; assetType: 'INVOICE' | 'MILESTONE'; payerLegalName: string;
   nominalAmountCents: string; advanceAmountCents: string; prooflyFeeCents: string; commercialDiscountCents: string;
   fundedCapitalCents: string; remainingFundingCents: string; termDays: number; dueDate: string; status: string;
   effectiveAnnualRate: number; freelancerExecutionScore: number; payerSolvencyScore: number;
+  contractId?: string; milestoneIndex?: number;
 };
 type Projection = { fundedCapitalCents: string; netEstimatedProfitCents: string; totalEstimatedPayoutCents: string; effectiveAnnualRate: number };
 type Snapshot = {
   me: { id: string; name: string; tier: string; kycStatus: string; availableLimitCents: string; maxQuotaCents: string; executionScore: number };
   operations: Operation[];
-  investments: { id: string; operationId: string; fundedCapitalCents: string; projection: Projection; settlement?: { profitEarnedCents: string; totalDistributedCents: string } }[];
+  investments: { id: string; operationId: string; fundedCapitalCents: string; createdAt: string; projection: Projection; settlement?: { profitEarnedCents: string; totalDistributedCents: string } }[];
   events: { id: string; operationId: string; kind: string; title: string; date: string }[];
 };
 const NAV: { id: Page; label: string; icon: string }[] = [
   { id: 'home', label: 'Inicio', icon: 'home' },
   { id: 'invest', label: 'Invertir', icon: 'growth' },
   { id: 'raise', label: 'Anticipar', icon: 'bolt' },
-  { id: 'activity', label: 'Actividad', icon: 'clock' },
+  { id: 'contracts', label: 'Contratos', icon: 'folder' },
 ];
 const STATUS: Record<string, string> = {
   PENDING_CLIENT_CONFIRMATION: 'Por confirmar', QUOTED: 'Cotización lista', APPROVED_PENDING_FUNDING: 'Disponible',
@@ -39,6 +40,37 @@ function cents(value: string) {
   if (result <= 0n) throw new Error('El valor debe ser mayor que cero.');
   return result.toString();
 }
+// Animate a number from its previous value to the next one. Honors
+// prefers-reduced-motion by snapping straight to the target.
+function useCountUp(target: number, duration = 650) {
+  const [value, setValue] = useState(target);
+  const fromRef = useRef(target);
+  useEffect(() => {
+    const from = fromRef.current;
+    if (from === target) return;
+    const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { fromRef.current = target; setValue(target); return; }
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      setValue(from + (target - from) * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else fromRef.current = target;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return value;
+}
+
+// A money amount (in cents) that counts up on change.
+function CountUpMoney({ cents }: { cents: bigint }) {
+  const value = useCountUp(Number(cents));
+  return <>{money(Math.round(value).toString())}</>;
+}
+
 function Icon({ name, size = 22 }: { name: string; size?: number }) {
   const paths: Record<string, ReactNode> = {
     home: <><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="M9 21v-8h6v8"/></>,
@@ -48,6 +80,8 @@ function Icon({ name, size = 22 }: { name: string; size?: number }) {
     bell: <><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></>,
     chevron: <path d="m9 18 6-6-6-6"/>,
     file: <><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/></>,
+    folder: <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>,
+    layers: <><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/></>,
     arrow: <path d="M5 12h14m-6-6 6 6-6 6"/>, plus: <path d="M12 5v14M5 12h14"/>, close: <path d="m6 6 12 12M18 6 6 18"/>,
     check: <path d="m5 12 4 4L19 6"/>, exit: <><path d="M10 4H5v16h5M14 7l5 5-5 5M9 12h10"/></>,
   };
@@ -75,6 +109,7 @@ export default function AppShell() {
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   const [attachment, setAttachment] = useState<string>('');
   const [investFilter, setInvestFilter] = useState<'ALL' | 'INVOICE' | 'MILESTONE'>('ALL');
+  const [contractId, setContractId] = useState('');
   const [accepted, setAccepted] = useState(false);
   function toggleCheck(key: string) { setChecks(c => ({ ...c, [key]: !c[key] })); }
   const [notice, setNotice] = useState('');
@@ -161,19 +196,53 @@ export default function AppShell() {
     try {
       const required = kind === 'MILESTONE' ? ['ready'] : ['validated', 'received', 'delivered', 'accepted'];
       const allConfirmed = required.every(k => checks[k]);
-      const result = await mutate('create', { assetType: kind, title: form.get('title'), payerLegalName: form.get('company'), nominalAmountCents: cents(String(form.get('amount'))), termDays: Number(form.get('term')), checks: allConfirmed });
+      const result = await mutate('create', { assetType: kind, title: form.get('title'), payerLegalName: form.get('company'), nominalAmountCents: cents(String(form.get('amount'))), termDays: Number(form.get('term')), checks: allConfirmed, contractId: kind === 'MILESTONE' && contractId ? contractId : undefined });
       if (result) { setCreating(false); setSelected(result.id); go('raise'); }
     } catch (r) { setError(r instanceof Error ? r.message : 'Revisa los datos.'); }
   }
-  function openCreate(assetKind: string) { setKind(assetKind); setChecks({}); setAttachment(''); setRaiseAmount('1000000'); setRaiseTerm('30'); setError(''); setCreating(true); }
+  function openCreate(assetKind: string, contractId?: string) { setKind(assetKind); setChecks({}); setAttachment(''); setRaiseAmount('1000000'); setRaiseTerm('30'); setContractId(contractId ?? ''); setError(''); setCreating(true); }
 
   if (!data) return <main className="app-boot"><div className="font-script text-3xl text-electric">Proofly</div><p role="status">{error || 'Preparando tu espacio…'}</p>{error && <button className="app-primary" onClick={() => location.reload()}>Reintentar</button>}</main>;
 
   const mine = data.operations.filter(op => op.freelancerId === data.me.id);
   const market = data.operations.filter(op => op.status === 'APPROVED_PENDING_FUNDING' && op.freelancerId !== data.me.id);
+
+  // Group the user's own milestones by contract. Each group is a contract with
+  // its milestones ordered by index; invoices and ungrouped milestones become
+  // single-item groups so the Contracts tab shows everything the user raised.
+  type Group = { contractId: string | null; title: string; payer: string; isContract: boolean; ops: Operation[] };
+  const groups: Group[] = (() => {
+    const byContract = new Map<string, Operation[]>();
+    const singles: Operation[] = [];
+    for (const op of mine) {
+      if (op.assetType === 'MILESTONE' && op.contractId) {
+        const list = byContract.get(op.contractId) || [];
+        list.push(op); byContract.set(op.contractId, list);
+      } else singles.push(op);
+    }
+    const contractGroups: Group[] = [...byContract.entries()].map(([contractId, ops]) => {
+      const ordered = [...ops].sort((a, b) => (a.milestoneIndex || 0) - (b.milestoneIndex || 0));
+      return { contractId, title: ordered[0].title, payer: ordered[0].payerLegalName, isContract: ops.length > 1, ops: ordered };
+    });
+    const singleGroups: Group[] = singles.map(op => ({ contractId: op.contractId ?? null, title: op.title, payer: op.payerLegalName, isContract: false, ops: [op] }));
+    return [...contractGroups, ...singleGroups];
+  })();
   const active = data.operations.find(op => op.id === selected);
   const invested = sum(data.investments.map(i => i.fundedCapitalCents));
   const profit = sum(data.investments.map(i => i.projection?.netEstimatedProfitCents || '0'));
+
+  // Real capital trend: cumulative invested capital over time, built from the
+  // investments ordered by date. Each bar is a real cumulative point; no data
+  // means no chart (we show a flat baseline instead of inventing a trend).
+  const spark = (() => {
+    const ordered = [...data.investments].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    if (ordered.length < 2) return [] as number[];
+    let acc = 0n;
+    const cumulative = ordered.map(i => { acc += BigInt(i.fundedCapitalCents); return Number(acc); });
+    const peak = cumulative[cumulative.length - 1] || 1;
+    // Keep the last 7 points and scale to a 24..100% band so bars read well.
+    return cumulative.slice(-7).map(v => 24 + Math.round((v / peak) * 76));
+  })();
   const tier = TIER[data.me.tier] || 'Semilla';
   const ownActive = active ? active.freelancerId === data.me.id : false;
   const unread = (() => { let n = 0; for (const ev of data.events) { if (ev.id === seen) break; n++; } return n; })();
@@ -299,13 +368,15 @@ export default function AppShell() {
           <section className="app-hero-balance">
             <div className="app-hero-main">
               <span className="app-hero-label">Capital invertido</span>
-              <strong className="app-hero-amount">{money(invested)}</strong>
-              <span className={`app-hero-trend ${profit > 0n ? 'is-up' : ''}`}>{profit > 0n ? `▲ ${money(profit)} de ganancia estimada` : 'Empieza a invertir y haz crecer tu capital'}</span>
+              <strong className="app-hero-amount"><CountUpMoney cents={invested}/></strong>
+              <span className={`app-hero-trend ${profit > 0n ? 'is-up' : ''}`}>{profit > 0n ? <>▲ <CountUpMoney cents={profit}/> de ganancia estimada</> : 'Empieza a invertir y haz crecer tu capital'}</span>
             </div>
-            <div className="app-hero-spark" aria-hidden="true">{[38,52,44,70,58,84,66].map((h, i) => <i key={i} style={{ height: `${h}%` }}/>)}</div>
+            {spark.length
+              ? <div className="app-hero-spark" aria-hidden="true">{spark.map((h, i) => <i key={i} style={{ height: `${h}%` }}/>)}</div>
+              : <div className="app-hero-baseline" aria-hidden="true"/>}
             <div className="app-hero-quota">
               <span><Icon name="bolt" size={15}/> Cupo para anticipar</span>
-              <strong>{money(data.me.availableLimitCents)}</strong>
+              <strong><CountUpMoney cents={BigInt(data.me.availableLimitCents)}/></strong>
             </div>
           </section>
 
@@ -321,7 +392,7 @@ export default function AppShell() {
             </button>
           </div>
 
-          <div className="app-sec-head"><h2>Actividad reciente</h2>{data.events.length > 0 && <button className="app-link" onClick={() => go('activity')}>Ver todo</button>}</div>
+          <div className="app-sec-head"><h2>Actividad reciente</h2>{mine.some(op => op.contractId) && <button className="app-link" onClick={() => go('contracts')}>Ver contratos</button>}</div>
           {data.events.length
             ? <div className="app-list">{data.events.slice(0, 4).map(ev => <div key={ev.id} className="app-act"><span className="app-row-icon"><Icon name={ev.kind === 'settle' ? 'check' : ev.kind === 'participate' ? 'growth' : 'clock'} size={18}/></span><div><strong>{ev.title}</strong><span>{new Date(ev.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</span></div></div>)}</div>
             : <div className="app-empty">
@@ -368,11 +439,46 @@ export default function AppShell() {
             : <p className="app-muted">Crea tu primera factura o hito para ver una cotización.</p>}
         </>}
 
-        {page === 'activity' && <>
-          <h1 className="app-title">Actividad</h1>
-          {data.events.length
-            ? <div className="app-list">{data.events.map(ev => <button key={ev.id} className="app-act" onClick={() => { const op = data.operations.find(o => o.id === ev.operationId); if (op) open(op); }}><span className="app-row-icon"><Icon name={ev.kind === 'settle' ? 'check' : 'clock'} size={18}/></span><div><strong>{ev.title}</strong><span>{new Date(ev.date).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}</span></div><Icon name="arrow" size={16}/></button>)}</div>
-            : <p className="app-muted">Aquí verás cada movimiento de tu cuenta.</p>}
+        {page === 'contracts' && <>
+          <div className="app-sec-head"><h1 className="app-title">Contratos</h1><button className="app-primary app-primary-sm" onClick={() => openCreate('MILESTONE')}><Icon name="plus" size={16}/>Nuevo</button></div>
+          <p className="app-lead">Agrupa los hitos de un mismo proyecto y sigue el recaudo tramo a tramo.</p>
+          {groups.length
+            ? <div className="app-contract-grid">{groups.map(group => {
+                const total = sum(group.ops.map(o => o.advanceAmountCents));
+                const settled = group.ops.filter(o => o.status === 'SETTLED');
+                const collected = sum(settled.map(o => o.advanceAmountCents));
+                const pct = total > 0n ? Math.min(100, Math.round(Number(collected) / Number(total) * 100)) : 0;
+                return <section key={group.contractId ?? group.ops[0].id} className={`app-contract ${group.isContract ? '' : 'is-single'}`}>
+                  <header className="app-contract-head">
+                    <span className="app-contract-icon"><Icon name={group.isContract ? 'layers' : group.ops[0].assetType === 'MILESTONE' ? 'bolt' : 'file'} size={18}/></span>
+                    <div className="app-contract-ident">
+                      <strong>{group.isContract ? `Contrato · ${group.payer}` : group.title}</strong>
+                      <span>{group.isContract ? `${group.ops.length} hitos · ${group.payer}` : group.payer}</span>
+                    </div>
+                  </header>
+                  {group.isContract && <>
+                    <div className="app-contract-figures">
+                      <div><span>Recaudado</span><strong className="app-positive">{money(collected)}</strong></div>
+                      <div><span>Total del contrato</span><strong>{money(total)}</strong></div>
+                      <div><span>Hitos liquidados</span><strong>{settled.length}/{group.ops.length}</strong></div>
+                    </div>
+                    <div className="app-op-progress"><i style={{ width: `${pct}%` }}/></div>
+                  </>}
+                  <div className="app-contract-steps">{group.ops.map(op => <button key={op.id} className="app-milestone" onClick={() => open(op)}>
+                    {group.isContract && <span className="app-milestone-idx">{op.milestoneIndex}</span>}
+                    <span className="app-milestone-body"><strong>{op.title}</strong><span className={`app-step app-step-${op.status.startsWith('SETTLED') ? 'done' : op.status === 'APPROVED_PENDING_FUNDING' || op.status === 'ACTIVE_FUNDED' || op.status === 'DISBURSED' ? 'go' : 'wait'}`}>{STATUS[op.status] || op.status}</span></span>
+                    <span className="app-milestone-amount">{money(op.advanceAmountCents)}</span>
+                    <Icon name="chevron" size={16}/>
+                  </button>)}</div>
+                  {group.isContract && settled.length < group.ops.length && <button className="app-contract-add" onClick={() => openCreate('MILESTONE', group.contractId ?? undefined)}><Icon name="plus" size={14}/>Añadir hito a este contrato</button>}
+                </section>;
+              })}</div>
+            : <div className="app-empty">
+                <span className="app-empty-icon"><Icon name="folder" size={26}/></span>
+                <strong>Aún no tienes contratos</strong>
+                <p>Crea un contrato por hitos para financiar un proyecto por tramos y seguir su recaudo aquí.</p>
+                <div className="app-empty-actions"><button className="app-primary app-primary-sm" onClick={() => openCreate('MILESTONE')}>Crear contrato por hitos</button></div>
+              </div>}
         </>}
 
       </main>
@@ -396,14 +502,21 @@ export default function AppShell() {
       const required = events.map(([k]) => k);
       const allConfirmed = required.every(k => checks[k]);
       const confirmedCount = required.filter(k => checks[k]).length;
-      return <Modal title="Anticipar cobro" onClose={() => { setCreating(false); setError(''); }}>
-        <div className="app-asset-tabs" role="tablist">
-          <button type="button" role="tab" aria-selected={isInvoice} className={isInvoice ? 'is-on' : ''} onClick={() => { setKind('INVOICE'); setChecks({}); }}><Icon name="file" size={16}/> Factura</button>
-          <button type="button" role="tab" aria-selected={!isInvoice} className={!isInvoice ? 'is-on' : ''} onClick={() => { setKind('MILESTONE'); setChecks({}); setAttachment(''); }}><Icon name="bolt" size={16}/> Hito</button>
-        </div>
+      // Adding a milestone to an existing contract: lock to MILESTONE, inherit the payer.
+      const contractOps = contractId ? mine.filter(op => op.contractId === contractId) : [];
+      const inContract = contractId !== '' && contractOps.length > 0;
+      const contractPayer = contractOps[0]?.payerLegalName ?? '';
+      const nextIndex = contractOps.reduce((max, op) => Math.max(max, op.milestoneIndex || 0), 0) + 1;
+      return <Modal title={inContract ? 'Añadir hito al contrato' : 'Anticipar cobro'} onClose={() => { setCreating(false); setError(''); }}>
+        {inContract
+          ? <div className="app-contract-note"><Icon name="layers" size={16}/> Hito {nextIndex} de un contrato con {contractPayer}. Hereda la empresa pagadora.</div>
+          : <div className="app-asset-tabs" role="tablist">
+              <button type="button" role="tab" aria-selected={isInvoice} className={isInvoice ? 'is-on' : ''} onClick={() => { setKind('INVOICE'); setChecks({}); }}><Icon name="file" size={16}/> Factura</button>
+              <button type="button" role="tab" aria-selected={!isInvoice} className={!isInvoice ? 'is-on' : ''} onClick={() => { setKind('MILESTONE'); setChecks({}); setAttachment(''); }}><Icon name="bolt" size={16}/> Hito</button>
+            </div>}
         <form onSubmit={create} className="app-form">
-          <label>Título<input name="title" required minLength={3} maxLength={80} placeholder="Diseño de identidad"/></label>
-          <label>Empresa pagadora<input name="company" required maxLength={80} placeholder="Estudio Nube"/></label>
+          <label>Título<input name="title" required minLength={3} maxLength={80} placeholder={inContract ? `Hito ${nextIndex}: entrega` : 'Diseño de identidad'}/></label>
+          <label>Empresa pagadora<input name="company" required maxLength={80} placeholder="Estudio Nube" defaultValue={contractPayer} readOnly={inContract}/></label>
           <div className="app-form-pair"><label>Valor (COP)<input name="amount" type="number" required min="1000" step="1000" value={raiseAmount} onChange={e => setRaiseAmount(e.target.value)}/></label><label>Plazo<select name="term" value={raiseTerm} onChange={e => setRaiseTerm(e.target.value)}><option value="15">15 días</option><option value="30">30 días</option><option value="45">45 días</option><option value="60">60 días</option><option value="90">90 días</option></select></label></div>
 
           {advance > 0n && <div className="app-quote">

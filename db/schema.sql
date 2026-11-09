@@ -139,6 +139,17 @@ CREATE TABLE operations (
     payer_solvency_score INT,
     freelancer_execution_score INT,
 
+    -- Metadata de presentación (no es invariante financiera): el título que el
+    -- usuario da al entregable y la tasa E.A. cotizada que muestra la interfaz.
+    -- Se persisten aquí para que sobrevivan al reinicio del proceso.
+    title VARCHAR(80),
+    effective_annual_rate NUMERIC,
+
+    -- Agrupación por contrato (solo presentación): los hitos de un mismo contrato
+    -- comparten contract_id y llevan su índice 1-based. Las facturas los dejan NULL.
+    contract_id VARCHAR(64),
+    milestone_index INT,
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -150,6 +161,7 @@ CREATE TABLE operations (
 CREATE INDEX idx_operations_status ON operations(status);
 CREATE INDEX idx_operations_freelancer ON operations(freelancer_id);
 CREATE INDEX idx_operations_due_date ON operations(due_date);
+CREATE INDEX idx_operations_contract ON operations(contract_id) WHERE contract_id IS NOT NULL;
 
 -- ----------------------------------------------------------------------------
 -- 4. PARTICIPACIONES DE FINANCIADORES (InvestmentEntity del dominio)
@@ -171,7 +183,26 @@ CREATE INDEX idx_investments_operation ON investments(operation_id);
 CREATE INDEX idx_investments_financier ON investments(financier_id);
 
 -- ----------------------------------------------------------------------------
--- 5. SINCRONIZACIÓN BLOCKCHAIN (TRANSACTIONAL OUTBOX, ADR-0004)
+-- 5. ACTIVIDAD DEL USUARIO (feed de eventos para la interfaz)
+-- ----------------------------------------------------------------------------
+-- Cada evento que el usuario ve en su actividad y notificaciones (crear,
+-- confirmar, aceptar, participar, recaudar). Es metadata de presentación, no
+-- parte del núcleo financiero; se persiste para que la actividad sobreviva al
+-- reinicio del proceso.
+
+CREATE TABLE activity_events (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64) NOT NULL REFERENCES users(id),
+    operation_id VARCHAR(64) NOT NULL REFERENCES operations(id) ON DELETE RESTRICT,
+    kind VARCHAR(40) NOT NULL,
+    title VARCHAR(160) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_activity_user ON activity_events(user_id, created_at DESC);
+
+-- ----------------------------------------------------------------------------
+-- 6. SINCRONIZACIÓN BLOCKCHAIN (TRANSACTIONAL OUTBOX, ADR-0004)
 -- ----------------------------------------------------------------------------
 -- Compartido entre apps/api (productor) y apps/worker (consumidor con SKIP LOCKED).
 

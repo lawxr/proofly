@@ -32,6 +32,15 @@ export interface OperationProps {
   freelancerExecutionScore?: number;
   createdAt: Date;
   updatedAt: Date;
+  // Presentation metadata (not a financial invariant). The title is the user's
+  // label for the deliverable; the rate is the quoted E.A. the UI displays.
+  // Optional so the domain never requires them, but persisted when present.
+  title?: string;
+  effectiveAnnualRate?: number;
+  // Contract grouping (presentation only): milestones of the same contract share
+  // a contractId and carry their 1-based index. Invoices leave both undefined.
+  contractId?: string;
+  milestoneIndex?: number;
 }
 
 export class OperationEntity {
@@ -55,6 +64,10 @@ export class OperationEntity {
   freelancerExecutionScore?: number;
   createdAt: Date;
   updatedAt: Date;
+  title?: string;
+  effectiveAnnualRate?: number;
+  contractId?: string;
+  milestoneIndex?: number;
 
   constructor(props: OperationProps) {
     this.id = props.id;
@@ -77,6 +90,10 @@ export class OperationEntity {
     this.freelancerExecutionScore = props.freelancerExecutionScore;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
+    this.title = props.title;
+    this.effectiveAnnualRate = props.effectiveAnnualRate;
+    this.contractId = props.contractId;
+    this.milestoneIndex = props.milestoneIndex;
   }
 
   isFullyFunded(): boolean {
