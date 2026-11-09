@@ -147,7 +147,7 @@ export function createProoflyServer({ root = process.cwd(), secureCookies = proc
         return serve(res, dist, 'index.html');
       }
       // Public legal pages: rendered by the SPA, no session required.
-      if (pathname === '/privacidad' || pathname === '/privacidad/' || pathname === '/cookies' || pathname === '/cookies/') {
+      if (pathname === '/privacidad' || pathname === '/privacidad/' || pathname === '/cookies' || pathname === '/cookies/' || pathname === '/aviso' || pathname === '/aviso/') {
         return serve(res, dist, 'index.html');
       }
       if (pathname.startsWith('/assets/')) return serve(res, resolve(dist, 'assets'), pathname.slice(8));

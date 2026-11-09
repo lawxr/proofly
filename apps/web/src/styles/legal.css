@@ -16,6 +16,7 @@
 .legal-main strong { color: #1E0B3B; font-weight: 700; }
 .legal-main a { color: #7300FF; font-weight: 600; }
 .legal-note { background: #F2E8FD; border-radius: 16px; padding: 16px 18px; margin: 18px 0; font-size: 14px; line-height: 1.6; color: #3A1670; }
+.legal-callout { background: #FDF2E2; border: 1px solid #F3D9A8; border-radius: 16px; padding: 16px 18px; margin: 4px 0 24px; font-size: 15px; line-height: 1.6; font-weight: 600; color: #8A5A12; }
 .legal-foot { border-top: 1px solid #F0E7FA; margin-top: 40px; padding-top: 20px; display: flex; gap: 16px; flex-wrap: wrap; }
 .legal-foot a { font-size: 14px; color: #7300FF; font-weight: 700; text-decoration: none; }
 .legal-foot a:hover { text-decoration: underline; }
