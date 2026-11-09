@@ -51,6 +51,7 @@ import {
   SandboxMilestoneConfirmationAdapter,
   SandboxKycAdapter
 } from './adapters/sandbox-mocks/sandbox-adapters.ts';
+import { CufeInvoiceVerificationAdapter } from './adapters/dian/cufe-invoice-adapter.ts';
 
 export interface AppDependencies {
   operationRepo: OperationRepositoryPort;
@@ -100,12 +101,20 @@ export function createPostgresDependencies(connectionString: string, serverSecre
  */
 export function createDependenciesFromEnv(env: Record<string, string | undefined> = process.env): AppDependencies {
   const serverSecret = env.SERVER_HMAC_SECRET || undefined;
-  if (env.PERSISTENCE === 'postgres') {
-    const url = env.DATABASE_URL;
-    if (!url) throw new Error('PERSISTENCE=postgres requires DATABASE_URL.');
-    return createPostgresDependencies(url, serverSecret);
+  const deps = env.PERSISTENCE === 'postgres'
+    ? (() => {
+        const url = env.DATABASE_URL;
+        if (!url) throw new Error('PERSISTENCE=postgres requires DATABASE_URL.');
+        return createPostgresDependencies(url, serverSecret);
+      })()
+    : createDependencies(serverSecret);
+
+  // Real invoice integrity check by CUFE recomputation (opt-in). Default stays
+  // the sandbox verifier so existing flows are unchanged.
+  if (env.INVOICE_VERIFIER === 'cufe') {
+    deps.invoiceVerifier = new CufeInvoiceVerificationAdapter(env.DIAN_CLAVE_TECNICA || '');
   }
-  return createDependencies(serverSecret);
+  return deps;
 }
 
 export async function seedDemoData(deps: AppDependencies): Promise<{

@@ -6,6 +6,7 @@
 export * from './financial/financial-engine.ts';
 export * from './security/anti-duplicate.ts';
 export * from './security/password.ts';
+export * from './security/cufe.ts';
 export * from './state/operation-state.ts';
 export * from './reputation/tiers-policy.ts';
 
