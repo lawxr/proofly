@@ -42,6 +42,9 @@ try {
   await page.goto(`${base}/cookies`);
   await page.getByRole('heading', { name: 'Política de cookies', exact: true }).waitFor();
   await page.getByText('proofly_session', { exact: false }).waitFor();
+  await page.goto(`${base}/aviso`);
+  await page.getByRole('heading', { name: 'Aviso de demostración', exact: true }).waitFor();
+  assert.ok(await page.getByText('Proofly es un proyecto de demostración', { exact: false }).count() >= 1, 'demo notice clarifies non-commercial demonstration');
 
   await page.goto(base);
   await page.getByRole('button', { name: 'Empezar', exact: true }).click();

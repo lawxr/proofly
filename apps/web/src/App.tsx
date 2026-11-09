@@ -5,7 +5,7 @@ import { ValueProposition } from './components/ValueProposition';
 import { BentoCarousel } from './components/BentoCarousel';
 import { Footer } from './components/Footer';
 import { AuthScreen } from './components/AuthScreen';
-import { PrivacyPolicy, CookiePolicy } from './components/LegalPages';
+import { PrivacyPolicy, CookiePolicy, DemoNotice } from './components/LegalPages';
 import { CookieConsent } from './components/CookieConsent';
 const AppShell = lazy(() => import('./components/AppShell'));
 
@@ -29,6 +29,7 @@ export default function App() {
   if (/^\/login\/?$/.test(window.location.pathname)) return <AuthScreen />;
   if (/^\/privacidad\/?$/.test(window.location.pathname)) return <PrivacyPolicy />;
   if (/^\/cookies\/?$/.test(window.location.pathname)) return <CookiePolicy />;
+  if (/^\/aviso\/?$/.test(window.location.pathname)) return <DemoNotice />;
   if (/^\/app(?:\/|$)/.test(window.location.pathname)) return <Suspense fallback={<main className="proofly-login text-electric" role="status">Abriendo Proofly…</main>}><AppShell /></Suspense>;
 
   return (

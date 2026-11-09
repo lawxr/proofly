@@ -15,6 +15,7 @@ function Shell({ title, children }: { title: string; children: ReactNode }) {
         <p className="legal-updated">Última actualización: {UPDATED}</p>
         {children}
         <nav className="legal-foot">
+          <a href="/aviso">Aviso de demostración</a>
           <a href="/privacidad">Política de privacidad</a>
           <a href="/cookies">Política de cookies</a>
           <a href="/">Inicio</a>
@@ -127,6 +128,56 @@ export function CookiePolicy() {
         Puedes borrar el almacenamiento local y las cookies de Proofly desde la configuración de tu navegador. Al
         hacerlo, el aviso de cookies volverá a mostrarse en tu próxima visita. Ten en cuenta que, si bloqueas la
         cookie de sesión, no podrás mantener la sesión iniciada.
+      </p>
+    </Shell>
+  );
+}
+
+export function DemoNotice() {
+  return (
+    <Shell title="Aviso de demostración">
+      <div className="legal-callout" role="note">
+        Proofly es un proyecto de demostración. No es un producto financiero disponible para el
+        público y no debe usarse para operaciones reales.
+      </div>
+
+      <h2>1. Qué es Proofly</h2>
+      <p>
+        Proofly se construyó únicamente para demostrar el funcionamiento de un modelo de negocio de
+        anticipo de facturas e hitos (factoring) con liquidación transparente. Es material académico
+        y de prototipo; no constituye una oferta, invitación ni recomendación para invertir, financiar
+        o contratar servicio financiero alguno.
+      </p>
+
+      <h2>2. No es un servicio financiero real</h2>
+      <ul>
+        <li>No mueve dinero real: no hay desembolsos, recaudos ni pagos efectivos.</li>
+        <li>No está autorizado ni vigilado por la Superintendencia Financiera de Colombia ni por ninguna autoridad.</li>
+        <li>No capta recursos del público ni administra dinero de terceros.</li>
+        <li>Las cifras, tasas, operaciones y empresas mostradas son ilustrativas.</li>
+      </ul>
+
+      <h2>3. Verificaciones simuladas</h2>
+      <p>
+        La verificación de identidad (KYC) y la validación de facturas se realizan con adaptadores de
+        demostración. No sustituyen una verificación real ante la DIAN ni ante un proveedor de
+        identidad, y no deben interpretarse como tales.
+      </p>
+
+      <h2>4. Uso permitido</h2>
+      <p>
+        Puedes explorar la interfaz y el flujo para entender el modelo. No ingreses datos personales
+        reales sensibles ni información financiera real. Cualquier dato que ingreses es para fines de
+        la demostración.
+      </p>
+
+      <h2>5. Salida a producción</h2>
+      <p>
+        Antes de ofrecer un servicio como este al público se requieren, entre otros, la estructura
+        jurídica apropiada (cesión de derechos, patrimonio autónomo o cuenta de recaudo), proveedores
+        reales de KYC, pagos y validación tributaria, y el cumplimiento regulatorio colombiano
+        aplicable. Mientras eso no exista, Proofly permanece como demostración y no puede salir al
+        público.
       </p>
     </Shell>
   );

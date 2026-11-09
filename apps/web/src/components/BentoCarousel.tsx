@@ -177,7 +177,7 @@ export function BentoCarousel({ onFund, onSimulate }: BentoCarouselProps) {
       {/* Header */}
       <div className="proofly-ecosystem-heading grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
         <div className="lg:col-span-2">
-          <span className="inline-flex items-center gap-2 text-xs font-extrabold tracking-widest text-electric bg-lilac/50 border border-ink/15 px-3 py-1 rounded-full tabular-nums">01–06</span>
+          <span className="inline-flex items-center gap-2 text-xs font-extrabold tracking-widest text-electric bg-lilac/50 border border-ink/15 px-3 py-1 rounded-full tabular-nums">01-06</span>
         </div>
         <div className="lg:col-span-6">
           <h2 className="balance-text font-extrabold text-4xl sm:text-6xl tracking-tight text-ink leading-[1.03]">
@@ -204,7 +204,7 @@ export function BentoCarousel({ onFund, onSimulate }: BentoCarouselProps) {
                 <img
                   src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=700&q=80"
                   alt="Diseñador independiente validando su entregable"
-                  width="700" height="800" loading="lazy"
+                  width="700" height="800" loading="lazy" decoding="async"
                   className="editorial-photo w-full h-full object-cover"
                 />
               </div>
@@ -234,8 +234,8 @@ export function BentoCarousel({ onFund, onSimulate }: BentoCarouselProps) {
               <svg className="w-24 h-24" viewBox="0 0 110 110" fill="none" aria-hidden="true" filter="url(#soft3DShadow)">
                 <rect x="16" y="38" width="66" height="38" rx="10" transform="rotate(-14 16 38)" fill="url(#clayViolet)" stroke="#1E0B3B" strokeWidth="2.2"/>
                 <rect x="26" y="46" width="66" height="38" rx="10" transform="rotate(8 26 46)" fill="url(#clayLilac)" stroke="#1E0B3B" strokeWidth="2.2"/>
-                <circle cx="58" cy="65" r="11" fill="#7300FF" stroke="#1E0B3B" strokeWidth="1.8"/>
-                <text x="58" y="69" textAnchor="middle" fill="#FFF" fontSize="12" fontWeight="800">$</text>
+                <circle cx="56" cy="69" r="11" fill="#7300FF" stroke="#1E0B3B" strokeWidth="1.8"/>
+                <text x="56" y="69" textAnchor="middle" dominantBaseline="central" fill="#FFF" fontSize="12" fontWeight="800">$</text>
               </svg>
               <span className="text-[11px] font-extrabold text-ink">Efectivo al instante</span>
             </div>
@@ -306,13 +306,13 @@ export function BentoCarousel({ onFund, onSimulate }: BentoCarouselProps) {
                 <img
                   src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=700&q=80"
                   alt="Equipo revisando retornos de portafolio"
-                  width="700" height="665" loading="lazy"
+                  width="700" height="665" loading="lazy" decoding="async"
                   className="editorial-photo w-full h-full object-cover"
                 />
               </div>
             </div>
 
-            <div className="bg-white border border-ink/15 rounded-[28px] p-6 shadow-floating w-[86%] -mt-64 ml-auto relative z-20 space-y-5">
+            <div className="bg-white border border-ink/15 rounded-[28px] p-6 shadow-floating w-[86%] -mt-28 sm:-mt-36 ml-auto relative z-20 space-y-5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold text-zinc-600">Resumen de recaudos</span>
                 <button type="button" onClick={onSimulate} className="text-xs font-extrabold text-electric hover:underline">Ver todo</button>
