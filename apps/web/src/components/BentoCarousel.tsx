@@ -312,7 +312,7 @@ export function BentoCarousel({ onFund, onSimulate }: BentoCarouselProps) {
               </div>
             </div>
 
-            <div className="bg-white border border-ink/15 rounded-[28px] p-6 shadow-floating w-[86%] -mt-40 sm:-mt-64 ml-auto relative z-20 space-y-5">
+            <div className="bg-white border border-ink/15 rounded-[28px] p-6 shadow-floating w-[86%] -mt-28 sm:-mt-36 ml-auto relative z-20 space-y-5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold text-zinc-600">Resumen de recaudos</span>
                 <button type="button" onClick={onSimulate} className="text-xs font-extrabold text-electric hover:underline">Ver todo</button>

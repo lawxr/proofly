@@ -33,11 +33,6 @@ function Welcome({ onSignup, onLogin }: { onSignup: () => void; onLogin: () => v
         <span className="auth-welcome-eyebrow">Te damos la bienvenida</span>
         <h1>Empecemos</h1>
         <p className="auth-welcome-lead">Crea tu cuenta en un minuto o entra si ya tienes una. La verificación de identidad va después, sin fricción.</p>
-        <ul className="auth-welcome-points">
-          <li><span className="auth-point-dot" aria-hidden="true"/>Invierte en operaciones verificadas</li>
-          <li><span className="auth-point-dot" aria-hidden="true"/>Anticipa tus facturas e hitos en pesos</li>
-          <li><span className="auth-point-dot" aria-hidden="true"/>Una sola cuenta para ambas cosas</li>
-        </ul>
       </div>
 
       <div className="auth-welcome-actions">
