@@ -4,9 +4,10 @@ pragma solidity ^0.8.24;
 import {Script, console} from "forge-std/Script.sol";
 import {ProoflyKYCRegistry} from "../src/ProoflyKYCRegistry.sol";
 import {ProoflyOperations} from "../src/ProoflyOperations.sol";
+import {MockUSDC} from "../src/MockUSDC.sol";
 
 contract DeployProofly is Script {
-    function run() external returns (address kycAddress, address operationsAddress) {
+    function run() external returns (address kycAddress, address mockUsdcAddress, address operationsAddress) {
         uint256 deployerPrivateKey = vm.envOr(
             "OPERATOR_PRIVATE_KEY",
             uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80) // Anvil default key
@@ -23,8 +24,13 @@ contract DeployProofly is Script {
         kycAddress = address(kyc);
         console.log("ProoflyKYCRegistry desplegado en:", kycAddress);
 
-        // 2. Desplegar Motor de Operaciones ERC-1155
-        ProoflyOperations operations = new ProoflyOperations(deployer, kycAddress);
+        // 2. Desplegar MockUSDC demo con 6 decimales
+        MockUSDC mockUsdc = new MockUSDC(deployer);
+        mockUsdcAddress = address(mockUsdc);
+        console.log("MockUSDC desplegado en:", mockUsdcAddress);
+
+        // 3. Desplegar Motor de Operaciones ERC-1155
+        ProoflyOperations operations = new ProoflyOperations(deployer, kycAddress, mockUsdcAddress);
         operationsAddress = address(operations);
         console.log("ProoflyOperations desplegado en:", operationsAddress);
 

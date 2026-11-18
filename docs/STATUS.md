@@ -68,4 +68,10 @@ La **Fase 7 (Validación Integral QA-01 a QA-06, Seguridad y Pruebas de Carga)**
 ---
 
 ## 4. Próxima Acción Inmediata
+- Despliegue USDC/operations de prueba completado en Ethereum Sepolia:
+  - KYC: `0x407B83F792895E2d88B8b96e1A640b0Fa3A2De11`
+  - MockUSDC: `0x776991CA67ec0DAb8907FD84d08143BcA2050C0b`
+  - Operations: `0xdA03f2AfBeB77a47843466252e04d7dA284DaBA3`
+- 2026-11-18: vuelta completa validada en Sepolia (token 5): abrir → aprobar → depositar 97 mUSDC → sincronizar COP → recaudo → liquidar on-chain → retirar 99 mUSDC. Ver `docs/plan/USDC-SEPOLIA-MVP/batch-report.yaml` (sección `e2e_batch`).
+- Pendiente de aprobación: redeploy de `ProoflyOperations.sol` corregido; decisión sobre los 100 mUSDC bloqueados en el token 2.
 - Recibir confirmación **«APROBADO FASE 7»** para dar inicio a la **Fase 8: Documentación Operativa, Runbooks de Producción y Lanzamiento**.

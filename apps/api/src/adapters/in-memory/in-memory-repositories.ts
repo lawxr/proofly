@@ -212,5 +212,18 @@ export class InMemoryOutboxRepository implements OutboxRepositoryPort {
       e.lastError = reason;
     }
   }
+
+  async markRetry(id: string, reason: string): Promise<void> {
+    const e = this.events.find(ev => ev.id === id);
+    if (e) {
+      e.status = 'PENDING';
+      e.lastError = reason;
+      e.retryCount++;
+    }
+  }
+
+  async listByAggregate(aggregateType: string, aggregateId: string): Promise<OutboxEvent[]> {
+    return this.events.filter(e => e.aggregateType === aggregateType && e.aggregateId === aggregateId);
+  }
 }
 

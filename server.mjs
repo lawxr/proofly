@@ -102,10 +102,20 @@ export function createProoflyServer({ root = process.cwd(), secureCookies = proc
       }
 
       // --- Authenticated account: password change and KYC verification ---
-      if (pathname === '/api/account/password' || pathname === '/api/account/kyc') {
+      if (pathname === '/api/account/password' || pathname === '/api/account/kyc' || pathname === '/api/account/wallet') {
         const s = session(req);
         if (!s) return json(res, 401, 'unauthenticated');
         if (!sameOrigin(req)) return json(res, 403, 'invalid_origin');
+        if (pathname.endsWith('/wallet') && req.method === 'DELETE') {
+          if (!account.unlinkWallet) return json(res, 503, 'wallet_unavailable');
+          try {
+            await account.unlinkWallet({ userId: s.userId });
+            return json(res, 200, { code: 'wallet_unlinked' });
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'wallet_unlink_failed';
+            return json(res, 400, { code: 'invalid_request', message });
+          }
+        }
         if (req.method !== 'POST') return json(res, 405, 'method_not_allowed');
         if (!account) return json(res, 503, 'account_unavailable');
         const data = await readJsonBody(req, res);
@@ -114,6 +124,11 @@ export function createProoflyServer({ root = process.cwd(), secureCookies = proc
           if (pathname.endsWith('kyc')) {
             const user = await account.verifyIdentity({ userId: s.userId, legalName: data.legalName });
             return json(res, 200, { code: 'verified', name: user.legalName });
+          }
+          if (pathname.endsWith('wallet')) {
+            if (!account.linkWallet) return json(res, 503, 'wallet_unavailable');
+            const user = await account.linkWallet({ userId: s.userId, address: data.address, signature: data.signature });
+            return json(res, 200, { code: 'wallet_linked', address: user.walletAddress });
           }
           await account.changePassword({ userId: s.userId, currentPassword: data.currentPassword, newPassword: data.newPassword });
           return json(res, 200, { code: 'updated' });
@@ -161,5 +176,6 @@ export function createProoflyServer({ root = process.cwd(), secureCookies = proc
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const server = createProoflyServer();
-  server.listen(Number(process.env.PORT || 3000), '127.0.0.1', () => console.log(`Proofly: http://127.0.0.1:${server.address().port}`));
+  const host = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
+  server.listen(Number(process.env.PORT || 3000), host, () => console.log(`Proofly: http://${host}:${server.address().port}`));
 }

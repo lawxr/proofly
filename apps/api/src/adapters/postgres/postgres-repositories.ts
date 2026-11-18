@@ -428,6 +428,33 @@ export class PostgresOutboxRepository implements OutboxRepositoryPort {
       [id, reason]
     );
   }
+
+  /** Error transitorio (RPC, red): el evento vuelve a PENDING para reintentarlo. */
+  async markRetry(id: string, reason: string): Promise<void> {
+    await this.client.query(
+      `UPDATE outbox_events SET status = 'PENDING', last_error = $2, retry_count = retry_count + 1 WHERE id = $1`,
+      [id, reason]
+    );
+  }
+
+  async listByAggregate(aggregateType: string, aggregateId: string): Promise<OutboxEvent[]> {
+    const res = await this.client.query<any>(
+      `SELECT * FROM outbox_events WHERE aggregate_type = $1 AND aggregate_id = $2 ORDER BY created_at ASC`,
+      [aggregateType, aggregateId]
+    );
+    return res.rows.map(r => new OutboxEvent({
+      id: r.id,
+      aggregateType: r.aggregate_type,
+      aggregateId: r.aggregate_id,
+      eventType: r.event_type,
+      payload: typeof r.payload === 'string' ? JSON.parse(r.payload) : r.payload,
+      status: r.status,
+      retryCount: r.retry_count,
+      lastError: r.last_error ?? undefined,
+      createdAt: new Date(r.created_at),
+      processedAt: r.processed_at ? new Date(r.processed_at) : undefined
+    }));
+  }
 }
 
 

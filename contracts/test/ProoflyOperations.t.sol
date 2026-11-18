@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {ProoflyKYCRegistry} from "../src/ProoflyKYCRegistry.sol";
+import {MockUSDC} from "../src/MockUSDC.sol";
 import {
     ProoflyOperations,
     OperationAlreadyRegistered,
@@ -18,6 +19,7 @@ import {
 contract ProoflyOperationsTest is Test {
     ProoflyKYCRegistry public kyc;
     ProoflyOperations public operations;
+    MockUSDC public mockUsdc;
 
     address public admin = address(0xAA1);
     address public operator = address(0xBB2);
@@ -32,7 +34,8 @@ contract ProoflyOperationsTest is Test {
     function setUp() public {
         vm.startPrank(admin);
         kyc = new ProoflyKYCRegistry(admin);
-        operations = new ProoflyOperations(admin, address(kyc));
+        mockUsdc = new MockUSDC(admin);
+        operations = new ProoflyOperations(admin, address(kyc), address(mockUsdc));
 
         operations.setOperator(operator, true);
         operations.setReconciler(reconciler, true);

@@ -12,13 +12,24 @@ import type { SqlClient, SqlQueryResult } from './postgres-repositories.ts';
 export interface PgClientConfig {
   connectionString: string;
   max?: number;
+  /**
+   * Conexión cifrada (bases gestionadas en la nube). Los proveedores usan
+   * certificados propios, por eso no se valida la cadena de la CA.
+   */
+  ssl?: boolean;
 }
 
 export class PgSqlClient implements SqlClient {
   private readonly pool: pg.Pool;
 
   constructor(config: PgClientConfig) {
-    this.pool = new pg.Pool({ connectionString: config.connectionString, max: config.max ?? 10 });
+    this.pool = new pg.Pool({
+      connectionString: config.connectionString,
+      max: config.max ?? 10,
+      ...(config.ssl ? { ssl: { rejectUnauthorized: false } } : {})
+    });
+    // Un error de una conexión inactiva (p. ej. la base reinicia) no debe tumbar el proceso.
+    this.pool.on('error', error => console.error('[Postgres] conexión perdida:', error.message));
   }
 
   async query<T = unknown>(sql: string, params?: unknown[]): Promise<SqlQueryResult<T>> {

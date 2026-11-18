@@ -12,6 +12,8 @@ async function setup() {
   const me = await register.execute({ email: `me-${Date.now()}@proofly.co`, taxId: '1098765432', password: 'una-clave-segura' });
   // KYC is required before operating: verify identity right after sign-up.
   await new VerifyIdentityUseCase(deps.userRepo, deps.kycVerifier).execute({ userId: me.id, legalName: 'Persona Real' });
+  me.walletAddress = '0x7b52FDA3e0B84a1B67aD0FfDA6f02cD4daD07616';
+  await deps.userRepo.save(me);
   const app = await createAppService(deps);
   return { app, meId: me.id, deps };
 }
@@ -55,6 +57,46 @@ test('one identity owns operations and invests in the market through the full li
   assert.equal(result.investorDistributions.reduce((sum, item) => sum + BigInt(item.totalDistributedCents), 0n) + BigInt(result.prooflyFeeRetainedCents), 100000000n);
   const invoice = await app.execute(meId, 'create', { ...input, assetType: 'INVOICE', title: 'Factura', termDays: 30 });
   assert.equal(invoice.status, 'QUOTED');
+});
+
+test('vault mode: no off-chain-only participation and settlement blocked until the vault is funded', async () => {
+  const { createDependencies: make } = await import('../apps/api/src/app.ts');
+  const deps = make();
+  const register = new RegisterUserUseCase(deps.userRepo);
+  const verify = new VerifyIdentityUseCase(deps.userRepo, deps.kycVerifier);
+  const owner = await register.execute({ email: 'vault-owner@proofly.co', taxId: '1000000011', password: 'una-clave-segura' });
+  await verify.execute({ userId: owner.id, legalName: 'Dueña Vault' });
+  const vaults = new Map();
+  const ledger = {
+    chainId: 11155111, operationsAddress: '0x00000000000000000000000000000000000000aa', mockUsdcAddress: '0x00000000000000000000000000000000000000bb',
+    chainKeyFor: id => '0x' + Buffer.from(id).toString('hex').padEnd(64, '0').slice(0, 64),
+    async getOperation(id) { return vaults.get(id) ?? null; },
+    async getHolderShares() { return 0n; }, async getClaimableUnits() { return 0n; },
+    async getWallet(address) { return { address, kycVerified: true, usdcUnits: 0n, allowanceUnits: 0n }; },
+    async verifyDeposit() { throw new Error('no deposit'); }, async verifyClaim() { throw new Error('no claim'); },
+  };
+  const app = await createAppService(deps, { vaultLedger: ledger, copPerUsdc: 4000n, chainCacheMs: 0 });
+
+  // Concept and company reach the persisted operation; the vault requires exact mUSDC amounts.
+  await assert.rejects(app.execute(owner.id, 'create', { assetType: 'INVOICE', title: 'Impar', payerLegalName: 'Empresa', nominalAmountCents: '100050', termDays: 30, checks: true }), /exact mUSDC/);
+  const op = await app.execute(owner.id, 'create', { assetType: 'INVOICE', title: 'Desarrollo backend', payerLegalName: 'Eafit', nominalAmountCents: '40000000', termDays: 30, checks: true });
+  assert.equal(op.title, 'Desarrollo backend');
+  assert.equal(op.payerLegalName, 'Eafit');
+  await app.execute(owner.id, 'accept', { id: op.id, accepted: true });
+
+  let snap = await app.snapshot(owner.id);
+  assert.equal(snap.vault.enabled, true);
+  assert.equal(snap.operations.find(o => o.id === op.id).chain.phase, 'opening', 'no deposit before hmacToTokenId != 0');
+
+  const market = snap.operations.find(o => o.freelancerId !== owner.id);
+  await assert.rejects(app.execute(owner.id, 'participate', { id: market.id, amountCents: '1000000' }), /On-chain mUSDC deposit required/);
+
+  vaults.set(op.id, { tokenId: 7n, chainKey: '0xk', targetCents: 38_800_000n, state: 'OpenForFunding', fundedCents: 0n, fundedUsdcUnits: 0n, profitPoolUsdcUnits: 0n, settledCents: 0n, settlementProofHash: '0x0' });
+  snap = await app.snapshot(owner.id);
+  const chain = snap.operations.find(o => o.id === op.id).chain;
+  assert.equal(chain.tokenId, '7');
+  assert.equal(chain.targetUsdcUnits, '97000000');
+  assert.equal(chain.settleAllowed, false);
 });
 
 test('rejected creation preserves data and concurrent funding cannot overfill an operation', async () => {
@@ -109,6 +151,10 @@ test('two different users see their own operations and investments separately', 
   const b = await register.execute({ email: 'beto.diaz@proofly.co', taxId: '1000000002', password: 'una-clave-segura' });
   await verify.execute({ userId: a.id, legalName: 'Ana Ruiz Gómez' });
   await verify.execute({ userId: b.id, legalName: 'Beto Díaz Pérez' });
+  a.walletAddress = '0x93EeF2B60d667DCcf109BB8EEe5B47fc7dd124Fe';
+  b.walletAddress = '0x7b52FDA3e0B84a1B67aD0FfDA6f02cD4daD07616';
+  await deps.userRepo.save(a);
+  await deps.userRepo.save(b);
   const app = await createAppService(deps);
 
   const market = (await app.snapshot(a.id)).operations[0];

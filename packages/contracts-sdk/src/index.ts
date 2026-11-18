@@ -5,9 +5,11 @@
 
 import KYCRegistryAbi from './abis/ProoflyKYCRegistry.json' with { type: 'json' };
 import OperationsAbi from './abis/ProoflyOperations.json' with { type: 'json' };
+import MockUsdcAbi from './abis/MockUSDC.json' with { type: 'json' };
 
 export const PROOFLY_KYC_REGISTRY_ABI = KYCRegistryAbi;
 export const PROOFLY_OPERATIONS_ABI = OperationsAbi;
+export const MOCK_USDC_ABI = MockUsdcAbi;
 
 export const BASE_CHAIN_IDS = {
   SEPOLIA: 84532,

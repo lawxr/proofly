@@ -79,8 +79,8 @@ export function createDependencies(serverSecret = 'proofly-dev-secret-salt-2026-
   };
 }
 
-export function createPostgresDependencies(connectionString: string, serverSecret = 'proofly-dev-secret-salt-2026-super-secure-32-chars'): AppDependencies {
-  const client = new PgSqlClient({ connectionString });
+export function createPostgresDependencies(connectionString: string, serverSecret = 'proofly-dev-secret-salt-2026-super-secure-32-chars', ssl = false): AppDependencies {
+  const client = new PgSqlClient({ connectionString, ssl });
   return {
     operationRepo: new PostgresOperationRepository(client),
     investmentRepo: new PostgresInvestmentRepository(client),
@@ -105,7 +105,7 @@ export function createDependenciesFromEnv(env: Record<string, string | undefined
     ? (() => {
         const url = env.DATABASE_URL;
         if (!url) throw new Error('PERSISTENCE=postgres requires DATABASE_URL.');
-        return createPostgresDependencies(url, serverSecret);
+        return createPostgresDependencies(url, serverSecret, env.DATABASE_SSL === 'true');
       })()
     : createDependencies(serverSecret);
 

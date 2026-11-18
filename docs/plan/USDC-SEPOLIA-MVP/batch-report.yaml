@@ -1,0 +1,131 @@
+batch_id: "USDC-SEPOLIA-MVP-backend"
+status: PASS
+
+matched_tasks:
+  - T008
+  - T009
+  - T011
+
+implemented_files:
+  - apps/api/src/config/env.schema.ts
+  - apps/api/src/adapters/blockchain/blockchain-factory.ts
+  - apps/api/src/adapters/blockchain/viem-blockchain-adapter.ts
+  - apps/worker/src/outbox/dispatcher.ts
+  - packages/contracts-sdk/src/index.ts
+  - packages/contracts-sdk/src/abis/ProoflyOperations.json
+  - packages/contracts-sdk/src/abis/MockUSDC.json
+  - .env.example
+
+tests:
+  framework: forge
+  passed: 51
+  failed: 0
+  skipped: 0
+
+verification:
+  build: PASS
+  worker_tests: PASS
+  full_suite: PASS
+  frontend_build: PASS
+  vault_contract_tests: PASS
+
+warnings:
+  - severity: MEDIUM
+    message: "The vault demo uses a fixed 400,000 COP-cents-per-USDC rate and is not connected to a real oracle."
+  - severity: MEDIUM
+    message: "The operator remains centralized for opening operations and recording settlement."
+  - severity: MEDIUM
+    message: "UI deposit/approve/claim actions are not implemented in this backend batch."
+
+required_endpoints: []
+
+ui_batch:
+  status: PASS
+  matched_tasks:
+    - T012
+    - T013
+    - T014
+  implemented_files:
+    - apps/web/src/components/AppShell.tsx
+    - apps/web/package.json
+    - .env.example
+  tests:
+    framework: TypeScript/Vite
+    typecheck: PASS
+    build: PASS
+    full_suite: PASS
+  warnings:
+    - severity: MEDIUM
+      message: "T010 dedicated outbox deposit/claim events remain pending."
+    - severity: MEDIUM
+      message: "T015 requires a deployed MockUSDC and ProoflyOperations before browser transactions can be tested."
+
+deployment:
+  status: PASS
+  network: Ethereum Sepolia
+  chain_id: 11155111
+  kyc_address: "0x407B83F792895E2d88B8b96e1A640b0Fa3A2De11"
+  mock_usdc_address: "0x776991CA67ec0DAb8907FD84d08143BcA2050C0b"
+  operations_address: "0xbBF2B7F76f16F0D9c0C6d72d9D64300D9249DEf1"
+  financier_address: "0x7b52FDA3e0B84a1B67aD0FfDA6f02cD4daD07616"
+  financier_kyc: true
+  financier_musdc_units: "1000000000"
+
+e2e_batch:
+  batch_id: "USDC-SEPOLIA-MVP-e2e"
+  date: "2026-11-18"
+  status: PASS
+  matched_tasks: [T010, T015]
+  contract_source_changes_not_deployed: true   # ProoflyOperations.sol corregido; requiere aprobación para redeploy
+  validation:
+    npm_test: "24/24 + 64/64 PASS"
+    web_typecheck: PASS
+    web_build: PASS
+    forge_test: "46/46 PASS (26 vault)"
+    http_127_0_0_1_3000: "/ 200 · /login 200 · /app/ 303 sin sesión · /api/app 401 sin sesión"
+    docker_postgres_port: 55432
+  sepolia_run:
+    report_file: docs/plan/USDC-SEPOLIA-MVP/e2e-sepolia-report.json
+    operation_id: abd3cf81-6db3-4649-a97f-a71dffd2587c
+    token_id: 5
+    invoice: "$400.000 COP · 30 días · adelanto $388.000 = 97 mUSDC · descuento $8.000 = 2 mUSDC"
+    financier_wallet: "0xbe01Eb2da5E8FaE095a2599D394Aa91683Ff9352 (operadora usada como financiador demo, autorizado por el usuario)"
+    tx:
+      open_operation: "0x3946495fb0ebe967255a4a2bcb7ed1cde17d03e26fd0d92097c9632e20c92521"
+      approve: "0x970d4cd340df5e597764414186ac11d3af950c01c35be2db33860278505e37b6"
+      deposit: "0xcf68030dbf20581a8441a45df9a7e8a8dcfbac40b4bcd6498192446a93eb83b4"
+      fund_and_settle: "0xafba43733be8310efc2c9a90bd432ffda5b67c826b43f1ea7a874ad6a0b3273f"
+      claim: "0xaa76db7d1c1e848e92acf1774e69b3ac6e51dd6c044e35f168282eb9dff47a11"
+    mint_demo_musdc: "0x746e348a1a3375ae7775bc6b2abd4b90d05d5e8b712e4966f6657b29a40dc56c (100 mUSDC a la operadora)"
+    previous_successful_run: "token 3 · operación d223ef43 · deposit 0x0bd688a1… · settle 0x504b2ed9… · claim 0x6856c040…"
+    results:
+      funded_usdc_by_operation: "97000000"
+      postgres_funded_capital_cents: "38800000"
+      profit_pool_units: "2000000"
+      claimed_units: "99000000"
+      erc1155_after_claim: "0"
+      second_claim: reverts
+  incidents:
+    - "approve 0xc2a5fe9d… revirtió por OutOfGas: estimación de gas sobre un nodo RPC atrasado. Corregido con estimación en 'latest' + 50 % de margen (script y worker)."
+    - "Reconciler reportó un falso positivo 'meta 0' por atraso del RPC. Corregido: se trata como transitorio."
+  open_items:
+    - "Operación 4253130f (token 2): meta on-chain 1.000.000 COP ≠ adelanto 970.000; 100 mUSDC de 0x7b52… bloqueados. Requiere decisión."
+    - "Operación e4b35ada (token 4): abierta sin fondear, residuo de la corrida fallida."
+    - "El contrato desplegado es la versión anterior; los arreglos de ProoflyOperations.sol solo están en código."
+
+redeploy:
+  date: "2026-11-18"
+  approved_by_user: true
+  operations_address: "0xdA03f2AfBeB77a47843466252e04d7dA284DaBA3"
+  deploy_tx: "0xcb3cc9089f9245eadc8f2109a08bc51eaa251ee811024ceb4e75288b99a99c33"
+  reused: { kyc: "0x407B83F792895E2d88B8b96e1A640b0Fa3A2De11", mock_usdc: "0x776991CA67ec0DAb8907FD84d08143BcA2050C0b" }
+  previous_operations_address: "0xbBF2B7F76f16F0D9c0C6d72d9D64300D9249DEf1 (abandonado; fondos de prueba dados por perdidos)"
+  demo_mint: "1000 mUSDC a 0xbe01� � tx 0xa824c56a8534b192050ecb96ca9b3e6658726a647e1e3a9546dfc758dbb63d83"
+  e2e_on_new_contract:
+    status: PASS
+    operation_id: 253ec470-7139-4b76-b6d3-7e815063b02c
+    token_id: 3
+    approve: "0xaf4217fe57351b55dc49619f159901bd25d41a2b64b4513f5268bbbdcf2c22fa"
+    deposit: "0x720dfbf9c876a4d2ce0481cb01232dae011af0b473dc55f4a2a3442c31e2b315"
+    settle: "0x112241ef095d944319c6a0776f3ba5eb6c9f0376a2f9a1f364604ba97ddf3e46"
+    claim: "0x01fcd9cd52950207e8b5028698a2801e9ae746de33bb48511cfcf1b849eb7d7f"

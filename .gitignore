@@ -21,3 +21,9 @@ contracts/broadcast/
 # Design taste skill (local tooling, not app source).
 .taste-skill/
 .codegraph/
+
+# Any local env file (keys, DB passwords). Only the template is committed.
+.env
+.env.*
+!.env.example
+*.log

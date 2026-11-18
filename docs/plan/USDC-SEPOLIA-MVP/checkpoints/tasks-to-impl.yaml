@@ -1,0 +1,64 @@
+batch:
+  phase: "Contratos de fondos USDC demo"
+  tasks_completed:
+    - T001
+    - T002
+    - T003
+    - T004
+    - T005
+    - T006
+    - T007
+  evidence:
+    - "contracts/src/MockUSDC.sol"
+    - "contracts/src/ProoflyOperations.sol"
+    - "contracts/script/Deploy.s.sol"
+    - "contracts/test/ProoflyVault.t.sol"
+  requirements:
+    - REQ-USDC-03
+    - REQ-USDC-04
+    - REQ-USDC-05
+    - REQ-USDC-06
+    - REQ-USDC-07
+    - REQ-USDC-08
+
+backend_batch:
+  phase: "Integración backend y worker USDC demo"
+  tasks_completed:
+    - T008
+    - T009
+    - T011
+  tasks_blocked:
+    - T010
+    - T012
+    - T013
+    - T014
+  evidence:
+    - "apps/api/src/config/env.schema.ts"
+    - "apps/api/src/adapters/blockchain/blockchain-factory.ts"
+    - "apps/api/src/adapters/blockchain/viem-blockchain-adapter.ts"
+    - "apps/worker/src/outbox/dispatcher.ts"
+  requirements:
+    - REQ-USDC-01
+    - REQ-USDC-02
+    - REQ-USDC-08
+    - REQ-USDC-09
+    - REQ-USDC-10
+
+ui_batch:
+  phase: "Interfaz MetaMask USDC demo"
+  tasks_completed:
+    - T012
+    - T013
+    - T014
+  tasks_blocked:
+    - T015
+    - T016
+  evidence:
+    - "apps/web/src/components/AppShell.tsx"
+    - "apps/web/package.json"
+    - ".env.example"
+  requirements:
+    - REQ-USDC-01
+    - REQ-USDC-02
+    - REQ-USDC-09
+    - REQ-USDC-10

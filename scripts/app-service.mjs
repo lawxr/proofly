@@ -3,17 +3,26 @@ import {
   UserEntity, SimulateQuoteUseCase, CreateInvoiceOperationUseCase, CreateMilestoneOperationUseCase,
   ConfirmMilestoneUseCase, AcceptQuoteUseCase, SimulateParticipationUseCase,
   PurchaseParticipationUseCase, ReconcileBankReceiptUseCase, TiersPolicy, FreelancerTier,
+  FinancialEngine, UsdcDemoRate, RecordVaultDepositUseCase, RecordVaultClaimUseCase, VaultInconsistencyError,
 } from '../packages/domain/src/index.ts';
 
 const plain = value => JSON.parse(JSON.stringify(value, (_key, item) => typeof item === 'bigint' ? item.toString() : item));
 const DAY = 86400000;
+const EXPLORERS = { 11155111: 'https://sepolia.etherscan.io', 84532: 'https://sepolia.basescan.org', 8453: 'https://basescan.org', 1: 'https://etherscan.io' };
+const VAULT_STATUSES = ['APPROVED_PENDING_FUNDING', 'ACTIVE_FUNDED', 'DISBURSED', 'SETTLED', 'PARTIALLY_SETTLED_OVERDUE'];
+const CHAIN_TTL_MS = 4000;
 
 /**
  * Application service: all financial mutations go through the canonical domain,
  * scoped to the authenticated user (meId comes from the session, per request).
  * Receives a shared `deps` so auth and the app use the same user repository.
+ *
+ * `options.vaultLedger` (VaultLedgerPort, read-only) switches funding to the
+ * on-chain mUSDC vault: a participation is only recorded from a confirmed
+ * deposit receipt, and settlement is blocked when PostgreSQL and the contract
+ * disagree. Without it the legacy COP-only flow (tests, memory mode) is kept.
  */
-export async function createAppService(deps) {
+export async function createAppService(deps, options = {}) {
   let tail = Promise.resolve();
   if (deps.milestoneNotifier) deps.milestoneNotifier.sendConfirmationLink = async () => true;
   const quote = new SimulateQuoteUseCase();
@@ -22,6 +31,118 @@ export async function createAppService(deps) {
   const simulate = new SimulateParticipationUseCase(deps.operationRepo);
   const purchase = new PurchaseParticipationUseCase(deps.operationRepo, deps.investmentRepo, deps.userRepo, deps.outboxRepo);
   const reconcile = new ReconcileBankReceiptUseCase(deps.operationRepo, deps.investmentRepo, deps.outboxRepo);
+
+  // --- mUSDC vault (optional) ---
+  const ledger = options.vaultLedger || null;
+  const rate = new UsdcDemoRate(BigInt(options.copPerUsdc ?? 4000));
+  const vaultMeta = ledger ? {
+    enabled: true,
+    chainId: options.chainId ?? ledger.chainId,
+    operationsAddress: options.operationsAddress ?? ledger.operationsAddress,
+    mockUsdcAddress: options.mockUsdcAddress ?? ledger.mockUsdcAddress,
+    copPerUsdc: String(rate.copCentsPerUsdc / 100n),
+    explorerUrl: EXPLORERS[Number(options.chainId ?? ledger.chainId)] ?? null,
+    asset: 'mUSDC (MockUSDC de prueba, sin respaldo)',
+  } : { enabled: false };
+  const recordDeposit = ledger && new RecordVaultDepositUseCase(deps.operationRepo, deps.investmentRepo, deps.userRepo, deps.outboxRepo, ledger);
+  const recordClaim = ledger && new RecordVaultClaimUseCase(deps.operationRepo, deps.investmentRepo, deps.userRepo, deps.outboxRepo, ledger);
+  const chainCache = new Map();
+  const forget = id => chainCache.delete(id);
+  const cached = async (key, load) => {
+    const hit = chainCache.get(key);
+    if (hit && Date.now() - hit.at < (options.chainCacheMs ?? CHAIN_TTL_MS)) return hit.value;
+    const value = await load();
+    chainCache.set(key, { at: Date.now(), value });
+    return value;
+  };
+
+  // On-chain view of an operation plus a consistency verdict against PostgreSQL.
+  // Never throws: an RPC failure is reported as `phase: 'unavailable'` so the UI
+  // keeps rendering and financial actions stay disabled.
+  async function chainFor(operation, { fresh = false } = {}) {
+    if (!ledger || !VAULT_STATUSES.includes(operation.status)) return undefined;
+    let vault;
+    try {
+      if (fresh) forget(operation.id);
+      vault = await cached(operation.id, () => ledger.getOperation(operation.id));
+    } catch (error) {
+      return { phase: 'unavailable', blocked: true, issue: 'rpc_unavailable', detail: String(error?.shortMessage || error?.message || error) };
+    }
+    const base = { chainKey: ledger.chainKeyFor(operation.id) };
+    const targetRepresentable = rate.isCentsRepresentable(operation.advanceAmountCents);
+    if (!vault) {
+      if (['SETTLED', 'PARTIALLY_SETTLED_OVERDUE'].includes(operation.status) || BigInt(operation.fundedCapitalCents) > 0n) {
+        return { ...base, phase: 'legacy', blocked: true, issue: 'not_on_chain' };
+      }
+      return { ...base, phase: 'opening', blocked: !targetRepresentable, issue: targetRepresentable ? undefined : 'not_representable',
+        targetUsdcUnits: targetRepresentable ? rate.centsToUnits(operation.advanceAmountCents).toString() : null };
+    }
+    const out = {
+      ...base, tokenId: vault.tokenId.toString(), state: vault.state, targetCents: vault.targetCents.toString(),
+      targetUsdcUnits: rate.isCentsRepresentable(vault.targetCents) ? rate.centsToUnits(vault.targetCents).toString() : null,
+      fundedCents: vault.fundedCents.toString(), fundedUsdcUnits: vault.fundedUsdcUnits.toString(),
+      remainingUsdcUnits: rate.isCentsRepresentable(vault.targetCents - vault.fundedCents) ? rate.centsToUnits(vault.targetCents - vault.fundedCents).toString() : null,
+      profitPoolUsdcUnits: vault.profitPoolUsdcUnits.toString(), settledCents: vault.settledCents.toString(),
+      phase: vault.state === 'Settled' ? 'settled' : vault.state === 'Funded' ? 'funded' : vault.state === 'OpenForFunding' ? 'open' : 'other',
+      blocked: false, settleAllowed: false,
+    };
+    const offFunded = BigInt(operation.fundedCapitalCents);
+    if (vault.targetCents !== operation.advanceAmountCents) return { ...out, blocked: true, issue: 'target_mismatch' };
+    if (offFunded > vault.fundedCents) return { ...out, blocked: true, issue: 'funding_mismatch' };
+    const offFundedStatus = ['ACTIVE_FUNDED', 'DISBURSED'].includes(operation.status);
+    if (offFundedStatus && vault.state !== 'Funded') return { ...out, blocked: true, issue: 'state_mismatch' };
+    if (operation.status === 'SETTLED' && !['Funded', 'Settled'].includes(vault.state)) return { ...out, blocked: true, issue: 'state_mismatch' };
+    if (operation.status === 'APPROVED_PENDING_FUNDING' && offFunded < vault.fundedCents) out.issue = 'sync_pending';
+    if (operation.status === 'SETTLED' && vault.state === 'Funded') out.issue = 'settlement_pending';
+    out.settleAllowed = offFundedStatus && vault.state === 'Funded' && vault.fundedCents === vault.targetCents
+      && offFunded === operation.advanceAmountCents
+      && rate.isCentsRepresentable(operation.advanceAmountCents + operation.commercialDiscountCents);
+    return out;
+  }
+
+  async function walletFor(address) {
+    if (!ledger || !address) return null;
+    try {
+      const wallet = await cached('wallet:' + address.toLowerCase(), () => ledger.getWallet(address));
+      return { address: wallet.address, kycVerified: wallet.kycVerified, usdcUnits: wallet.usdcUnits.toString(), allowanceUnits: wallet.allowanceUnits.toString() };
+    } catch (error) {
+      return { address, error: 'rpc_unavailable' };
+    }
+  }
+
+  // Deposit/claim proofs persisted in the outbox for an investment, plus the
+  // live on-chain position of the investor's wallet.
+  async function investmentChain(investment, walletAddress) {
+    if (!ledger) return undefined;
+    const events = deps.outboxRepo.listByAggregate ? await deps.outboxRepo.listByAggregate('INVESTMENT', investment.id) : [];
+    const deposit = [...events].reverse().find(ev => ev.eventType === 'INVESTMENT_DEPOSIT_CONFIRMED');
+    const claim = [...events].reverse().find(ev => ev.eventType === 'INVESTMENT_CLAIMED');
+    const out = {
+      tokenId: deposit?.payload.tokenId ?? null,
+      depositTxHash: deposit?.payload.txHash ?? null,
+      depositUsdcUnits: deposit?.payload.amountUsdcUnits ?? null,
+      claimTxHash: claim?.payload.txHash ?? null,
+      claimedUsdcUnits: claim?.payload.amountUsdcUnits ?? null,
+    };
+    if (out.tokenId && walletAddress) {
+      try {
+        const tokenId = BigInt(out.tokenId);
+        const [shares, claimable] = await cached(`pos:${tokenId}:${walletAddress.toLowerCase()}`, () =>
+          Promise.all([ledger.getHolderShares(tokenId, walletAddress), ledger.getClaimableUnits(tokenId, walletAddress)]));
+        out.holderShares = shares.toString();
+        out.claimableUsdcUnits = claimable.toString();
+      } catch { out.positionError = 'rpc_unavailable'; }
+    }
+    return out;
+  }
+
+  async function assertSettleAllowed(operation) {
+    if (!ledger) return;
+    const chain = await chainFor(operation, { fresh: true });
+    if (!chain?.settleAllowed) {
+      throw new VaultInconsistencyError(`Settlement requires a fully funded, consistent on-chain vault (phase ${chain?.phase}, issue ${chain?.issue ?? 'none'}).`);
+    }
+  }
   // All operations relevant to `meId`: the market supply (funding-open), the
   // user's own operations in any status, and any operation the user has invested
   // in (even once it leaves the market). All come from the repository, so they
@@ -70,6 +191,15 @@ export async function createAppService(deps) {
     const term = Number(input.termDays);
     if (amount <= 0n || !Number.isInteger(term) || term < 15 || term > 90) throw new Error('Use a positive amount and a term between 15 and 90 days.');
     if (input.checks !== true) throw new Error('All acceptance checks must be complete.');
+    if (ledger) {
+      // The vault funds the advance and pays back advance + discount in mUSDC:
+      // both must convert exactly at the demo rate, or the operation could never
+      // be funded or settled on-chain.
+      const q = FinancialEngine.calculateQuote({ nominalAmountCents: amount, termDays: term, monthlyDiscountRate: 0.02, prooflyFeeRate: 0.01 });
+      if (!rate.isCentsRepresentable(q.advanceAmountCents) || !rate.isCentsRepresentable(q.commercialDiscountCents)) {
+        throw new Error('Amount has no exact mUSDC equivalent at the demo rate. Use multiples of 1000 COP.');
+      }
+    }
     const user = await deps.userRepo.findById(owner);
     const config = TiersPolicy.TIER_CONFIG[user.tier];
     const active = (await allOperations(owner)).filter(op => op.freelancerId === owner && !['SETTLED', 'REJECTED_CANCELLED'].includes(op.status));
@@ -133,11 +263,34 @@ export async function createAppService(deps) {
       await accept.execute({ operationId: operation.id, freelancerId: operation.freelancerId,
         electronicSignatureHash: createHash('sha256').update('acceptance:' + operation.id).digest('hex') });
       await record(meId, operation, name, 'Cotización aceptada');
+    } else if (name === 'confirmDeposit') {
+      if (!recordDeposit) throw new Error('The mUSDC vault is not configured.');
+      forget(operation.id);
+      const result = await recordDeposit.execute({ operationId: operation.id, investorId: meId, txHash: String(input.txHash || '') });
+      forget(operation.id);
+      if (result.isNew) await record(meId, operation, 'participate', 'Depósito mUSDC confirmado on-chain');
+      const fresh = await deps.operationRepo.findById(operation.id);
+      return { operation: serialize(fresh), chain: await chainFor(fresh, { fresh: true }),
+        deposit: { isNew: result.isNew, txHash: result.proof.txHash, tokenId: result.proof.tokenId, amountUsdcUnits: result.proof.amountUsdcUnits,
+          sharesCents: result.investment.fundedCapitalCents, investmentId: result.investment.id, isFullyFunded: result.isFullyFunded } };
+    } else if (name === 'confirmClaim') {
+      if (!recordClaim) throw new Error('The mUSDC vault is not configured.');
+      const result = await recordClaim.execute({ operationId: operation.id, investorId: meId, txHash: String(input.txHash || '') });
+      chainCache.clear();
+      if (result.isNew) await record(meId, operation, 'claim', 'Retiro mUSDC confirmado on-chain');
+      return { claim: { isNew: result.isNew, txHash: result.proof.txHash, tokenId: result.proof.tokenId, amountUsdcUnits: result.proof.amountUsdcUnits } };
     } else if (name === 'simulate' || name === 'participate') {
       if (!/^\d{1,15}$/.test(String(input.amountCents))) throw new Error('Invalid participation amount.');
+      // With the vault, a COP participation only exists as the mirror of an
+      // on-chain deposit (confirmDeposit). No off-chain-only funding path.
+      if (ledger && name === 'participate') throw new Error('On-chain mUSDC deposit required for this operation.');
       const asCounterparty = input.counterparty === true;
       const investorId = asCounterparty ? counterpartyId : meId;
       if (!asCounterparty && operation.freelancerId === meId) throw new Error('You cannot invest in your own operation.');
+      if (!asCounterparty) {
+        const investor = await deps.userRepo.findById(meId);
+        if (!investor?.walletAddress) throw new Error('Connect and verify your wallet before investing.');
+      }
       const amount = BigInt(input.amountCents);
       const result = await simulate.execute({ operationId: operation.id, amountToFundCents: amount });
       if (name === 'simulate') return result;
@@ -147,6 +300,8 @@ export async function createAppService(deps) {
       await record(meId, operation, name, 'Participación registrada');
       return result;
     } else if (name === 'settle') {
+      await assertSettleAllowed(operation);
+      forget(operation.id);
       const result = await reconcile.execute({ operationId: operation.id, bankReceiptHash: randomBytes(32).toString('hex'),
         receivedAmountCents: operation.nominalAmountCents, bankTransactionRef: 'RCPT-' + randomUUID() });
       if (result.isFullySettled) {
@@ -176,8 +331,8 @@ export async function createAppService(deps) {
   async function settlementFor(investment) {
     const op = await deps.operationRepo.findById(investment.operationId);
     if (!op || op.status !== 'SETTLED') return undefined;
-    const share = Number(investment.fundedCapitalCents) / Number(op.advanceAmountCents);
-    const profit = BigInt(Math.floor(Number(op.commercialDiscountCents) * share));
+    // Integer pro-rata of the commercial discount (no floating point money).
+    const profit = op.advanceAmountCents > 0n ? (op.commercialDiscountCents * investment.fundedCapitalCents) / op.advanceAmountCents : 0n;
     return { investorId: investment.investorId, capitalReturnedCents: investment.fundedCapitalCents,
       profitEarnedCents: profit, totalDistributedCents: investment.fundedCapitalCents + profit };
   }
@@ -190,11 +345,18 @@ export async function createAppService(deps) {
     const name = me.legalName.replace(/\s*\(.*\)\s*$/, '').trim() || me.legalName;
     const investmentsOut = await Promise.all(investments.map(async investment => ({
       ...investment, projection: await projectionFor(investment), settlement: await settlementFor(investment),
+      chain: await investmentChain(investment, me.walletAddress),
     })));
-    return plain({ me: { id: me.id, name, tier: me.tier, kycStatus: me.kycStatus,
+    const operationsOut = await Promise.all(operations.map(async operation => {
+      const out = serialize(operation);
+      const chain = await chainFor(operation);
+      return chain ? { ...out, chain: plain(chain) } : out;
+    }));
+    return plain({ me: { id: me.id, name, walletAddress: me.walletAddress, tier: me.tier, kycStatus: me.kycStatus,
       availableLimitCents: me.availableLimitCents, maxQuotaCents: me.tier ? TiersPolicy.TIER_CONFIG[me.tier].maxQuotaCents : '0',
       executionScore: me.executionScore },
-      operations: operations.map(serialize), investments: investmentsOut, events: await eventsFor(meId) });
+      vault: ledger ? { ...vaultMeta, wallet: await walletFor(me.walletAddress) } : vaultMeta,
+      operations: operationsOut, investments: investmentsOut, events: await eventsFor(meId) });
   }
 
   // Seed market supply once: other people's operations, available to invest in.

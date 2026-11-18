@@ -1,0 +1,21 @@
+coverage:
+  - requirement: REQ-USDC-01
+    plan_items: ["6.2", "7"]
+  - requirement: REQ-USDC-02
+    plan_items: ["6.2", "7"]
+  - requirement: REQ-USDC-03
+    plan_items: ["5.2", "8"]
+  - requirement: REQ-USDC-04
+    plan_items: ["5.2", "6.3"]
+  - requirement: REQ-USDC-05
+    plan_items: ["5.2", "8"]
+  - requirement: REQ-USDC-06
+    plan_items: ["5.2"]
+  - requirement: REQ-USDC-07
+    plan_items: ["5.2", "8"]
+  - requirement: REQ-USDC-08
+    plan_items: ["5.2", "6.3"]
+  - requirement: REQ-USDC-09
+    plan_items: ["7"]
+  - requirement: REQ-USDC-10
+    plan_items: ["6.1"]

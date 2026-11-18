@@ -164,6 +164,34 @@ node --experimental-strip-types scripts/verify-chain.mjs
 BLOCKCHAIN_ADAPTER=viem node --experimental-strip-types scripts/verify-worker-chain.mjs
 ```
 
+### Conectar la aplicación a contratos desplegados
+
+Para que una inversión de la aplicación dispare el minteo y la liquidación
+on-chain, usa PostgreSQL como outbox compartido y arranca la API y el worker
+por separado. En `.env.local` configura:
+
+```env
+PERSISTENCE=postgres
+DATABASE_URL=postgresql://proofly:proofly_secret@localhost:55432/proofly_db
+BLOCKCHAIN_ADAPTER=viem
+CHAIN_ID=11155111
+RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
+PROOFLY_OPERATIONS_ADDRESS=0x...
+PROOFLY_KYC_REGISTRY_ADDRESS=0x...
+PROOFLY_FINANCIER_ADDRESS=0x...
+OPERATOR_PRIVATE_KEY=0x...
+```
+
+`PROOFLY_FINANCIER_ADDRESS` es un fallback para la demo; si el financiador
+vincula MetaMask antes de aportar, el outbox usa su dirección vinculada.
+`OPERATOR_PRIVATE_KEY` solo debe existir localmente y nunca debe subirse al
+repositorio.
+
+En una terminal ejecuta `npm run dev` para la aplicación web/API y en otra
+`npm run dev --workspace @proofly/worker` para consumir el outbox. Al completar
+el fondeo, el worker mintea el ERC-1155; al registrar el recaudo, registra la
+liquidación en `ProoflyOperations`.
+
 ### Contratos Principales
 - [`ProoflyOperations.sol`](contracts/src/ProoflyOperations.sol): Token semi-fungible ERC-1155 que representa derechos económicos fraccionados sobre cada operación aprobada.
 - [`ProoflyKYCRegistry.sol`](contracts/src/ProoflyKYCRegistry.sol): Registro on-chain de identidades verificadas (permite transferencias únicamente entre partes con KYC aprobado).

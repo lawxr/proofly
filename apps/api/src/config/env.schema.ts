@@ -21,6 +21,8 @@ export interface EnvConfig {
   RPC_URL: string;
   PROOFLY_OPERATIONS_ADDRESS: `0x${string}`;
   PROOFLY_KYC_REGISTRY_ADDRESS: `0x${string}`;
+  MOCK_USDC_ADDRESS: `0x${string}`;
+  DEMO_COP_PER_USDC: number;
   OPERATOR_PRIVATE_KEY: string;
   
   // Adaptadores de Dominio
@@ -47,6 +49,10 @@ export function validateEnv(env: Record<string, string | undefined>): EnvConfig 
 
   const chainId = mode === 'production' ? 8453 : 84532;
   const defaultRpc = mode === 'production' ? 'https://mainnet.base.org' : 'https://sepolia.base.org';
+  const demoCopPerUsdc = Number(env.DEMO_COP_PER_USDC || 4000);
+  if (!Number.isInteger(demoCopPerUsdc) || demoCopPerUsdc <= 0) {
+    throw new Error('DEMO_COP_PER_USDC must be a positive integer');
+  }
 
   return {
     NODE_ENV: nodeEnv,
@@ -60,6 +66,8 @@ export function validateEnv(env: Record<string, string | undefined>): EnvConfig 
     RPC_URL: env.RPC_URL || defaultRpc,
     PROOFLY_OPERATIONS_ADDRESS: (env.PROOFLY_OPERATIONS_ADDRESS || '0x0000000000000000000000000000000000000001') as `0x${string}`,
     PROOFLY_KYC_REGISTRY_ADDRESS: (env.PROOFLY_KYC_REGISTRY_ADDRESS || '0x0000000000000000000000000000000000000002') as `0x${string}`,
+    MOCK_USDC_ADDRESS: (env.MOCK_USDC_ADDRESS || '0x0000000000000000000000000000000000000003') as `0x${string}`,
+    DEMO_COP_PER_USDC: demoCopPerUsdc,
     OPERATOR_PRIVATE_KEY: env.OPERATOR_PRIVATE_KEY || '0x0000000000000000000000000000000000000000000000000000000000000001',
     INVOICE_ADAPTER: (env.INVOICE_ADAPTER || (mode === 'production' ? 'dian_http' : 'mock')) as 'mock' | 'dian_http',
     MILESTONE_ADAPTER: (env.MILESTONE_ADAPTER || (mode === 'production' ? 'sendgrid' : 'console')) as 'console' | 'sendgrid',

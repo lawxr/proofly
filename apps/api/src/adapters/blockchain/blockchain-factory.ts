@@ -21,6 +21,8 @@ export interface BlockchainFactoryEnv {
   OPERATOR_PRIVATE_KEY?: string;
   PROOFLY_OPERATIONS_ADDRESS?: string;
   PROOFLY_KYC_REGISTRY_ADDRESS?: string;
+  MOCK_USDC_ADDRESS?: string;
+  DEMO_COP_PER_USDC?: string | number;
 }
 
 export function createBlockchainAdapter(env: BlockchainFactoryEnv): BlockchainPort {
@@ -39,6 +41,7 @@ export function createBlockchainAdapter(env: BlockchainFactoryEnv): BlockchainPo
     chainId: Number(env.CHAIN_ID || 84532),
     operatorPrivateKey: env.OPERATOR_PRIVATE_KEY as Hex,
     operationsAddress: env.PROOFLY_OPERATIONS_ADDRESS as Hex,
-    kycRegistryAddress: env.PROOFLY_KYC_REGISTRY_ADDRESS as Hex
+    kycRegistryAddress: env.PROOFLY_KYC_REGISTRY_ADDRESS as Hex,
+    mockUsdcAddress: env.MOCK_USDC_ADDRESS as Hex | undefined
   });
 }

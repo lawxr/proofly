@@ -151,6 +151,11 @@ export class ReconcileBankReceiptUseCase {
         receivedAmountCents: dto.receivedAmountCents.toString(),
         bankTransactionRef: dto.bankTransactionRef,
         isFullySettled,
+        // Capital + ganancia que corresponde a los financiadores (sin la comisión
+        // de Proofly). Es el monto que el worker liquida en el vault on-chain.
+        investorPayoutCents: investorDistributions
+          .reduce((total, item) => total + item.totalDistributedCents, 0n)
+          .toString(),
         newStatus: operation.status
       }
     });

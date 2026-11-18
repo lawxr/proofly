@@ -110,6 +110,7 @@ export class PurchaseParticipationUseCase {
         investmentId: investment.id,
         operationId: operation.id,
         investorId: investor.id,
+        financierAddress: investor.walletAddress,
         fundedCapitalCents: investment.fundedCapitalCents.toString(),
         tokensCount: investment.tokensCount.toString()
       }
@@ -124,6 +125,7 @@ export class PurchaseParticipationUseCase {
         payload: {
           operationId: operation.id,
           freelancerId: operation.freelancerId,
+          financierAddress: investor.walletAddress,
           totalFundedCents: operation.fundedCapitalCents.toString(),
           advanceAmountCents: operation.advanceAmountCents.toString(),
           hmacKey: operation.hmacKey

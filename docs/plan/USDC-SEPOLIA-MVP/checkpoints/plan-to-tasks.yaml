@@ -1,0 +1,17 @@
+coverage:
+  - plan_item: "5.1"
+    tasks: ["T001"]
+  - plan_item: "5.2"
+    tasks: ["T002", "T003", "T004", "T005", "T007"]
+  - plan_item: "5.3"
+    tasks: ["T006"]
+  - plan_item: "6.1"
+    tasks: ["T008"]
+  - plan_item: "6.2"
+    tasks: ["T009"]
+  - plan_item: "6.3"
+    tasks: ["T010", "T011"]
+  - plan_item: "7"
+    tasks: ["T012", "T013", "T014"]
+  - plan_item: "8"
+    tasks: ["T015", "T016"]

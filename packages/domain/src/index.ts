@@ -4,6 +4,7 @@
 
 // Lógica financiera y seguridad
 export * from './financial/financial-engine.ts';
+export * from './financial/usdc-demo-rate.ts';
 export * from './security/anti-duplicate.ts';
 export * from './security/password.ts';
 export * from './security/cufe.ts';
@@ -23,6 +24,7 @@ export * from './ports/investment-repository.port.ts';
 export * from './ports/user-repository.port.ts';
 export * from './ports/outbox-repository.port.ts';
 export * from './ports/external-services.port.ts';
+export * from './ports/vault-ledger.port.ts';
 
 // Casos de uso
 export * from './use-cases/simulate-quote.use-case.ts';
@@ -34,3 +36,5 @@ export * from './use-cases/simulate-participation.use-case.ts';
 export * from './use-cases/purchase-participation.use-case.ts';
 export * from './use-cases/reconcile-bank-receipt.use-case.ts';
 export * from './use-cases/auth.use-case.ts';
+export * from './use-cases/record-vault-deposit.use-case.ts';
+export * from './use-cases/record-vault-claim.use-case.ts';

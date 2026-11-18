@@ -1,0 +1,183 @@
+{
+  "startedAt": "2026-11-18T13:57:19.669Z",
+  "network": "Ethereum Sepolia (11155111)",
+  "operations": "0xdA03f2AfBeB77a47843466252e04d7dA284DaBA3",
+  "mockUsdc": "0x776991CA67ec0DAb8907FD84d08143BcA2050C0b",
+  "financier": "0xbe01Eb2da5E8FaE095a2599D394Aa91683Ff9352",
+  "steps": [
+    {
+      "name": "snapshot inicial",
+      "at": "2026-11-18T13:57:20.155Z",
+      "financierUsdcUnits": "1100000000",
+      "financierEthWei": "373510084560299176"
+    },
+    {
+      "name": "usuarios de prueba creados",
+      "at": "2026-11-18T13:57:20.335Z",
+      "freelancerId": "861c5001-9e4f-4255-8c0f-6edf06999140",
+      "investorId": "a0c397ad-f01a-48ac-8ef7-86a47e7856d2",
+      "investorWallet": "0xbe01Eb2da5E8FaE095a2599D394Aa91683Ff9352"
+    },
+    {
+      "name": "cotización aceptada → APPROVED_PENDING_FUNDING",
+      "at": "2026-11-18T13:57:20.441Z",
+      "operationId": "253ec470-7139-4b76-b6d3-7e815063b02c"
+    },
+    {
+      "name": "estado antes de abrir on-chain",
+      "at": "2026-11-18T13:57:21.057Z",
+      "phase": "opening",
+      "tokenId": null
+    },
+    {
+      "name": "approve 97 mUSDC",
+      "at": "2026-11-18T13:57:38.910Z",
+      "txHash": "0xaf4217fe57351b55dc49619f159901bd25d41a2b64b4513f5268bbbdcf2c22fa",
+      "block": "12161891",
+      "etherscan": "https://sepolia.etherscan.io/tx/0xaf4217fe57351b55dc49619f159901bd25d41a2b64b4513f5268bbbdcf2c22fa"
+    },
+    {
+      "name": "depositForOperation 97 mUSDC",
+      "at": "2026-11-18T13:57:47.878Z",
+      "txHash": "0x720dfbf9c876a4d2ce0481cb01232dae011af0b473dc55f4a2a3442c31e2b315",
+      "block": "12161892",
+      "etherscan": "https://sepolia.etherscan.io/tx/0x720dfbf9c876a4d2ce0481cb01232dae011af0b473dc55f4a2a3442c31e2b315"
+    },
+    {
+      "name": "worker liquidó on-chain",
+      "at": "2026-11-18T13:58:17.509Z",
+      "tokenId": "3",
+      "settledCents": "39600000"
+    },
+    {
+      "name": "claimSettlement",
+      "at": "2026-11-18T13:58:39.359Z",
+      "txHash": "0x01fcd9cd52950207e8b5028698a2801e9ae746de33bb48511cfcf1b849eb7d7f",
+      "block": "12161896",
+      "etherscan": "https://sepolia.etherscan.io/tx/0x01fcd9cd52950207e8b5028698a2801e9ae746de33bb48511cfcf1b849eb7d7f"
+    }
+  ],
+  "checks": [
+    {
+      "name": "factura creada con concepto y empresa",
+      "ok": true,
+      "detail": "Prueba E2E mUSDC · Empresa Demo SAS · QUOTED"
+    },
+    {
+      "name": "adelanto 38.800.000 centavos (97 mUSDC)",
+      "ok": true,
+      "detail": "38800000"
+    },
+    {
+      "name": "worker abrió la operación (hmacToTokenId ≠ 0)",
+      "ok": true,
+      "detail": "token 3"
+    },
+    {
+      "name": "meta on-chain = adelanto",
+      "ok": true,
+      "detail": "38800000"
+    },
+    {
+      "name": "aporte COP sin depósito on-chain rechazado",
+      "ok": true
+    },
+    {
+      "name": "fundedUsdcByOperation = 97 mUSDC",
+      "ok": true,
+      "detail": "97000000"
+    },
+    {
+      "name": "depósito sincronizado en COP",
+      "ok": true,
+      "detail": "38800000 centavos"
+    },
+    {
+      "name": "operación ACTIVE_FUNDED off-chain",
+      "ok": true,
+      "detail": "ACTIVE_FUNDED"
+    },
+    {
+      "name": "reenvío del mismo depósito no duplica",
+      "ok": true
+    },
+    {
+      "name": "PostgreSQL fundedCapitalCents = 38.800.000",
+      "ok": true,
+      "detail": "38800000"
+    },
+    {
+      "name": "Registrar recaudo habilitado (settleAllowed)",
+      "ok": true,
+      "detail": "Funded"
+    },
+    {
+      "name": "recaudo off-chain: capital + ganancia = 39.600.000 centavos (99 mUSDC)",
+      "ok": true,
+      "detail": "39600000"
+    },
+    {
+      "name": "estado on-chain Settled",
+      "ok": true
+    },
+    {
+      "name": "pool de ganancia = 2 mUSDC",
+      "ok": true,
+      "detail": "2000000"
+    },
+    {
+      "name": "claimableUsdc = 99 mUSDC",
+      "ok": true,
+      "detail": "99000000"
+    },
+    {
+      "name": "wallet recibió 99 mUSDC (97 capital + 2 ganancia)",
+      "ok": true,
+      "detail": "99000000 unidades"
+    },
+    {
+      "name": "ERC-1155 quemado",
+      "ok": true
+    },
+    {
+      "name": "segundo claim revierte",
+      "ok": true
+    },
+    {
+      "name": "retiro registrado",
+      "ok": true
+    },
+    {
+      "name": "snapshot: operación SETTLED y token Settled",
+      "ok": true
+    },
+    {
+      "name": "snapshot: inversión con hashes de depósito y retiro",
+      "ok": true,
+      "detail": "0x720dfbf9c876a4d2ce0481cb01232dae011af0b473dc55f4a2a3442c31e2b315 / 0x01fcd9cd52950207e8b5028698a2801e9ae746de33bb48511cfcf1b849eb7d7f"
+    }
+  ],
+  "operationId": "253ec470-7139-4b76-b6d3-7e815063b02c",
+  "tokenId": "3",
+  "final": {
+    "operationStatus": "SETTLED",
+    "chainState": "Settled",
+    "investment": {
+      "tokenId": "3",
+      "depositTxHash": "0x720dfbf9c876a4d2ce0481cb01232dae011af0b473dc55f4a2a3442c31e2b315",
+      "depositUsdcUnits": "97000000",
+      "claimTxHash": "0x01fcd9cd52950207e8b5028698a2801e9ae746de33bb48511cfcf1b849eb7d7f",
+      "claimedUsdcUnits": "99000000",
+      "holderShares": "0",
+      "claimableUsdcUnits": "0"
+    },
+    "settlement": {
+      "investorId": "a0c397ad-f01a-48ac-8ef7-86a47e7856d2",
+      "capitalReturnedCents": "38800000",
+      "profitEarnedCents": "800000",
+      "totalDistributedCents": "39600000"
+    }
+  },
+  "result": "PASS",
+  "finishedAt": "2026-11-18T13:58:40.690Z"
+}

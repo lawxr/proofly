@@ -8,8 +8,15 @@
     "apps/*",
     "packages/*"
   ],
+  "engines": {
+    "node": ">=22.12"
+  },
   "scripts": {
     "dev": "node --experimental-strip-types scripts/dev.mjs",
+    "build": "npm run build --workspace @proofly/web",
+    "start": "node --experimental-strip-types scripts/dev.mjs --no-build",
+    "start:worker": "node --experimental-strip-types apps/worker/src/main.ts",
+    "db:init": "node scripts/db-init.mjs",
     "test": "node --experimental-strip-types --test tests/*.test.mjs && node --experimental-strip-types --test packages/domain/src/**/*.test.ts apps/api/src/**/*.test.ts apps/worker/src/**/*.test.ts tests/e2e/qa-suite.test.ts",
     "test:contracts": "cd contracts && ~/.foundry/bin/forge test",
     "build:contracts": "cd contracts && ~/.foundry/bin/forge build",
